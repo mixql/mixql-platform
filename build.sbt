@@ -35,5 +35,16 @@ packArchive := Def.sequential(stageAll, makeTarGZ).value
 makeTarGZ := {
   import sbt.internal.util.ManagedLogger
   implicit val log = streams.value.log
-  //TO-DO
+
+  IO.delete(new File(s"target/${name.value}-${version.value}.tar.gz"))
+
+  log.info(s"Pack ${(root / target).value / s"${name.value}-${version.value}"}")
+
+  TarGzArchiver.createTarGz(new File(s"target/${name.value}-${version.value}.tar.gz"),
+    name.value + "/",
+    new File(s"target/universal/stage/bin"),
+    new File(s"target/universal/stage/lib")
+  )
+  log.info("Task `packArchive` completed successfully")
 }
+

@@ -1,4 +1,4 @@
-package org.mixql.engine.demo
+package org.mixql.engine.core
 
 trait IModuleExecutor {
 

@@ -1,3 +1,3 @@
-package org.mixql.engine.demo
+package org.mixql.engine.core
 
 class BrakeException extends Exception{}

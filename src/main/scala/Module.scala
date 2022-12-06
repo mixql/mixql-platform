@@ -129,7 +129,7 @@ class Module(executor: IModuleExecutor, indentity: String, host: String, port: I
             case None => //got protobuf message
               implicit val clientAddress = clientAdrressTmp
               implicit val clientAddressStr = new String(clientAddress)
-              executor.reactOnMessage(msg.get)(server, identity, clientAddressStr, clientAddress)
+              executor.reactOnMessage(msg.get)(server, identity, clientAddress)
           }
           processStart = DateTime.now()
           liveness = 3

@@ -1,7 +1,9 @@
 package org.mixql.engine.core
 
+import org.zeromq.ZMQ
+
 trait IModuleExecutor {
 
-  def reactOnMessage(clientAddress: Array[Byte], msg: Array[Byte])
-                    (implicit identity: String, clientAddressStr: String): Unit
+  def reactOnMessage(msg: Array[Byte])
+                    (implicit server: ZMQ.Socket, identity: String, clientAddressStr: String, clientAddress: Array[Byte]): Unit
 }

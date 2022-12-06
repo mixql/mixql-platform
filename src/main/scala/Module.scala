@@ -8,7 +8,71 @@ import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 
 object Module {
-  var wasCloseExecuted: Boolean = false
+  def sendMsgToServerBroker(msg: Array[Byte])
+                           (implicit server: ZMQ.Socket, identity: String, clientAddress: Array[Byte])
+  : Boolean = {
+    //Sending multipart message
+    println(s"Module $identity: sendMsgToServerBroker: sending empty frame")
+    server.send("".getBytes(), ZMQ.SNDMORE) //Send empty frame
+    println(s"Module $identity: sendMsgToServerBroker: sending clientaddress")
+    server.send(clientAddress, ZMQ.SNDMORE) //First send address frame
+    println(s"Module $identity: sendMsgToServerBroker: sending empty frame")
+    server.send("".getBytes(), ZMQ.SNDMORE) //Send empty frame
+    println(s"Module $identity: sendMsgToServerBroker: sending message")
+    server.send(msg)
+  }
+
+  def sendMsgToServerBroker(msg: String)
+                           (implicit server: ZMQ.Socket, identity: String): Boolean = {
+    println(s"Module $identity: sendMsgToServerBroker: convert msg of type String to Array of bytes")
+    println(s"Module $identity: sending empty frame")
+    server.send("".getBytes(), ZMQ.SNDMORE) //Send empty frame
+    println(s"Module $identity: Send msg to server ")
+    server.send(msg.getBytes())
+  }
+
+  def sendMsgToServerBroker(clientAdrress: Array[Byte], msg: scalapb.GeneratedMessage)
+                           (implicit server: ZMQ.Socket, identity: String, clientAddress: Array[Byte])
+  : Boolean = {
+    println(s"Module $identity: sendMsgToServerBroker: convert msg of type Protobuf to Array of bytes")
+    sendMsgToServerBroker(ProtoBufConverter.toArray(msg).get)
+  }
+
+  def readMsgFromServerBroker()
+                             (implicit server: ZMQ.Socket, identity: String)
+  : (Array[Byte], Option[Array[Byte]], Option[String]) = {
+    //FOR PROTOCOL SEE BOOK OReilly ZeroMQ Messaging for any applications 2013 ~page 100
+    //From server broker messanger we get msg with such body:
+    //indentity frame
+    // empty frame --> delimiter
+    // data ->
+    if (server.recv(0) == null)
+      throw new BrakeException() //empty frame
+    println(s"$identity readMsgFromServerBroker: received empty frame")
+
+    val clientAdrress = server.recv(0) //Indentity of client object on server
+    // or pong-heartbeat from broker
+    if (clientAdrress == null)
+      throw new BrakeException()
+
+    var msg: Option[Array[Byte]] = None
+
+    var pongHeartMessage: Option[String] = Some(new String(clientAdrress))
+    if (pongHeartMessage.get != "PONG-HEARTBEAT") {
+      pongHeartMessage = None
+
+      println(s"$identity readMsgFromServerBroker: got client address: " + new String(clientAdrress))
+
+      if (server.recv(0) == null)
+        throw new BrakeException() //empty frame
+      println(s"$identity readMsgFromServerBroker: received empty frame")
+
+      println(s"Module $identity: have received message from server ${new String(clientAdrress)}")
+      msg = Some(server.recv(0))
+    }
+
+    (clientAdrress, msg, pongHeartMessage)
+  }
 }
 
 class Module(executor: IModuleExecutor, indentity: String, host: String, port: Int) {
@@ -16,7 +80,7 @@ class Module(executor: IModuleExecutor, indentity: String, host: String, port: I
   import Module._
 
   var ctx: ZMQ.Context = null
-  var server: ZMQ.Socket = null
+  implicit var server: ZMQ.Socket = null
   var poller: ZMQ.Poller = null
 
   val heartBeatInterval: Long = 3000
@@ -50,6 +114,7 @@ class Module(executor: IModuleExecutor, indentity: String, host: String, port: I
       val pollInIndex = poller.register(server, ZMQ.Poller.POLLIN)
 
       println(s"Module $indentity: Sending READY message to server's broker")
+      implicit val identity = this.indentity
       sendMsgToServerBroker("READY")
 
       while (true) {
@@ -57,13 +122,14 @@ class Module(executor: IModuleExecutor, indentity: String, host: String, port: I
         //        if (rc == 1) throw BrakeException()
         if (poller.pollin(pollInIndex)) {
           println("Setting processStart for timer, as message was received")
-          val (clientAdrress, msg, pongHeartBeatMsg) = readMsgFromServerBroker()
+          val (clientAdrressTmp, msg, pongHeartBeatMsg) = readMsgFromServerBroker()
           pongHeartBeatMsg match {
             case Some(_) => //got pong heart beat message
               println(s"Module $indentity: got pong heart beat message from broker server")
             case None => //got protobuf message
-              implicit val clientAddressStr = new String(clientAdrress)
-              executor.reactOnMessage(clientAdrress, msg.get)
+              implicit val clientAddress = clientAdrressTmp
+              implicit val clientAddressStr = new String(clientAddress)
+              executor.reactOnMessage(msg.get)(server, identity, clientAddressStr, clientAddress)
           }
           processStart = DateTime.now()
           liveness = 3
@@ -93,88 +159,26 @@ class Module(executor: IModuleExecutor, indentity: String, host: String, port: I
   }
 
   def close(): Unit = {
-    if (!wasCloseExecuted) {
-      wasCloseExecuted = true
-      if (server != null) {
-        println(s"Module $indentity: finally close server")
-        server.close()
-      }
-
-      if (poller != null) {
-        println(s"Module $indentity: finally close poller")
-        poller.close()
-      }
-
-      try {
-        if (ctx != null) {
-          println(s"Module $indentity: finally close context")
-          implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
-          Await.result(Future {
-            ctx.term()
-          }, scala.concurrent.duration.Duration(5000, "millis"))
-        }
-      } catch {
-        case _: Throwable => println(s"Module $indentity: tiemout of closing context exceeded:(")
-      }
-    }
-  }
-
-  def sendMsgToServerBroker(clientAdrress: Array[Byte], msg: Array[Byte]): Boolean = {
-    //Sending multipart message
-    println(s"Module $indentity: sendMsgToServerBroker: sending empty frame")
-    server.send("".getBytes(), ZMQ.SNDMORE) //Send empty frame
-    println(s"Module $indentity: sendMsgToServerBroker: sending clientaddress")
-    server.send(clientAdrress, ZMQ.SNDMORE) //First send address frame
-    println(s"Module $indentity: sendMsgToServerBroker: sending empty frame")
-    server.send("".getBytes(), ZMQ.SNDMORE) //Send empty frame
-    println(s"Module $indentity: sendMsgToServerBroker: sending message")
-    server.send(msg)
-  }
-
-  def sendMsgToServerBroker(msg: String): Boolean = {
-    println(s"Module $indentity: sendMsgToServerBroker: convert msg of type String to Array of bytes")
-    println(s"Module $indentity: sending empty frame")
-    server.send("".getBytes(), ZMQ.SNDMORE) //Send empty frame
-    println(s"Module $indentity: Send msg to server ")
-    server.send(msg.getBytes())
-  }
-
-  def sendMsgToServerBroker(clientAdrress: Array[Byte], msg: scalapb.GeneratedMessage): Boolean = {
-    println(s"Module $indentity: sendMsgToServerBroker: convert msg of type Protobuf to Array of bytes")
-    sendMsgToServerBroker(clientAdrress, ProtoBufConverter.toArray(msg).get)
-  }
-
-  def readMsgFromServerBroker(): (Array[Byte], Option[Array[Byte]], Option[String]) = {
-    //FOR PROTOCOL SEE BOOK OReilly ZeroMQ Messaging for any applications 2013 ~page 100
-    //From server broker messanger we get msg with such body:
-    //indentity frame
-    // empty frame --> delimiter
-    // data ->
-    if (server.recv(0) == null)
-      throw new BrakeException() //empty frame
-    println(s"$indentity readMsgFromServerBroker: received empty frame")
-
-    val clientAdrress = server.recv(0) //Indentity of client object on server
-    // or pong-heartbeat from broker
-    if (clientAdrress == null)
-      throw new BrakeException()
-
-    var msg: Option[Array[Byte]] = None
-
-    var pongHeartMessage: Option[String] = Some(new String(clientAdrress))
-    if (pongHeartMessage.get != "PONG-HEARTBEAT") {
-      pongHeartMessage = None
-
-      println(s"$indentity readMsgFromServerBroker: got client address: " + new String(clientAdrress))
-
-      if (server.recv(0) == null)
-        throw new BrakeException() //empty frame
-      println(s"$indentity readMsgFromServerBroker: received empty frame")
-
-      println(s"Module $indentity: have received message from server ${new String(clientAdrress)}")
-      msg = Some(server.recv(0))
+    if (server != null) {
+      println(s"Module $indentity: finally close server")
+      server.close()
     }
 
-    (clientAdrress, msg, pongHeartMessage)
+    if (poller != null) {
+      println(s"Module $indentity: finally close poller")
+      poller.close()
+    }
+
+    try {
+      if (ctx != null) {
+        println(s"Module $indentity: finally close context")
+        implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
+        Await.result(Future {
+          ctx.term()
+        }, scala.concurrent.duration.Duration(5000, "millis"))
+      }
+    } catch {
+      case _: Throwable => println(s"Module $indentity: tiemout of closing context exceeded:(")
+    }
   }
 }

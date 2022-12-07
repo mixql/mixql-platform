@@ -1,58 +1,73 @@
-val scala3Version = "3.2.1"
-
-inThisBuild(
-  List(
-    organization := "org.mixql",
-    version := "0.1.0-SNAPSHOT",
-    homepage := Some(url("https://github.com/mixql/mixql-engine-demo.git")),
-    licenses := List(
-      "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
-    ),
-    developers := List(
-      Developer(
-        "LavrVV",
-        "mixql team",
-        "lavr3x@rambler.ru",
-        sbt.url("http://mixql.org/")
-      ),
-      Developer(
-        "wiikviz ",
-        "mixql team",
-        "kviz@outlook.com",
-        sbt.url("http://mixql.org/")
-      ),
-      Developer(
-        "mihan1235",
-        "mixql team",
-        "mihan1235@yandex.ru",
-        sbt.url("http://mixql.org/")
-      )
-    )
-  )
-)
-
 lazy val root = project
   .in(file("."))
   .enablePlugins(JavaAppPackaging)
   .settings(
-    name := "mixql-engine-demo",
+    credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credentials"),
+    name := "mixql-engine-stub",
+    organizationHomepage := Some(url("https://mixql.org/")),
+    description := "MixQL stub engine.",
     scalaVersion := scala3Version,
+    resolvers +=
+      "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots",
     libraryDependencies ++= {
       val vScallop = "4.1.0"
       Seq(
-        "org.rogach" %% "scallop" % vScallop,
-        "com.typesafe" % "config" % "1.4.2",
-        "org.scalameta" %% "munit" % "0.7.29" % Test,
-        "org.mixql" %% "mixql-engine-core" % "0.1.0-SNAPSHOT"
+        "org.rogach"    %% "scallop"      % vScallop,
+        "com.typesafe"   % "config"       % "1.4.2",
+        "org.mixql"     %% "mixql-engine" % "0.1.0-SNAPSHOT",
+        "org.scalameta" %% "munit"        % "0.7.29" % Test
       )
-    }
+    },
+    licenses := List(
+      "Apache 2" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt")
+    ),
+    homepage := Some(url("https://github.com/mixql/mixql-engine-stub")),
+    pomIncludeRepository := { _ => false },
+    publishTo := {
+      val nexus = "https://s01.oss.sonatype.org/"
+      if (isSnapshot.value)
+        Some("snapshots" at nexus + "content/repositories/snapshots")
+      else Some("releases" at nexus + "service/local/staging/deploy/maven2")
+    },
+    scmInfo := Some(
+      ScmInfo(
+        url("https://github.com/mixql/mixql-engine-stub"),
+        "scm:git@github.com:mixql/mixql-engine-stub.git"
+      )
+    ),
+    developers := List(
+      Developer(
+        "LavrVV",
+        "MixQL team",
+        "lavr3x@rambler.ru",
+        url("https://github.com/LavrVV")
+      ),
+      Developer(
+        "wiikviz",
+        "Kostya Kviz",
+        "kviz@outlook.com",
+        url("https://github.com/wiikviz")
+      ),
+      Developer(
+        "mihan1235",
+        "MixQL team",
+        "mihan1235@yandex.ru",
+        url("https://github.com/mihan1235")
+      ),
+      Developer(
+        "ntlegion",
+        "MixQL team",
+        "ntlegion@outlook.com",
+        url("https://github.com/ntlegion")
+      )
+    )
   )
-
 lazy val stageAll = taskKey[Unit]("Stage all projects")
 lazy val packArchive = taskKey[Unit]("Making release tar.gz")
 lazy val makeTarGZ = taskKey[Unit]("Pack target dist tar.gz")
-
-val projects_stage = ScopeFilter(inProjects(root), inConfigurations(Universal))
+lazy val scala3Version = "3.2.1"
+lazy val projects_stage =
+  ScopeFilter(inProjects(root), inConfigurations(Universal))
 
 stageAll := {
   stage.all(projects_stage).value
@@ -61,18 +76,17 @@ stageAll := {
 packArchive := Def.sequential(stageAll, makeTarGZ).value
 
 makeTarGZ := {
-  import sbt.internal.util.ManagedLogger
   implicit val log = streams.value.log
 
   IO.delete(new File(s"target/${name.value}-${version.value}.tar.gz"))
 
   log.info(s"Pack ${(root / target).value / s"${name.value}-${version.value}"}")
 
-  TarGzArchiver.createTarGz(new File(s"target/${name.value}-${version.value}.tar.gz"),
+  TarGzArchiver.createTarGz(
+    new File(s"target/${name.value}-${version.value}.tar.gz"),
     s"${name.value}-${version.value}/",
     new File(s"target/universal/stage/bin"),
     new File(s"target/universal/stage/lib")
   )
   log.info("Task `packArchive` completed successfully")
 }
-

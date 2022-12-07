@@ -1,14 +1,42 @@
 val scala3Version = "3.2.1"
 
+inThisBuild(
+  List(
+    organization := "org.mixql",
+    version := "0.1.0-SNAPSHOT",
+    homepage := Some(url("https://github.com/mixql/mixql-engine-demo.git")),
+    licenses := List(
+      "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
+    ),
+    developers := List(
+      Developer(
+        "LavrVV",
+        "mixql team",
+        "lavr3x@rambler.ru",
+        sbt.url("http://mixql.org/")
+      ),
+      Developer(
+        "wiikviz ",
+        "mixql team",
+        "kviz@outlook.com",
+        sbt.url("http://mixql.org/")
+      ),
+      Developer(
+        "mihan1235",
+        "mixql team",
+        "mihan1235@yandex.ru",
+        sbt.url("http://mixql.org/")
+      )
+    )
+  )
+)
+
 lazy val root = project
   .in(file("."))
   .enablePlugins(JavaAppPackaging)
   .settings(
     name := "mixql-engine-demo",
-    version := "0.1.0-SNAPSHOT",
-
     scalaVersion := scala3Version,
-
     libraryDependencies ++= {
       val vScallop = "4.1.0"
       Seq(
@@ -41,7 +69,7 @@ makeTarGZ := {
   log.info(s"Pack ${(root / target).value / s"${name.value}-${version.value}"}")
 
   TarGzArchiver.createTarGz(new File(s"target/${name.value}-${version.value}.tar.gz"),
-    name.value + "/",
+    s"${name.value}-${version.value}/",
     new File(s"target/universal/stage/bin"),
     new File(s"target/universal/stage/lib")
   )

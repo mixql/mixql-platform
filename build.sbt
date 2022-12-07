@@ -1,12 +1,18 @@
+import com.typesafe.sbt.packager.SettingsHelper.{
+  addPackage,
+  makeDeploymentSettings
+}
+
 lazy val root = project
   .in(file("."))
-  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
   .settings(
     credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credentials"),
+    organization := "org.mixql",
     name := "mixql-engine-stub",
     organizationHomepage := Some(url("https://mixql.org/")),
     description := "MixQL stub engine.",
-    scalaVersion := scala3Version,
+    scalaVersion := "3.2.1",
     resolvers +=
       "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots",
     libraryDependencies ++= {
@@ -29,6 +35,9 @@ lazy val root = project
         Some("snapshots" at nexus + "content/repositories/snapshots")
       else Some("releases" at nexus + "service/local/staging/deploy/maven2")
     },
+    Universal / packageZipTarball / mappings += file(
+      "README.md"
+    ) -> "README.md",
     scmInfo := Some(
       ScmInfo(
         url("https://github.com/mixql/mixql-engine-stub"),
@@ -62,31 +71,14 @@ lazy val root = project
       )
     )
   )
-lazy val stageAll = taskKey[Unit]("Stage all projects")
-lazy val packArchive = taskKey[Unit]("Making release tar.gz")
-lazy val makeTarGZ = taskKey[Unit]("Pack target dist tar.gz")
-lazy val scala3Version = "3.2.1"
-lazy val projects_stage =
-  ScopeFilter(inProjects(root), inConfigurations(Universal))
 
-stageAll := {
-  stage.all(projects_stage).value
-}
+// zip
+makeDeploymentSettings(Universal, packageBin in Universal, "zip")
 
-packArchive := Def.sequential(stageAll, makeTarGZ).value
+makeDeploymentSettings(UniversalDocs, packageBin in UniversalDocs, "zip")
 
-makeTarGZ := {
-  implicit val log = streams.value.log
+// additional tgz
+addPackage(Universal, packageZipTarball in Universal, "tgz")
 
-  IO.delete(new File(s"target/${name.value}-${version.value}.tar.gz"))
-
-  log.info(s"Pack ${(root / target).value / s"${name.value}-${version.value}"}")
-
-  TarGzArchiver.createTarGz(
-    new File(s"target/${name.value}-${version.value}.tar.gz"),
-    s"${name.value}-${version.value}/",
-    new File(s"target/universal/stage/bin"),
-    new File(s"target/universal/stage/lib")
-  )
-  log.info("Task `packArchive` completed successfully")
-}
+// additional txz
+addPackage(UniversalDocs, packageXzTarball in UniversalDocs, "txz")

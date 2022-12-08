@@ -35,7 +35,7 @@ lazy val root = project
         Some("snapshots" at nexus + "content/repositories/snapshots")
       else Some("releases" at nexus + "service/local/staging/deploy/maven2")
     },
-    Universal / packageZipTarball / mappings += file(
+    Universal / mappings += file(
       "README.md"
     ) -> "README.md",
     scmInfo := Some(

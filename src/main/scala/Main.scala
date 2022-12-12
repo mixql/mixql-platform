@@ -1,4 +1,4 @@
-package org.mixql.engine.demo
+package org.mixql.engine.sqlite
 
 import com.typesafe.config.*
 import org.rogach.scallop.ScallopConf

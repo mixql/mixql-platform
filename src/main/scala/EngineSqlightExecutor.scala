@@ -1,4 +1,4 @@
-package org.mixql.engine.demo
+package org.mixql.engine.sqlite
 
 import org.mixql.protobuf.ProtoBufConverter
 import org.mixql.protobuf.messages.clientMsgs
@@ -8,26 +8,32 @@ import org.mixql.engine.core.{IModuleExecutor, BrakeException}
 import org.mixql.engine.core.Module.{sendMsgToServerBroker, *}
 import org.zeromq.ZMQ
 
-object EngineSqlightExecutor extends IModuleExecutor {
+object EngineSqlightExecutor
+    extends IModuleExecutor
+    with java.lang.AutoCloseable:
   val engineParams: mutable.Map[String, scalapb.GeneratedMessage] =
     mutable.Map()
+
+  var context: SQLightJDBC = null
 
   def reactOnMessage(msg: Array[Byte])(implicit
     server: ZMQ.Socket,
     identity: String,
     clientAddress: Array[Byte]
   ): Unit = {
+    if context == null then context = SQLightJDBC(identity)
     val clientAddressStr = String(clientAddress)
     ProtoBufConverter.unpackAnyMsg(msg) match {
       case clientMsgs.Execute(statement, _) =>
         println(
           s"Module $identity: Received Execute msg from server statement: ${statement}"
         )
-        println(s"Module $identity: Executing command ${statement} for 1sec")
-        Thread.sleep(1000)
+        println(s"Module $identity: Executing command ${statement}")
+//        Thread.sleep(1000)
+        val res = context.execute(statement)
         println(s"Module $identity: Successfully executed command ${statement}")
-        println(s"Module $identity: Sending reply on Execute msg")
-        sendMsgToServerBroker(clientAddress, clientMsgs.NULL())
+        println(s"Module $identity: Sending reply on Execute msg " + res.getClass.getName)
+        sendMsgToServerBroker(clientAddress, res)
       case clientMsgs.SetParam(name, value, _) =>
         try {
           println(
@@ -77,4 +83,8 @@ object EngineSqlightExecutor extends IModuleExecutor {
         throw new BrakeException()
     }
   }
-}
+
+  override def close(): Unit =
+    if context != null then
+      context.close()
+

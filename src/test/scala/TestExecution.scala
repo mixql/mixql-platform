@@ -1,36 +1,47 @@
+import scalapb.GeneratedMessage
 class TestExecution extends MixqlEngineSqliteTest {
   behavior of "start engine, execute sql statements and close engine"
 
-  it should ("create table") in {
-    val code =
-      """
-        |CREATE TABLE Customers (
-        |                           CustomerName varchar(255),
-        |                           ContactName varchar(255),
-        |                           Address varchar(255),
-        |                           City varchar(255),
-        |                           PostalCode int,
-        |                           Country varchar(255)
-        |);
-        """.stripMargin
-    execute(code)
-  }
+  it should ("execute statements that create table, insert value into it and" +
+    " select values from table") in {
+    import org.mixql.protobuf.RemoteMsgsConverter
+    import org.mixql.core.context.gtype
 
-  it should ("insert value in table") in {
-    val code =
-      """
-        |INSERT INTO Customers (CustomerName, ContactName, Address, City, PostalCode, Country)
-        |VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
-        """.stripMargin
-    execute(code)
-  }
+    {
+      println(MixqlEngineSqliteTest.identity + ": execute create table customers")
+      val gType = execute(
+        TestOps.readContentFromResource("TestExecution/create_table_customers.sql")
+      )
+      println(
+        MixqlEngineSqliteTest.identity + " create table res : " + gType.toString
+      )
+      assert(gType.isInstanceOf[gtype.Null.type])
+    }
 
-  it should ("execute select and create array of array object converted to protobuf") in {
-    val code =
-      """
-        |select * from Customers
-        """.stripMargin
-    val res = execute(code)
-  }
 
+    {
+      println(MixqlEngineSqliteTest.identity + ": execute insert into customers")
+      val gType = execute(
+        TestOps.readContentFromResource("TestExecution/insert_into_customers.sql")
+      )
+      println(
+        MixqlEngineSqliteTest.identity + " insert into res : " + gType.toString
+      )
+      assert(gType.isInstanceOf[gtype.Null.type])
+    }
+
+    {
+      val code =
+        """
+          |select * from Customers
+          """.stripMargin
+      println(MixqlEngineSqliteTest.identity + ": execute select from customers")
+      val gType = execute(code)
+      println(
+        MixqlEngineSqliteTest.identity + " select from customers res : " + gType.toString
+      )
+    }
+
+
+  }
 }

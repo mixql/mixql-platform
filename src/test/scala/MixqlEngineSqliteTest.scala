@@ -1,6 +1,7 @@
 import org.mixql.engine.sqlite.SQLightJDBC
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
+import org.mixql.core.context.gtype
 
 object MixqlEngineSqliteTest:
   var context: SQLightJDBC = null
@@ -13,8 +14,11 @@ class MixqlEngineSqliteTest extends AnyFlatSpec with BeforeAndAfterAll:
     context = SQLightJDBC(identity)
     super.beforeAll()
 
-  def execute(stmt: String): scalapb.GeneratedMessage =
-    context.execute(stmt)
+  def execute(code: String): gtype.Type =
+    import org.mixql.protobuf.RemoteMsgsConverter
+
+    val res = context.execute(code)
+    RemoteMsgsConverter.toGtype(res)
 
   override def afterAll(): Unit =
     context.close()

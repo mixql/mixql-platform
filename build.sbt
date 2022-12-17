@@ -3,6 +3,8 @@ import com.typesafe.sbt.packager.SettingsHelper.{
   makeDeploymentSettings
 }
 
+updateOptions in ThisBuild := updateOptions.value.withGigahorse(false)
+
 lazy val root = project
   .in(file("."))
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)

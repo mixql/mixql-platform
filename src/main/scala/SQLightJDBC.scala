@@ -1,4 +1,5 @@
 package org.mixql.engine.sqlite
+
 import org.mixql.protobuf.messages.clientMsgs.AnyMsg
 import org.mixql.protobuf.messages.clientMsgs
 
@@ -65,7 +66,8 @@ class SQLightJDBC(identity: String) extends java.lang.AutoCloseable:
             val rowValues = getRowFromResultSet(res, columnCount, columnTypes)
             arr = arr :+ com.google.protobuf.any.Any.pack(
               AnyMsg(
-                clientMsgs.Array.getClass.getName,
+                clientMsgs.Array(Seq()).getClass.getName
+                ,
                 Some(
                   com.google.protobuf.any.Any
                     .pack(seqGeneratedMsgToArray(rowValues))
@@ -98,16 +100,17 @@ class SQLightJDBC(identity: String) extends java.lang.AutoCloseable:
     })
 
   def getRowFromResultSet(
-    res: ResultSet,
-    columnCount: Int,
-    columnTypes: Seq[scalapb.GeneratedMessage]
-  ): Seq[clientMsgs.AnyMsg] =
+                           res: ResultSet,
+                           columnCount: Int,
+                           columnTypes: Seq[scalapb.GeneratedMessage]
+                         ): Seq[clientMsgs.AnyMsg] =
     import org.mixql.protobuf.messages.clientMsgs
     for (i <- 1 to columnCount - 1) yield {
       columnTypes(i) match
         case clientMsgs.String(_, _, _) =>
           AnyMsg(
-            clientMsgs.String.getClass.getName,
+            clientMsgs.String("", "").getClass.getName
+            ,
             Some(
               com.google.protobuf.any.Any
                 .pack(clientMsgs.String(res.getString(i), ""))
@@ -115,7 +118,7 @@ class SQLightJDBC(identity: String) extends java.lang.AutoCloseable:
           )
         case clientMsgs.Bool(_, _) =>
           AnyMsg(
-            clientMsgs.Bool.getClass.getName,
+            clientMsgs.Bool(false).getClass.getName,
             Some(
               com.google.protobuf.any.Any
                 .pack(clientMsgs.Bool(res.getBoolean(i)))
@@ -123,7 +126,7 @@ class SQLightJDBC(identity: String) extends java.lang.AutoCloseable:
           )
         case clientMsgs.Int(_, _) =>
           AnyMsg(
-            clientMsgs.Int.getClass.getName,
+            clientMsgs.Int(-1).getClass.getName,
             Some(
               com.google.protobuf.any.Any
                 .pack(clientMsgs.Int(res.getInt(i)))
@@ -131,7 +134,7 @@ class SQLightJDBC(identity: String) extends java.lang.AutoCloseable:
           )
         case clientMsgs.Double(_, _) =>
           AnyMsg(
-            clientMsgs.Double.getClass.getName,
+            clientMsgs.Double(-1.0).getClass.getName,
             Some(
               com.google.protobuf.any.Any
                 .pack(clientMsgs.Double(res.getDouble(i)))
@@ -139,7 +142,7 @@ class SQLightJDBC(identity: String) extends java.lang.AutoCloseable:
           )
         case clientMsgs.Array(_, _) =>
           AnyMsg(
-            clientMsgs.Array.getClass.getName,
+            clientMsgs.Array(Seq()).getClass.getName,
             Some(
               com.google.protobuf.any.Any
                 .pack(readArrayFromResultSet(res.getArray(i)))
@@ -150,14 +153,14 @@ class SQLightJDBC(identity: String) extends java.lang.AutoCloseable:
   def readArrayFromResultSet(javaSqlArray: java.sql.Array): clientMsgs.Array = {
 
     clientMsgs.Array({
-//      val javaSqlArray = res.getArray(i)
+      //      val javaSqlArray = res.getArray(i)
       javaSqlTypeToClientMsg(javaSqlArray.getBaseType) match
         case clientMsgs.String(_, _, _) =>
           JavaSqlArrayConverter
             .toStringArray(javaSqlArray)
             .map { str =>
               AnyMsg(
-                clientMsgs.String.getClass.getName,
+                clientMsgs.String("", "").getClass.getName,
                 Some(
                   com.google.protobuf.any.Any
                     .pack(clientMsgs.String(str, ""))
@@ -173,7 +176,7 @@ class SQLightJDBC(identity: String) extends java.lang.AutoCloseable:
             .toBooleanArray(javaSqlArray)
             .map { value =>
               AnyMsg(
-                clientMsgs.Bool.getClass.getName,
+                clientMsgs.Bool(false).getClass.getName,
                 Some(
                   com.google.protobuf.any.Any
                     .pack(clientMsgs.Bool(value))
@@ -189,7 +192,7 @@ class SQLightJDBC(identity: String) extends java.lang.AutoCloseable:
             .toIntArray(javaSqlArray)
             .map { value =>
               AnyMsg(
-                clientMsgs.Int.getClass.getName,
+                clientMsgs.Int(-1).getClass.getName,
                 Some(
                   com.google.protobuf.any.Any
                     .pack(clientMsgs.Int(value))
@@ -205,7 +208,7 @@ class SQLightJDBC(identity: String) extends java.lang.AutoCloseable:
             .toDoubleArray(javaSqlArray)
             .map { value =>
               AnyMsg(
-                clientMsgs.Double.getClass.getName,
+                clientMsgs.Double(-1.0).getClass.getName,
                 Some(
                   com.google.protobuf.any.Any
                     .pack(clientMsgs.Double(value))
@@ -280,9 +283,9 @@ class SQLightJDBC(identity: String) extends java.lang.AutoCloseable:
         )
 
   def getColumnTypes(
-    resultSetMetaData: ResultSetMetaData,
-    columnCount: Int
-  ): Seq[scalapb.GeneratedMessage] = {
+                      resultSetMetaData: ResultSetMetaData,
+                      columnCount: Int
+                    ): Seq[scalapb.GeneratedMessage] = {
     (for (i <- 1 to columnCount) yield resultSetMetaData.getColumnType(i)).map {
       intType => javaSqlTypeToClientMsg(intType)
     }

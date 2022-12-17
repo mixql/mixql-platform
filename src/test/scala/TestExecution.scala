@@ -33,15 +33,14 @@ class TestExecution extends MixqlEngineSqliteTest {
     {
       val code =
         """
-          |select * from Customers
+          |select * from Customers;
           """.stripMargin
       println(MixqlEngineSqliteTest.identity + ": execute select from customers")
       val gType = execute(code)
       println(
         MixqlEngineSqliteTest.identity + " select from customers res : " + gType.toString
       )
+      assert(gType.toString == "[[\"Cardinal\", \"Tom B. Erichsen\", \"Skagen 21\", 0, \"4006\"]]")
     }
-
-
   }
 }

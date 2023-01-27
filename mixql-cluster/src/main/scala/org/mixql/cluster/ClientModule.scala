@@ -1,6 +1,5 @@
 package org.mixql.cluster
 
-import org.mixql.core.context.gtype.Type
 import org.mixql.core.engine.Engine
 import org.mixql.protobuf.ProtoBufConverter
 import org.mixql.protobuf.messages.clientMsgs

@@ -12,7 +12,14 @@ lazy val mixQLProtobuf = project
     crossScalaVersions := ScalaVersions,
     scalacOptions := ScalaCompilerSettings.extraOptions(scalaVersion.value),
     Compile / PB.targets := Seq(
-      scalapb.gen(grpc = true) -> (Compile / sourceManaged).value
+      scalapb.gen(grpc = true) -> {
+        //val file = (Compile / sourceManaged).value
+//        println("PB  target: " + file.getPath)
+//        val file = new File("target/scala-3.2.1/src_managed/main")
+        val file = (Compile / scalaSource ).value / "scalaPB"
+        println("PB  target: " + file.getAbsolutePath)
+        file
+      }
     ),
     resolvers ++=
       Seq(

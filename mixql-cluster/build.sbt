@@ -1,4 +1,4 @@
-lazy val `mixql-server-main` = project
+lazy val mixQLCluster = project
   .in(file("."))
   .settings(
     credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credentials"),
@@ -19,8 +19,7 @@ lazy val `mixql-server-main` = project
         "com.typesafe"   % "config"  % "1.4.2",
         "org.scalameta" %% "munit"   % "0.7.29" % Test,
         "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.9.6-0",
-        "org.zeromq" % "jeromq"         % "0.5.2",
-        "org.mixql" %% "mixql-protobuf" % "0.1.0"
+        "org.zeromq" % "jeromq"         % "0.5.2"
       )
     },
     licenses := List(
@@ -68,9 +67,7 @@ lazy val `mixql-server-main` = project
     )
   )
 
-lazy val cleanAll = taskKey[Unit]("Stage all projects")
+
 val scala3Version = "3.2.0"
 
-cleanAll := {
-  (`mixql-server-main` / clean).value
-}
+

@@ -36,3 +36,4 @@ metals.sbt
 .bloop
 .antlr
 *.iml
+mixql-protobuf/src/main/scala/scalaPB/org/mixql/protobuf/messages

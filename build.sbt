@@ -10,8 +10,11 @@ lazy val root = project
     description := "MixQL engine interface.",
     crossScalaVersions := ScalaVersions,
     ThisBuild / scalaVersion := Scala212,
-    resolvers +=
-      "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots",
+    resolvers ++=
+      Seq(
+        "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots",
+        "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/releases"
+      ),
     libraryDependencies ++= {
       Seq(
         "com.typesafe"            % "config"         % "1.4.2",

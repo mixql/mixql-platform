@@ -14,8 +14,11 @@ lazy val root = project
     organizationHomepage := Some(url("https://mixql.org/")),
     description := "MixQL stub engine.",
     scalaVersion := "3.2.1",
-    resolvers +=
-      "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots",
+    resolvers ++=
+      Seq(
+        "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots",
+        "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/releases"
+      ),
     libraryDependencies ++= {
       val vScallop = "4.1.0"
       Seq(
@@ -36,9 +39,7 @@ lazy val root = project
         Some("snapshots" at nexus + "content/repositories/snapshots")
       else Some("releases" at nexus + "service/local/staging/deploy/maven2")
     },
-    Universal / mappings += file(
-      "README.md"
-    ) -> "README.md",
+    Universal / mappings += file("README.md") -> "README.md",
     scmInfo := Some(
       ScmInfo(
         url("https://github.com/mixql/mixql-engine-stub"),

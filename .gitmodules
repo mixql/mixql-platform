@@ -1,0 +1,3 @@
+[submodule "mixql-core"]
+	path = mixql-core
+	url = https://github.com/mixql/mixql-core.git

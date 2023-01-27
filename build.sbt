@@ -11,6 +11,7 @@ lazy val root = project
   .settings(
     credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credentials"),
     organization := "org.mixql",
+    version := "0.1.0",
     name := "mixql-engine-sqlite",
     organizationHomepage := Some(url("https://mixql.org/")),
     description := "MixQL stub engine.",
@@ -22,7 +23,7 @@ lazy val root = project
       Seq(
         "org.rogach"    %% "scallop"      % vScallop,
         "com.typesafe"   % "config"       % "1.4.2",
-        "org.mixql"     %% "mixql-engine" % "0.1.0-SNAPSHOT",
+        "org.mixql"     %% "mixql-engine" % "0.1.0",
         "org.scalameta" %% "munit"        % "0.7.29" % Test,
         "org.xerial" % "sqlite-jdbc" % "3.40.0.0",
         "org.scalatest" %% "scalatest" % "3.2.14" % Test

@@ -4,7 +4,7 @@ lazy val root = project
     credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credentials"),
     organization := "org.mixql",
     name := "mixql-engine",
-    version := "0.1.0-SNAPSHOT",
+    version := "0.1.0",
     organizationName := "MixQL",
     organizationHomepage := Some(url("https://mixql.org/")),
     description := "MixQL engine interface.",
@@ -18,7 +18,7 @@ lazy val root = project
         "org.scalameta"          %% "munit"          % "0.7.29" % Test,
         "org.zeromq"              % "jeromq"         % "0.5.2",
         "com.github.nscala-time" %% "nscala-time"    % "2.32.0",
-        "org.mixql"              %% "mixql-protobuf" % "0.1.0-SNAPSHOT"
+        "org.mixql"              %% "mixql-protobuf" % "0.1.0"
       )
     },
     scalacOptions := {

@@ -7,7 +7,6 @@ object MixqlEngineSqliteTest:
   var context: SQLightJDBC = null
   val identity = "MixqlEngineSqliteTest"
 
-
 class MixqlEngineSqliteTest extends AnyFlatSpec with BeforeAndAfterAll:
   import MixqlEngineSqliteTest._
   override def beforeAll(): Unit =

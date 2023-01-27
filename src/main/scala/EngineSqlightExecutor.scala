@@ -32,7 +32,9 @@ object EngineSqlightExecutor
 //        Thread.sleep(1000)
         val res = context.execute(statement)
         println(s"Module $identity: Successfully executed command ${statement}")
-        println(s"Module $identity: Sending reply on Execute msg " + res.getClass.getName)
+        println(
+          s"Module $identity: Sending reply on Execute msg " + res.getClass.getName
+        )
         sendMsgToServerBroker(clientAddress, res)
       case clientMsgs.SetParam(name, value, _) =>
         try {
@@ -85,6 +87,4 @@ object EngineSqlightExecutor
   }
 
   override def close(): Unit =
-    if context != null then
-      context.close()
-
+    if context != null then context.close()

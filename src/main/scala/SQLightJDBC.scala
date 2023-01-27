@@ -66,8 +66,7 @@ class SQLightJDBC(identity: String) extends java.lang.AutoCloseable:
             val rowValues = getRowFromResultSet(res, columnCount, columnTypes)
             arr = arr :+ com.google.protobuf.any.Any.pack(
               AnyMsg(
-                clientMsgs.Array(Seq()).getClass.getName
-                ,
+                clientMsgs.Array(Seq()).getClass.getName,
                 Some(
                   com.google.protobuf.any.Any
                     .pack(seqGeneratedMsgToArray(rowValues))
@@ -100,17 +99,16 @@ class SQLightJDBC(identity: String) extends java.lang.AutoCloseable:
     })
 
   def getRowFromResultSet(
-                           res: ResultSet,
-                           columnCount: Int,
-                           columnTypes: Seq[scalapb.GeneratedMessage]
-                         ): Seq[clientMsgs.AnyMsg] =
+    res: ResultSet,
+    columnCount: Int,
+    columnTypes: Seq[scalapb.GeneratedMessage]
+  ): Seq[clientMsgs.AnyMsg] =
     import org.mixql.protobuf.messages.clientMsgs
     for (i <- 1 to columnCount - 1) yield {
       columnTypes(i) match
         case clientMsgs.String(_, _, _) =>
           AnyMsg(
-            clientMsgs.String("", "").getClass.getName
-            ,
+            clientMsgs.String("", "").getClass.getName,
             Some(
               com.google.protobuf.any.Any
                 .pack(clientMsgs.String(res.getString(i), ""))
@@ -283,9 +281,9 @@ class SQLightJDBC(identity: String) extends java.lang.AutoCloseable:
         )
 
   def getColumnTypes(
-                      resultSetMetaData: ResultSetMetaData,
-                      columnCount: Int
-                    ): Seq[scalapb.GeneratedMessage] = {
+    resultSetMetaData: ResultSetMetaData,
+    columnCount: Int
+  ): Seq[scalapb.GeneratedMessage] = {
     (for (i <- 1 to columnCount) yield resultSetMetaData.getColumnType(i)).map {
       intType => javaSqlTypeToClientMsg(intType)
     }

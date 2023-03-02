@@ -53,7 +53,7 @@ lazy val mixQLCore = projectMatrix
     Antlr4 / antlr4GenListener := false, // default: true
     Antlr4 / antlr4GenVisitor := true, // default: true
 //    Antlr4 / javaSource := baseDirectory.value / "src" / "main" / "java" / "antlr4",
-    Compile / unmanagedSourceDirectories += baseDirectory.value / "src" / "main" / "java" / "antlr4",
+    Compile / unmanagedSourceDirectories += baseDirectory.value / "src" / "main" / "java" / "antlr4", //For stupid IDEA
     libraryDependencies ++= Seq(
       "org.antlr"                % "antlr4-runtime" % "4.8-1",
       "org.apache.logging.log4j" % "log4j-api"      % "2.19.0",

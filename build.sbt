@@ -109,6 +109,22 @@ lazy val mixQLProtobufSCALA3 = mixQLProtobuf.jvm(Scala3)
 lazy val mixQLCluster = project
   .in(file("mixql-cluster")).dependsOn(mixQLProtobufSCALA3)
 
+lazy val mixQLEngine = projectMatrix
+  .in(file("mixql-engine")).dependsOn(mixQLProtobuf)
+  .settings(
+    libraryDependencies ++= {
+      Seq(
+        "com.typesafe" % "config" % "1.4.2",
+        "org.scalameta" %% "munit" % "0.7.29" % Test,
+        "org.zeromq" % "jeromq" % "0.5.2",
+        "com.github.nscala-time" %% "nscala-time" % "2.32.0"
+      )
+    }
+  )
+  .jvmPlatform(
+    Seq(Scala3, Scala213, Scala212),
+  )
+
 //
 //lazy val cleanAll = taskKey[Unit]("Stage all projects")
 //

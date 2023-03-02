@@ -52,33 +52,6 @@ scmInfo := Some(
   )
 )
 
-developers := List(
-  Developer(
-    "LavrVV",
-    "MixQL team",
-    "lavr3x@rambler.ru",
-    url("https://github.com/LavrVV")
-  ),
-  Developer(
-    "wiikviz",
-    "Kostya Kviz",
-    "kviz@outlook.com",
-    url("https://github.com/wiikviz")
-  ),
-  Developer(
-    "mihan1235",
-    "MixQL team",
-    "mihan1235@yandex.ru",
-    url("https://github.com/mihan1235")
-  ),
-  Developer(
-    "ntlegion",
-    "MixQL team",
-    "ntlegion@outlook.com",
-    url("https://github.com/ntlegion")
-  )
-)
-
 val scala3Version = "3.2.0"
 
 

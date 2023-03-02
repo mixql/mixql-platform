@@ -37,3 +37,6 @@ metals.sbt
 .antlr
 *.iml
 mixql-protobuf/src/main/scala/scalaPB/org/mixql/protobuf/messages
+
+#projectmatrix
+.sbt

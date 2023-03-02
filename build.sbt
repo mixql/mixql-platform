@@ -2,6 +2,7 @@ ThisBuild / scalaVersion := "3.2.1"
 
 inThisBuild(
   List(
+    organization := "org.mixql",
     organizationName := "MixQL",
     organizationHomepage := Some (url("https://mixql.org/")),
     developers := List(
@@ -124,6 +125,12 @@ lazy val mixQLEngine = projectMatrix
   .jvmPlatform(
     Seq(Scala3, Scala213, Scala212),
   )
+
+lazy val mixQLEngineSCALA3 = mixQLEngine.jvm(Scala3)
+
+lazy val mixQLEngineStub = project
+  .in(file("engines/mixql-engine-stub")).dependsOn(mixQLEngineSCALA3)
+  .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
 
 //
 //lazy val cleanAll = taskKey[Unit]("Stage all projects")

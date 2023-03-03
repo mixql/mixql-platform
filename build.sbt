@@ -132,6 +132,11 @@ lazy val mixQLEngineStub = project
   .dependsOn(mixQLEngineSCALA3)
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
 
+lazy val mixQLEngineSqlite = project
+  .in(file("engines/mixql-engine-sqlite"))
+  .dependsOn(mixQLEngineSCALA3)
+  .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
+
 //
 //lazy val cleanAll = taskKey[Unit]("Stage all projects")
 //

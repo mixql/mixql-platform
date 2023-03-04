@@ -41,10 +41,10 @@ Universal / mappings := {
 libraryDependencies ++= {
   val vScallop = "4.1.0"
   Seq(
-    "org.rogach"    %% "scallop"             % vScallop,
-    "com.typesafe"   % "config"              % "1.4.2",
-    "org.scalatest" %% "scalatest"           % "3.2.14" % Test,
-    "org.scalameta" %% "munit"               % "0.7.29" % Test,
+    "org.rogach"    %% "scallop"   % vScallop,
+    "com.typesafe"   % "config"    % "1.4.2",
+    "org.scalatest" %% "scalatest" % "3.2.14" % Test,
+    "org.scalameta" %% "munit"     % "0.7.29" % Test
   )
 }
 
@@ -74,46 +74,58 @@ lazy val prePackArchive =
 import com.typesafe.config.{Config, ConfigFactory}
 
 val configMixqlPlatform =
-  ConfigFactory.parseFile(new File("./mixql_platform.conf"))
+  settingKey[Config]("config of mixql platform demo")
+configMixqlPlatform := ConfigFactory.parseFile(
+  baseDirectory.value / "mixql_platform.conf"
+)
+
+lazy val stageEnginesDemo =
+  taskKey[Seq[(File, String)]](
+    "stage engines and get jars for mixqlPlatformDemo"
+  )
 
 prePackArchive := {
   implicit val log = streams.value.log
 
   import scala.util.{Try, Failure, Success}
+  var cache: Seq[(File, String)] = stageEnginesDemo.value
 
-  Try {
-    configMixqlPlatform.getStringList("org.mixql.engines")
-  } match {
-    case Failure(exception) =>
-      log.error(
-        "Error while getting list of engine uris: " +
-          exception.getMessage
-      )
-      Seq()
-    case Success(uris) =>
-      import scala.collection.JavaConverters._
-      var cache: Seq[(File, String)] = Seq()
-      uris.asScala.foreach(uri => {
-        val (name, version) = parseUri(uri)
-        downloadAndExtractModule(
-          name,
-          version,
-          uri,
-          new File(s"target/$name-$version.tar.gz")
+  cache = cache ++ {
+    Try {
+      configMixqlPlatform.value.getStringList("org.mixql.engines")
+    } match {
+      case Failure(exception) =>
+        log.warn(
+          "Error while getting list of engine uris: " +
+            exception.getMessage
         )
-        cache = cache ++
-          (baseDirectory.value / "target" / s"$name-$version" / "bin")
-            .listFiles()
-            .toSeq
-            .map(f =>
-              (f, "bin/" + f.getName)
-            ) ++ (baseDirectory.value / "target" / s"$name-$version" / "lib")
-            .listFiles()
-            .toSeq
-            .map(f => (f, "lib/" + f.getName))
-      })
-      cache
+        Seq()
+      case Success(uris) =>
+        import scala.collection.JavaConverters._
+
+        uris.asScala.foreach(uri => {
+          val (name, version) = parseUri(uri)
+          downloadAndExtractModule(
+            name,
+            version,
+            uri,
+            new File(s"target/$name-$version.tar.gz")
+          )
+          cache = cache ++
+            (baseDirectory.value / "target" / s"$name-$version" / "bin")
+              .listFiles()
+              .toSeq
+              .map(f =>
+                (f, "bin/" + f.getName)
+              ) ++ (baseDirectory.value / "target" / s"$name-$version" / "lib")
+              .listFiles()
+              .toSeq
+              .map(f => (f, "lib/" + f.getName))
+        })
+        cache
+    }
   }
+  cache
 }
 
 def downloadAndExtractModule(

@@ -53,7 +53,7 @@ lazy val mixQLCore = projectMatrix
     Antlr4 / antlr4GenListener := false, // default: true
     Antlr4 / antlr4GenVisitor := true, // default: true
 //    Antlr4 / javaSource := baseDirectory.value / "src" / "main" / "java" / "antlr4",
-    Compile / unmanagedSourceDirectories += baseDirectory.value / "src" / "main" / "java" / "antlr4", //For stupid IDEA
+    Compile / unmanagedSourceDirectories += baseDirectory.value / "src" / "main" / "java" / "antlr4", // For stupid IDEA
     libraryDependencies ++= Seq(
       "org.antlr"                % "antlr4-runtime" % "4.8-1",
       "org.apache.logging.log4j" % "log4j-api"      % "2.19.0",
@@ -137,13 +137,42 @@ lazy val mixQLEngineSqlite = project
   .dependsOn(mixQLEngineSCALA3)
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
 
+lazy val stageEnginesDemo =
+  taskKey[Seq[(File, String)]](
+    "stage engines and get jars for mixqlPlatformDemo"
+  )
+
 lazy val mixQLPlatformDemo = project
   .in(file("mixql-platform-demo"))
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
   .dependsOn(
-    mixQLCluster, mixQLEngineStub % "compile->test", mixQLEngineSqlite % "compile->test"
+    mixQLCluster,
+    mixQLEngineStub   % "compile->test",
+    mixQLEngineSqlite % "compile->test"
   )
+  .settings(stageEnginesDemo := {
+//      implicit val log = streams.value.log
+//      log.info("-------stageEnginesDemo---------")
+    var cache: Seq[(File, String)] = Seq()
+    (mixQLEngineStub / Universal / stage).value
+    (mixQLEngineSqlite / Universal / stage).value
+    val baseDirs = Seq((mixQLEngineStub / baseDirectory).value, (mixQLEngineSqlite / baseDirectory).value)
 
+    baseDirs.foreach(baseDir => {
+      cache = cache ++
+        (baseDir / "target" / "universal" / "stage" / "bin")
+          .listFiles()
+          .toSeq
+          .map(f =>
+            (f, "bin/" + f.getName)
+          ) ++ (baseDir / "target" / "universal" / "stage" / "lib")
+        .listFiles()
+        .toSeq
+        .map(f => (f, "lib/" + f.getName))
+    })
+
+    cache
+  })
 
 //
 //lazy val cleanAll = taskKey[Unit]("Stage all projects")
@@ -167,9 +196,9 @@ buildAllMixQLCore := {
   (mixQLCoreSCALA213 / Compile / packageBin).value
 }
 
-lazy val archiveMixQLPlatformDemo = taskKey[Unit]("Create dist archive of platform-demo")
-archiveMixQLPlatformDemo := {
-  (mixQLPlatformDemo / Universal / packageBin).value
-  (mixQLPlatformDemo / Universal / packageZipTarball).value
-}
-
+lazy val archiveMixQLPlatformDemo =
+  taskKey[Unit]("Create dist archive of platform-demo")
+archiveMixQLPlatformDemo := Def.sequential(
+  mixQLPlatformDemo / Universal / packageBin,
+  mixQLPlatformDemo / Universal / packageZipTarball
+).value

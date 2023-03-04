@@ -68,7 +68,7 @@ lazy val mixQLCore = projectMatrix
     Seq(VirtualAxis.jvm),
     _.settings(
       libraryDependencies ++= Seq(
-        "org.scalatest" %% "scalatest"     % "3.1.1" % Test,
+        "org.scalatest" %% "scalatest" % "3.1.1" % Test,
         "org.scala-lang" % "scala-reflect" % scalaVersion.value
       )
     )
@@ -84,6 +84,10 @@ lazy val mixQLCore = projectMatrix
       )
     )
   )
+
+lazy val mixQLCoreSCALA3 = mixQLCore.jvm(Scala3)
+lazy val mixQLCoreSCALA212 = mixQLCore.jvm(Scala212)
+lazy val mixQLCoreSCALA213 = mixQLCore.jvm(Scala213)
 
 lazy val mixQLProtobuf = projectMatrix
   .in(file("mixql-protobuf"))
@@ -156,7 +160,10 @@ lazy val mixQLPlatformDemo = project
     var cache: Seq[(File, String)] = Seq()
     (mixQLEngineStub / Universal / stage).value
     (mixQLEngineSqlite / Universal / stage).value
-    val baseDirs = Seq((mixQLEngineStub / baseDirectory).value, (mixQLEngineSqlite / baseDirectory).value)
+    val baseDirs = Seq(
+      (mixQLEngineStub / baseDirectory).value,
+      (mixQLEngineSqlite / baseDirectory).value
+    )
 
     baseDirs.foreach(baseDir => {
       cache = cache ++
@@ -166,9 +173,9 @@ lazy val mixQLPlatformDemo = project
           .map(f =>
             (f, "bin/" + f.getName)
           ) ++ (baseDir / "target" / "universal" / "stage" / "lib")
-        .listFiles()
-        .toSeq
-        .map(f => (f, "lib/" + f.getName))
+          .listFiles()
+          .toSeq
+          .map(f => (f, "lib/" + f.getName))
     })
 
     cache
@@ -185,9 +192,6 @@ lazy val mixQLPlatformDemo = project
 //
 
 lazy val buildAllMixQLCore = taskKey[Unit]("Build all mixql core projects")
-lazy val mixQLCoreSCALA3 = mixQLCore.jvm(Scala3)
-lazy val mixQLCoreSCALA212 = mixQLCore.jvm(Scala212)
-lazy val mixQLCoreSCALA213 = mixQLCore.jvm(Scala213)
 buildAllMixQLCore := {
 //  (mixQLCluster / Compile / packageBin).value
 //  (mixQLProtobuf / Compile / packageBin).value
@@ -198,7 +202,9 @@ buildAllMixQLCore := {
 
 lazy val archiveMixQLPlatformDemo =
   taskKey[Unit]("Create dist archive of platform-demo")
-archiveMixQLPlatformDemo := Def.sequential(
-  mixQLPlatformDemo / Universal / packageBin,
-  mixQLPlatformDemo / Universal / packageZipTarball
-).value
+archiveMixQLPlatformDemo := Def
+  .sequential(
+    mixQLPlatformDemo / Universal / packageBin,
+    mixQLPlatformDemo / Universal / packageZipTarball
+  )
+  .value

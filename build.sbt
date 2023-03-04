@@ -137,6 +137,14 @@ lazy val mixQLEngineSqlite = project
   .dependsOn(mixQLEngineSCALA3)
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
 
+lazy val mixQLPlatformDemo = project
+  .in(file("mixql-platform-demo"))
+  .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
+  .dependsOn(
+    mixQLCluster, mixQLEngineStub % "compile->test", mixQLEngineSqlite % "compile->test"
+  )
+
+
 //
 //lazy val cleanAll = taskKey[Unit]("Stage all projects")
 //
@@ -158,3 +166,10 @@ buildAllMixQLCore := {
   (mixQLCoreSCALA212 / Compile / packageBin).value
   (mixQLCoreSCALA213 / Compile / packageBin).value
 }
+
+lazy val archiveMixQLPlatformDemo = taskKey[Unit]("Create dist archive of platform-demo")
+archiveMixQLPlatformDemo := {
+  (mixQLPlatformDemo / Universal / packageBin).value
+  (mixQLPlatformDemo / Universal / packageZipTarball).value
+}
+

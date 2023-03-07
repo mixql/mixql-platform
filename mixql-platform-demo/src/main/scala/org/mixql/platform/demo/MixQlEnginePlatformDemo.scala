@@ -20,11 +20,6 @@ object MixQlEnginePlatformDemo:
     println("Mixql engine demo platform: parsing args")
     val (host, portFrontend, portBackend, basePath, sqlScriptFiles) = parseArgs(args.toList)
 
-    println(s"Mixql engine demo platform: Starting broker messager with" +
-      s" frontend port $portFrontend and backend port $portBackend on host $host")
-    val broker = new BrokerModule(portFrontend, portBackend, host)
-    broker.start()
-
     println(s"Mixql engine demo platform: initialising engines")
     val engines = mutable.Map[String, Engine]("stub" -> new ClientModule(
       //Name of client, is used for identification in broker,
@@ -87,34 +82,39 @@ object MixQlEnginePlatformDemo:
         }
       )
       context.close()
-      broker.close()
+      if ClientModule.broker != null then ClientModule.broker.close()
     }
 
-  def parseArgs(args: List[String]): (String, Int, Int, File, Option[List[File]]) =
+  def parseArgs(args: List[String]): (Option[String], Option[Int],
+    Option[Int], Option[File], Option[List[File]]) =
     import org.rogach.scallop.ScallopConfBase
     val appArgs = AppArgs(args)
-    val host: String = appArgs.host.toOption.get
-    val portFrontend = PortOperations.isPortAvailable(
-      appArgs.portFrontend.toOption.get
-    )
-    val portBackend = PortOperations.isPortAvailable(
-      appArgs.portBackend.toOption.get
-    )
-    val basePath = appArgs.basePath.toOption.get
+    val host = appArgs.host.toOption
+    val portFrontend = //PortOperations.isPortAvailable(
+      appArgs.portFrontend.toOption
+    //)
+    val portBackend = //PortOperations.isPortAvailable(
+      appArgs.portBackend.toOption
+    //)
+    val basePath = appArgs.basePath.toOption
     val sqlScripts = appArgs.sqlFile.toOption
     (host, portFrontend, portBackend, basePath, sqlScripts)
 
-case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments):
+case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments) :
 
   import org.rogach.scallop.stringConverter
   import org.rogach.scallop.intConverter
   import org.rogach.scallop.fileConverter
   import org.rogach.scallop.fileListConverter
 
-  val portFrontend = opt[Int](required = false, default = Some(0))
-  val portBackend = opt[Int](required = false, default = Some(0))
-  val host = opt[String](required = false, default = Some("0.0.0.0"))
-  val basePath = opt[File](required = false, default = Some(new File(".")))
+  val portFrontend = opt[Int](descr = "frontend port of platform's broker, client modules will connect to it",
+    required = false) //, default = Some(0))
+  val portBackend = opt[Int](descr = "backend port of platform's broker, remote engines will connect to it",
+    required = false) //, default = Some(0))
+  val host = opt[String](descr = "host of platform's broker",
+    required = false) //, default = Some("0.0.0.0"))
+  val basePath = opt[File](descr = "path with sripts for launching remote engines",
+    required = false) //, default = Some(new File(".")))
   val sqlFile = opt[List[File]](descr = "path to sql script file", required = false)
 
   validateFilesIsFile(sqlFile)

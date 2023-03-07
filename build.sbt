@@ -52,12 +52,12 @@ lazy val mixQLCore = projectMatrix
     Antlr4 / antlr4Version := "4.8-1",
     Antlr4 / antlr4GenListener := false, // default: true
     Antlr4 / antlr4GenVisitor := true, // default: true
-//    Antlr4 / javaSource := baseDirectory.value / "src" / "main" / "java" / "antlr4",
+    //    Antlr4 / javaSource := baseDirectory.value / "src" / "main" / "java" / "antlr4",
     Compile / unmanagedSourceDirectories += baseDirectory.value / "src" / "main" / "java" / "antlr4", // For stupid IDEA
     libraryDependencies ++= Seq(
-      "org.antlr"                % "antlr4-runtime" % "4.8-1",
-      "org.apache.logging.log4j" % "log4j-api"      % "2.19.0",
-      "org.apache.logging.log4j" % "log4j-core"     % "2.19.0"
+      "org.antlr" % "antlr4-runtime" % "4.8-1",
+      "org.apache.logging.log4j" % "log4j-api" % "2.19.0",
+      "org.apache.logging.log4j" % "log4j-core" % "2.19.0"
       // "org.ow2.asm"              % "asm"        % "9.3",
       // "org.ow2.asm"              % "asm-tree"   % "9.3",
     )
@@ -79,7 +79,7 @@ lazy val mixQLCore = projectMatrix
     Seq(VirtualAxis.jvm),
     _.settings(
       libraryDependencies ++= Seq(
-        "org.scalatest" %% "scalatest"     % "3.2.14" % Test,
+        "org.scalatest" %% "scalatest" % "3.2.14" % Test,
         "org.scala-lang" % "scala-reflect" % "2.13.8"
       )
     )
@@ -123,9 +123,9 @@ lazy val mixQLEngine = projectMatrix
   .dependsOn(mixQLProtobuf)
   .settings(libraryDependencies ++= {
     Seq(
-      "com.typesafe"            % "config"      % "1.4.2",
-      "org.scalameta"          %% "munit"       % "0.7.29" % Test,
-      "org.zeromq"              % "jeromq"      % "0.5.2",
+      "com.typesafe" % "config" % "1.4.2",
+      "org.scalameta" %% "munit" % "0.7.29" % Test,
+      "org.zeromq" % "jeromq" % "0.5.2",
       "com.github.nscala-time" %% "nscala-time" % "2.32.0"
     )
   })
@@ -161,14 +161,14 @@ lazy val mixQLPlatformDemo = project
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
   .dependsOn(
     mixQLCluster,
-    mixQLEngineStub   % "compile->test",
+    mixQLEngineStub % "compile->test",
     mixQLEngineSqlite % "compile->test",
-    mixQLEngineStubLocal,
-    mixQLEngineSqliteLocal
+    mixQLEngineStubLocal % "compile->compile;compile->test",
+    mixQLEngineSqliteLocal % "compile->compile;compile->test"
   )
   .settings(stageEnginesDemo := {
-//      implicit val log = streams.value.log
-//      log.info("-------stageEnginesDemo---------")
+    //      implicit val log = streams.value.log
+    //      log.info("-------stageEnginesDemo---------")
     var cache: Seq[(File, String)] = Seq()
     (mixQLEngineStub / Universal / stage).value
     (mixQLEngineSqlite / Universal / stage).value
@@ -185,9 +185,9 @@ lazy val mixQLPlatformDemo = project
           .map(f =>
             (f, "bin/" + f.getName)
           ) ++ (baseDir / "target" / "universal" / "stage" / "lib")
-          .listFiles()
-          .toSeq
-          .map(f => (f, "lib/" + f.getName))
+        .listFiles()
+        .toSeq
+        .map(f => (f, "lib/" + f.getName))
     })
 
     cache
@@ -205,8 +205,8 @@ lazy val mixQLPlatformDemo = project
 
 lazy val buildAllMixQLCore = taskKey[Unit]("Build all mixql core projects ")
 buildAllMixQLCore := {
-//  (mixQLCluster / Compile / packageBin).value
-//  (mixQLProtobuf / Compile / packageBin).value
+  //  (mixQLCluster / Compile / packageBin).value
+  //  (mixQLProtobuf / Compile / packageBin).value
   (mixQLCoreSCALA3 / Compile / packageBin).value
   (mixQLCoreSCALA212 / Compile / packageBin).value
   (mixQLCoreSCALA213 / Compile / packageBin).value

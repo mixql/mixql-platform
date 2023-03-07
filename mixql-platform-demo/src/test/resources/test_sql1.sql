@@ -1,4 +1,4 @@
-let engine "sqlite";
+let engine "sqlite-local";
 
 CREATE TABLE Customers (
                            CustomerName varchar(255),
@@ -15,4 +15,4 @@ VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway
 let a = (select * from Customers);
 print($a);
 
-let engine "demo";
+let engine "stub-local";

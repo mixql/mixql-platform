@@ -24,6 +24,10 @@ class BrokerModule(portFrontend: Int, portBackend: Int, host: String)
 
   import BrokerModule.*
 
+  def getPortFrontend = portFrontend
+  def getPortBackend = portBackend
+  def getHost = host
+
   def start() = {
     if threadBroker == null then
       println("Starting broker thread")

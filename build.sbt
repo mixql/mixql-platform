@@ -111,6 +111,8 @@ lazy val mixQLProtobuf = projectMatrix
   .jvmPlatform(Seq(Scala3, Scala213, Scala212))
 
 lazy val mixQLProtobufSCALA3 = mixQLProtobuf.jvm(Scala3)
+lazy val mixQLProtobufSCALA212 = mixQLProtobuf.jvm(Scala212)
+lazy val mixQLProtobufSCALA213 = mixQLProtobuf.jvm(Scala213)
 
 lazy val mixQLCluster = project
   .in(file("mixql-cluster"))
@@ -146,13 +148,23 @@ lazy val stageEnginesDemo =
     "stage engines and get jars for mixqlPlatformDemo"
   )
 
+lazy val mixQLEngineStubLocal = project
+  .in(file("engines/mixql-engine-stub-local"))
+  .dependsOn(mixQLCoreSCALA3)
+
+lazy val mixQLEngineSqliteLocal = project
+  .in(file("engines/mixql-engine-sqlite-local"))
+  .dependsOn(mixQLCoreSCALA3)
+
 lazy val mixQLPlatformDemo = project
   .in(file("mixql-platform-demo"))
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
   .dependsOn(
     mixQLCluster,
     mixQLEngineStub   % "compile->test",
-    mixQLEngineSqlite % "compile->test"
+    mixQLEngineSqlite % "compile->test",
+    mixQLEngineStubLocal,
+    mixQLEngineSqliteLocal
   )
   .settings(stageEnginesDemo := {
 //      implicit val log = streams.value.log
@@ -191,7 +203,7 @@ lazy val mixQLPlatformDemo = project
 //}
 //
 
-lazy val buildAllMixQLCore = taskKey[Unit]("Build all mixql core projects")
+lazy val buildAllMixQLCore = taskKey[Unit]("Build all mixql core projects ")
 buildAllMixQLCore := {
 //  (mixQLCluster / Compile / packageBin).value
 //  (mixQLProtobuf / Compile / packageBin).value
@@ -199,6 +211,16 @@ buildAllMixQLCore := {
   (mixQLCoreSCALA212 / Compile / packageBin).value
   (mixQLCoreSCALA213 / Compile / packageBin).value
 }
+
+lazy val buildAllMixQLProtobuf = taskKey[Unit]("Build all mixql protobuf projects ")
+buildAllMixQLProtobuf := {
+  //  (mixQLCluster / Compile / packageBin).value
+  //  (mixQLProtobuf / Compile / packageBin).value
+  (mixQLProtobufSCALA3 / Compile / packageBin).value
+  (mixQLProtobufSCALA213 / Compile / packageBin).value
+  (mixQLProtobufSCALA212 / Compile / packageBin).value
+}
+
 
 lazy val archiveMixQLPlatformDemo =
   taskKey[Unit]("Create dist archive of platform-demo")

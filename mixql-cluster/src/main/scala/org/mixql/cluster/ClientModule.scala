@@ -2,7 +2,7 @@ package org.mixql.cluster
 
 import org.mixql.core.engine.Engine
 import org.mixql.core.context.gtype.Type
-import org.mixql.protobuf.ProtoBufConverter
+import org.mixql.protobuf.{ProtoBufConverter, RemoteMsgsConverter}
 import org.mixql.protobuf.messages.clientMsgs
 import org.zeromq.{SocketType, ZMQ}
 
@@ -39,6 +39,14 @@ class ClientModule(
     import org.mixql.protobuf.messages.clientMsgs
     import org.mixql.protobuf.RemoteMsgsConverter
     sendMsg(clientMsgs.Execute(stmt))
+    RemoteMsgsConverter.toGtype(recvMsg())
+  }
+
+  override def executeFunc(name: String, params: Type*): Type ={
+    sendMsg(clientMsgs.ExecuteFunction(name, Some(clientMsgs.Array(params.map(
+      gParam =>
+        com.google.protobuf.any.Any.pack(RemoteMsgsConverter.toAnyMessage(gParam))
+    )))))
     RemoteMsgsConverter.toGtype(recvMsg())
   }
 

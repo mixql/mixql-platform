@@ -10,6 +10,8 @@ import org.mixql.core.engine.Engine
 import org.mixql.net.PortOperations
 import org.mixql.core.context.Context
 import org.mixql.protobuf.messages.clientMsgs.ShutDown
+import org.mixql.engine.stub.local.EngineStubLocal
+import org.mixql.engine.sqlite.local.EngineSqlightLocal
 
 import scala.collection.mutable
 
@@ -24,7 +26,7 @@ object MixQlEnginePlatformDemo:
     broker.start()
 
     println(s"Mixql engine demo platform: initialising engines")
-    val engines = mutable.Map[String, Engine]("demo" -> new ClientModule(
+    val engines = mutable.Map[String, Engine]("stub" -> new ClientModule(
       //Name of client, is used for identification in broker,
       //must be unique
       "mixql-engine-stub-demo-platform",
@@ -49,12 +51,14 @@ object MixQlEnginePlatformDemo:
         Some("mixql-engine-sqlite"),
         None,
         host, portFrontend, portBackend, basePath
-      )
+      ),
+      "stub-local" -> EngineStubLocal,
+      "sqlite-local" -> EngineSqlightLocal
     )
 
     println(s"Mixql engine demo platform: init Cluster context")
     val context =
-      new Context(engines, "demo")
+      new Context(engines, "stub")
 
     try {
       println(s"Mixql engine demo platform: reading and executing sql files if they exist")

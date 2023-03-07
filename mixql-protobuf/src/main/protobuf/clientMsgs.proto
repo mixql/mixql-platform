@@ -55,6 +55,11 @@ message Error{
   string msg = 1;
 }
 
+message ExecuteFunction{
+  string name = 1;
+  Array params = 2;
+}
+
 //Types
 
 message NULL{}

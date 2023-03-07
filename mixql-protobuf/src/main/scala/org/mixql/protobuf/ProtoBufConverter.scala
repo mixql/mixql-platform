@@ -26,6 +26,8 @@ object ProtoBufConverter {
           anyMsg.getMsg.unpack[clientMsgs.GetParam]
         case "org.mixql.protobuf.messages.clientMsgs.IsParam" =>
           anyMsg.getMsg.unpack[clientMsgs.IsParam]
+        case "org.mixql.protobuf.messages.clientMsgs.ExecuteFunction" =>
+          anyMsg.getMsg.unpack[clientMsgs.ExecuteFunction]
         case typeMsg: String => toType(typeMsg, anyMsg.getMsg)
         case _: scala.Any =>
           clientMsgs.Error(

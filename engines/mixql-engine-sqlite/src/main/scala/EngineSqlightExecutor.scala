@@ -83,6 +83,31 @@ object EngineSqlightExecutor
       case clientMsgs.ShutDown(_) =>
         println(s"Module $identity: Started shutdown")
         throw new BrakeException()
+      case clientMsgs.ExecuteFunction(name, params, _) =>
+        try
+          println(s"Started executing function $name")
+          import org.mixql.core.context.gtype
+          import org.mixql.protobuf.RemoteMsgsConverter
+          val gParams: Seq[gtype.Type] = params match
+            case Some(value) =>
+              val p = RemoteMsgsConverter.toGtype(value).asInstanceOf[gtype.array].arr
+              println(s"Params provided for function $name: " + p)
+              p
+            case None => Seq()
+          println(s"Executing function $name with params " + gParams.toString)
+          sendMsgToServerBroker(
+            clientAddress,
+            clientMsgs.NULL()
+          )
+        catch
+          case e: Throwable =>
+            sendMsgToServerBroker(
+              clientAddress,
+              clientMsgs.Error(
+                s"Module $identity to ${clientAddressStr}: error while executing function $name: " +
+                  e.getMessage
+              )
+            )
     }
   }
 

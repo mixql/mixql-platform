@@ -1,6 +1,5 @@
 package org.mixql.platform.demo
 
-import MixQlEnginePlatformDemo.code
 import org.mixql.core.run
 import org.rogach.scallop.ScallopConf
 

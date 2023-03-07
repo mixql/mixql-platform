@@ -15,32 +15,32 @@ object MixQLClusterTest{
   val engines = {
     println(s"Mixql engine demo platform: initialising engines")
     mutable.Map[String, Engine](
-//      "stub" -> new ClientModule(
-//      //Name of client, is used for identification in broker,
-//      //must be unique
-//      "mixql-engine-stub-demo-platform",
-//      //Name of remote engine, is used for identification in broker,
-//      //must be unique
-//      "mixql-engine-stub",
-//      //will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
-//      //in base path
-//      None,
-//      Some(MixQlEngineStubExecutor),
-//      None, None, None, None
-//    ),
-//      "sqlite" -> new ClientModule(
-//        //Name of client, is used for identification in broker,
-//        //must be unique
-//        "mixql-engine-sqlite-demo-platform",
-//        //Name of remote engine, is used for identification in broker,
-//        //must be unique
-//        "mixql-engine-sqlite",
-//        //will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
-//        //in base path
-//        None,
-//        Some(MixQlEngineSqliteExecutor),
-//        None, None, None, None
-//      ),
+      "stub" -> new ClientModule(
+      //Name of client, is used for identification in broker,
+      //must be unique
+      "mixql-engine-stub-demo-platform",
+      //Name of remote engine, is used for identification in broker,
+      //must be unique
+      "mixql-engine-stub",
+      //will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
+      //in base path
+      None,
+      Some(MixQlEngineStubExecutor),
+      None, None, None, None
+    ),
+      "sqlite" -> new ClientModule(
+        //Name of client, is used for identification in broker,
+        //must be unique
+        "mixql-engine-sqlite-demo-platform",
+        //Name of remote engine, is used for identification in broker,
+        //must be unique
+        "mixql-engine-sqlite",
+        //will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
+        //in base path
+        None,
+        Some(MixQlEngineSqliteExecutor),
+        None, None, None, None
+      ),
       "stub-local" -> EngineStubLocal,
       "sqlite-local" -> EngineSqlightLocal
     )

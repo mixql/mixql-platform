@@ -14,12 +14,54 @@ import java.net.{InetSocketAddress, SocketAddress}
 import java.nio.channels.{ServerSocketChannel, SocketChannel}
 import scala.concurrent.Future
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.util.Try
+import org.mixql.core.context.gtype
+import org.mixql.protobuf.messages.clientMsgs.ShutDown
+
+case class StashedParam(name: String, value: gtype.Type)
 
 object ClientModule {
   var broker: BrokerModule = null
   val engineStartedMap: mutable.Map[String, Boolean] = mutable.Map()
+  val enginesStashedParams: mutable.Map[String, ListBuffer[StashedParam]] = mutable.Map()
   val config = ConfigFactory.load()
+
+  var haveSentStashedParams: Boolean = false
+
+  def stashMessage(
+                    moduleName: String,
+                    clientName: String,
+                    name: String,
+                    value: gtype.Type,
+                  ) = {
+    println(
+      s"[ClientModule-$clientName]: started to stash parameter $name with value $value"
+    )
+    if enginesStashedParams.get(moduleName).isEmpty then
+      enginesStashedParams.put(
+        moduleName,
+        ListBuffer(StashedParam(name, value))
+      )
+    else
+      enginesStashedParams.get(moduleName) match
+        case Some(messages) =>
+          messages += StashedParam(name, value)
+        case None =>
+          println(
+            s"[ClientModule-$clientName]: warning! no key $moduleName in enginesStashedParams," +
+              s" thow it should be here! Strange!"
+          )
+          enginesStashedParams.put(
+            moduleName,
+            ListBuffer(StashedParam(name, value))
+          )
+      end match
+    end if
+    println(
+      s"[ClientModule-$clientName]: successfully stashed parameter $name with value $value"
+    )
+  }
 }
 
 //if start script name is not none then client must start remote engine by executing script
@@ -45,7 +87,37 @@ class ClientModule(
 
   override def name: String = clientName
 
+  private def sendStashedParamsIfTheyAre() = {
+    ClientModule.haveSentStashedParams = true
+    import ClientModule.enginesStashedParams
+    println(s"[ClientModule-$clientName]: Check if there are stashed params")
+    enginesStashedParams.get(moduleName) match
+      case Some(messages) =>
+        if messages.isEmpty then
+          println(
+            s"[ClientModule-$clientName]: Checked engines map. No stashed messages for $moduleName"
+          )
+        else
+          println(
+            s"[ClientModule-$clientName]: Have founded stashed messages (amount: ${messages.length}) " +
+              s"for engine $moduleName. Sending them"
+          )
+          messages.foreach(msg =>
+            sendParam(msg.name, msg.value)
+          )
+          //                  engines.put(moduleName, ListBuffer())
+          messages.clear()
+
+      case None =>
+        println(
+          s"[ClientModule-$clientName]: warning! no key $moduleName, thow it should be here! Strange!"
+        )
+    end match
+  }
+
   override def execute(stmt: String): Type = {
+    sendStashedParamsIfTheyAre()
+
     import org.mixql.protobuf.messages.clientMsgs
     import org.mixql.protobuf.RemoteMsgsConverter
     sendMsg(clientMsgs.Execute(stmt))
@@ -53,6 +125,7 @@ class ClientModule(
   }
 
   override def executeFunc(name: String, params: Type*): Type = {
+    sendStashedParamsIfTheyAre()
     sendMsg(clientMsgs.ExecuteFunction(name, Some(clientMsgs.Array(params.map(
       gParam =>
         com.google.protobuf.any.Any.pack(RemoteMsgsConverter.toAnyMessage(gParam))
@@ -60,7 +133,7 @@ class ClientModule(
     RemoteMsgsConverter.toGtype(recvMsg())
   }
 
-  override def setParam(name: String, value: Type): Unit = {
+  private def sendParam(name: String, value: Type): Unit = {
     import org.mixql.protobuf.messages.clientMsgs
     import org.mixql.protobuf.RemoteMsgsConverter
 
@@ -84,7 +157,15 @@ class ClientModule(
         )
   }
 
+  override def setParam(name: String, value: Type): Unit = {
+    if ClientModule.haveSentStashedParams then
+      sendParam(name, value)
+    else
+      ClientModule.stashMessage(moduleName, clientName, name, value)
+  }
+
   override def getParam(name: String): Type = {
+    sendStashedParamsIfTheyAre()
     import org.mixql.protobuf.messages.clientMsgs
     import org.mixql.protobuf.RemoteMsgsConverter
 
@@ -93,6 +174,7 @@ class ClientModule(
   }
 
   override def isParam(name: String): Boolean = {
+    sendStashedParamsIfTheyAre()
     import org.mixql.core.context.gtype
     import org.mixql.protobuf.messages.clientMsgs
     import org.mixql.protobuf.RemoteMsgsConverter
@@ -101,7 +183,7 @@ class ClientModule(
     RemoteMsgsConverter.toGtype(recvMsg()).asInstanceOf[gtype.bool].value
   }
 
-  def sendMsg(msg: scalapb.GeneratedMessage): Unit = {
+  private def sendMsg(msg: scalapb.GeneratedMessage): Unit = {
     import ClientModule.engineStartedMap
     val started = engineStartedMap.get(moduleName.trim) match
       case Some(value) => value
@@ -139,11 +221,11 @@ class ClientModule(
     )
   }
 
-  def recvMsg(): scalapb.GeneratedMessage = {
+  private def recvMsg(): scalapb.GeneratedMessage = {
     ProtoBufConverter.unpackAnyMsg(client.recv(0))
   }
 
-  def startBroker() = {
+  private def startBroker() = {
     import ClientModule.broker
     import ClientModule.config
 
@@ -178,7 +260,7 @@ class ClientModule(
     broker.start()
   }
 
-  def startModuleClient() = {
+  private def startModuleClient() = {
     val host = broker.getHost
     val portBackend = broker.getPortBackend
 
@@ -227,6 +309,19 @@ class ClientModule(
             )
             clientFuture = engine.start(moduleName, host, portBackend.toString)
           case None =>
+  }
+
+  def ShutDown() = {
+    import ClientModule.engineStartedMap
+    val started = engineStartedMap.get(moduleName.trim) match
+      case Some(value) => value
+      case None => false
+
+
+    import ClientModule.broker
+    if started then
+      sendMsg(clientMsgs.ShutDown())
+      engineStartedMap.put(moduleName.trim, false) //not to send occasionally more then once
   }
 
   override def close() = {

@@ -78,7 +78,7 @@ object MixQlEnginePlatformDemo:
         e => if (e.isInstanceOf[ClientModule]) {
           val cl: ClientModule = e.asInstanceOf[ClientModule]
           println(s"mixql core context: sending shutdwon to remote engine " + cl.name)
-          cl.sendMsg(ShutDown())
+          cl.ShutDown()
         }
       )
       context.close()

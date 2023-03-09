@@ -10,15 +10,15 @@ object SimpleFuncs{
   }
 
   val print_current_vars = new ((Context, Boolean) => String) {
-    override def apply(ctx: Context, currentScope: Boolean): String = {
+    override def apply(ctx: Context, currentScope: Boolean = false): String = {
       println("[print_current_vars] started")
       println("[print_current_vars] context scope: " + ctx.scope.toString())
       "SUCCESS"
     }
   }
 
-  val get_engines_list = new ((Context, Boolean) => Array[String]) {
-    override def apply(ctx: Context, currentScope: Boolean): Array[String] = {
+  val get_engines_list = new ((Context) => Array[String]) {
+    override def apply(ctx: Context): Array[String] = {
       println("[get_engines_list] started")
       val engineNames = ctx.engines.keys
       println("[get_engines_list] supported engines: " + engineNames.mkString(","))

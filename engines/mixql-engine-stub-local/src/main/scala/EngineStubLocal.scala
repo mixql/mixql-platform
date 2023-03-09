@@ -4,6 +4,7 @@ import scala.collection.mutable
 import org.mixql.core.engine.Engine
 import org.mixql.core.context.gtype
 import org.mixql.core.context.gtype.Type
+import org.mixql.core.function.FunctionInvoker
 import org.mixql.engine.stub.local.EngineStubLocal.name
 
 object EngineStubLocal extends Engine {
@@ -22,14 +23,22 @@ object EngineStubLocal extends Engine {
     gtype.Null
   }
 
+  val functions: Map[String, Any] = Map(
+    "stub_simple_proc" -> StubSimpleProc.simple_func,
+    "stub_simple_proc_params" -> StubSimpleProc.simple_func_params,
+    "stub_simple_proc_context_params" -> StubSimpleProc.simple_func_context_params,
+  )
+
   override def executeFunc(name: String, params: Type*): Type = {
+    import org.mixql.core.context.gtype
     try
       println(s"[ENGINE ${this.name}] :Started executing function $name")
       println(s"[ENGINE ${this.name}] :Params provided for function $name : " + params.toString())
       println(s"[ENGINE ${this.name}] :Executing function $name with params " + params.toString)
-      Thread.sleep(1000)
-      println(s"[ENGINE ${this.name}] : Successfully executed function $name with params " + params.toString)
-      gtype.Null
+      val res = FunctionInvoker.invoke(functions, name, StubContext(), params.map(p => gtype.unpack(p)))
+      println(s"[ENGINE ${this.name}] : Successfully executed function $name with params " + params.toString +
+        s"\nResult: $res")
+      gtype.pack(res)
     catch
       case e: Throwable =>
         throw new Exception(
@@ -68,5 +77,10 @@ object EngineStubLocal extends Engine {
     println(s"[ENGINE ${this.name}] : Received GetParam $name msg from server")
     println(s"[ENGINE ${this.name}] :  Sending reply on GetParam $name msg")
     engineParams.keys.toSeq.contains(name)
+  }
+
+  override def getDefinedFunctions: List[String] = {
+    println(s"[ENGINE ${this.name}] : Was asked to get defined functions")
+    List("stub_simple_proc", "stub_simple_proc_params", "stub_simple_proc_context_params")
   }
 }

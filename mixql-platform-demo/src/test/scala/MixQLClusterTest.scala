@@ -9,6 +9,7 @@ import scala.collection.mutable
 import org.mixql.core.context.Context
 import org.mixql.engine.sqlite.local.EngineSqlightLocal
 import org.mixql.engine.stub.local.EngineStubLocal
+import org.mixql.platform.demo.procedures.SimpleFuncs
 import org.mixql.protobuf.messages.clientMsgs.ShutDown
 
 object MixQLClusterTest{
@@ -46,10 +47,16 @@ object MixQLClusterTest{
     )
   }
 
+  val functions: collection.mutable.Map[String, Any] = collection.mutable.Map(
+    "simple_func" -> SimpleFuncs.simple_func,
+    "print_current_vars" -> SimpleFuncs.print_current_vars,
+    "get_engines_list" -> SimpleFuncs.get_engines_list,
+  )
+
 
   val context = {
     println(s"Mixql engine demo platform: init Cluster context")
-    new Context(engines, "stub-local")
+    new Context(engines, "stub-local", functions = functions)
   }
 }
 class MixQLClusterTest extends AnyFlatSpec with BeforeAndAfterAll {

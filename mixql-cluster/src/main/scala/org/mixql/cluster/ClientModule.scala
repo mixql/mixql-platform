@@ -231,7 +231,7 @@ class ClientModule(
 
     val portFrontend: Int = portFrontendArgs.getOrElse(
       Try(
-        config.getInt("org.mixql.platform.demo.broker.portFrontend")
+        config.getInt("org.mixql.cluster.broker.portFrontend")
       ).getOrElse(
         PortOperations.isPortAvailable(0)
       )
@@ -239,7 +239,7 @@ class ClientModule(
 
     val portBackend: Int = portBackendArgs.getOrElse(
       Try(
-        config.getInt("org.mixql.platform.demo.broker.portBackend")
+        config.getInt("org.mixql.cluster.broker.portBackend")
       ).getOrElse(
         PortOperations.isPortAvailable(0)
       )
@@ -247,7 +247,7 @@ class ClientModule(
 
     val host: String = hostArgs.getOrElse(
       Try(
-        config.getString("org.mixql.platform.demo.broker.host")
+        config.getString("org.mixql.cluster.broker.host")
       ).getOrElse(
         "0.0.0.0"
       )
@@ -267,20 +267,30 @@ class ClientModule(
     import ClientModule.config
     val basePath: File = basePathArgs.getOrElse(
       Try({
-        val file = new File(config.getString("org.mixql.platform.demo.cluster.basePath"))
+        val file = new File(config.getString("org.mixql.cluster.basePath"))
         if !file.isDirectory then
-          println("ERROR: Provided basePath in config in parameter org.mixql.platform.demo.cluster.basePath" +
+          println("ERROR: Provided basePath in config in parameter org.mixql.cluster.basePath" +
             " must be directory!!!")
           throw new Exception("")
 
         if !file.exists() then
-          println("ERROR: Provided basePath in config in parameter org.mixql.platform.demo.cluster.basePath" +
+          println("ERROR: Provided basePath in config in parameter org.mixql.cluster.basePath" +
             " must exist!!!")
           throw new Exception("")
 
         file
       }).getOrElse(
-        new File(".")
+        {
+          val file = new File(sys.env("MIXQL_CLUSTER_BASE_PATH"))
+          if !file.isDirectory then
+            println("ERROR: Provided basePath in system variable MIXQL_CLUSTER_BASE_PATH must be directory!!!")
+            throw new Exception("")
+
+          if !file.exists() then
+            println("ERROR: Provided basePath in system variable MIXQL_CLUSTER_BASE_PATH must exist!!!")
+            throw new Exception("")
+          file
+        }
       )
     )
 

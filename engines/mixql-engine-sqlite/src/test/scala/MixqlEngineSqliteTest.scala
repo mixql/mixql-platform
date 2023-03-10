@@ -14,10 +14,10 @@ class MixqlEngineSqliteTest extends AnyFlatSpec with BeforeAndAfterAll:
     super.beforeAll()
 
   def execute(code: String): gtype.Type =
-    import org.mixql.protobuf.RemoteMsgsConverter
+    import org.mixql.protobuf.GtypeConverter
 
     val res = context.execute(code)
-    RemoteMsgsConverter.toGtype(res)
+    GtypeConverter.toGtype(res)
 
   override def afterAll(): Unit =
     context.close()

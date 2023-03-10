@@ -30,7 +30,11 @@ object ProtoBufConverter {
           anyMsg.getMsg.unpack[clientMsgs.ParamWasSet]
         case "org.mixql.protobuf.messages.clientMsgs.ExecuteFunction" =>
           anyMsg.getMsg.unpack[clientMsgs.ExecuteFunction]
-        case typeMsg: String => toType(typeMsg, anyMsg.getMsg)
+        case "org.mixql.protobuf.messages.clientMsgs.GetDefinedFunctions" =>
+          anyMsg.getMsg.unpack[clientMsgs.GetDefinedFunctions]
+        case "org.mixql.protobuf.messages.clientMsgs.DefinedFunctions" =>
+          anyMsg.getMsg.unpack[clientMsgs.DefinedFunctions]
+        case typeMsg: String => GtypeConverter.toGeneratedMsg(GtypeConverter.protobufAnyToGtype(anyMsg.getMsg))
         case _: scala.Any =>
           clientMsgs.Error(
             s"Protobuf any msg converter: Error: Got unknown type ${anyMsg.`type`} of message"
@@ -41,36 +45,6 @@ object ProtoBufConverter {
         clientMsgs.Error(s"Protobuf anymsg converter: Error: " + e.getMessage)
     }
   }
-
-  def toType(
-    protobufType: String,
-    anyMsg: com.google.protobuf.any.Any
-  ): scalapb.GeneratedMessage = {
-    try {
-      protobufType match {
-        case "org.mixql.protobuf.messages.clientMsgs.NULL" =>
-          anyMsg.unpack[clientMsgs.NULL]
-        case "org.mixql.protobuf.messages.clientMsgs.Bool" =>
-          anyMsg.unpack[clientMsgs.Bool]
-        case "org.mixql.protobuf.messages.clientMsgs.Int" =>
-          anyMsg.unpack[clientMsgs.Int]
-        case "org.mixql.protobuf.messages.clientMsgs.Double" =>
-          anyMsg.unpack[clientMsgs.Double]
-        case "org.mixql.protobuf.messages.clientMsgs.String" =>
-          anyMsg.unpack[clientMsgs.String]
-        case "org.mixql.protobuf.messages.clientMsgs.Array" =>
-          anyMsg.unpack[clientMsgs.Array]
-        case _: scala.Any =>
-          clientMsgs.Error(
-            s"Protobuf type converter: Error: Got unknown type ${protobufType}"
-          )
-      }
-    } catch {
-      case e: Throwable =>
-        clientMsgs.Error(s"Protobuf type converter: Error: " + e.getMessage)
-    }
-  }
-
   def toArray(msg: scalapb.GeneratedMessage): Try[scala.Array[Byte]] = {
     Try {
       AnyMsg(

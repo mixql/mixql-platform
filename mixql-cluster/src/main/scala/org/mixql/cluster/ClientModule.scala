@@ -5,7 +5,7 @@ import org.mixql.cluster.ClientModule.broker
 import org.mixql.core.engine.Engine
 import org.mixql.core.context.gtype.Type
 import org.mixql.net.PortOperations
-import org.mixql.protobuf.{ProtoBufConverter, RemoteMsgsConverter}
+import org.mixql.protobuf.{ProtoBufConverter, GtypeConverter}
 import org.mixql.protobuf.messages.clientMsgs
 import org.zeromq.{SocketType, ZMQ}
 
@@ -119,30 +119,41 @@ class ClientModule(
     sendStashedParamsIfTheyAre()
 
     import org.mixql.protobuf.messages.clientMsgs
-    import org.mixql.protobuf.RemoteMsgsConverter
+    import org.mixql.protobuf.GtypeConverter
     sendMsg(clientMsgs.Execute(stmt))
-    RemoteMsgsConverter.toGtype(recvMsg())
+    GtypeConverter.toGtype(recvMsg())
   }
 
   override def executeFunc(name: String, params: Type*): Type = {
     sendStashedParamsIfTheyAre()
     sendMsg(clientMsgs.ExecuteFunction(name, Some(clientMsgs.Array(params.map(
-      gParam =>
-        com.google.protobuf.any.Any.pack(RemoteMsgsConverter.toAnyMessage(gParam))
+      gParam => GtypeConverter.toProtobufAny(gParam)
     )))))
-    RemoteMsgsConverter.toGtype(recvMsg())
+    GtypeConverter.toGtype(recvMsg())
+  }
+
+
+  override def getDefinedFunctions: List[String] = {
+    import org.mixql.core.context.gtype
+    sendStashedParamsIfTheyAre()
+    println(s"Server: ClientModule: $clientName: ask defined functions from remote engine")
+    sendMsg(clientMsgs.GetDefinedFunctions())
+    val functionsList = recvMsg().asInstanceOf[clientMsgs.DefinedFunctions].arr.toList
+    if functionsList.isEmpty then
+      Nil
+    else
+      functionsList
   }
 
   private def sendParam(name: String, value: Type): Unit = {
     import org.mixql.protobuf.messages.clientMsgs
-    import org.mixql.protobuf.RemoteMsgsConverter
+    import org.mixql.protobuf.GtypeConverter
 
     sendMsg(
       clientMsgs.SetParam(
         name,
         Some(
-          com.google.protobuf.any.Any
-            .pack(RemoteMsgsConverter.toAnyMessage(value))
+          GtypeConverter.toProtobufAny(value)
         )
       )
     )
@@ -167,20 +178,20 @@ class ClientModule(
   override def getParam(name: String): Type = {
     sendStashedParamsIfTheyAre()
     import org.mixql.protobuf.messages.clientMsgs
-    import org.mixql.protobuf.RemoteMsgsConverter
+    import org.mixql.protobuf.GtypeConverter
 
     sendMsg(clientMsgs.GetParam(name))
-    RemoteMsgsConverter.toGtype(recvMsg())
+    GtypeConverter.toGtype(recvMsg())
   }
 
   override def isParam(name: String): Boolean = {
     sendStashedParamsIfTheyAre()
     import org.mixql.core.context.gtype
     import org.mixql.protobuf.messages.clientMsgs
-    import org.mixql.protobuf.RemoteMsgsConverter
+    import org.mixql.protobuf.GtypeConverter
 
     sendMsg(clientMsgs.IsParam(name))
-    RemoteMsgsConverter.toGtype(recvMsg()).asInstanceOf[gtype.bool].value
+    GtypeConverter.toGtype(recvMsg()).asInstanceOf[gtype.bool].value
   }
 
   private def sendMsg(msg: scalapb.GeneratedMessage): Unit = {
@@ -280,7 +291,7 @@ class ClientModule(
 
         file
       }).getOrElse(
-        {
+        Try({
           val file = new File(sys.env("MIXQL_CLUSTER_BASE_PATH"))
           if !file.isDirectory then
             println("ERROR: Provided basePath in system variable MIXQL_CLUSTER_BASE_PATH must be directory!!!")
@@ -290,7 +301,7 @@ class ClientModule(
             println("ERROR: Provided basePath in system variable MIXQL_CLUSTER_BASE_PATH must exist!!!")
             throw new Exception("")
           file
-        }
+        }).getOrElse(new File("."))
       )
     )
 

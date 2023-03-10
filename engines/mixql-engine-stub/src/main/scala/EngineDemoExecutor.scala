@@ -1,10 +1,10 @@
 package org.mixql.engine.demo
 
-import org.mixql.protobuf.ProtoBufConverter
+import org.mixql.protobuf.{GtypeConverter, ProtoBufConverter}
 import org.mixql.protobuf.messages.clientMsgs
 
 import scala.collection.mutable
-import org.mixql.engine.core.{IModuleExecutor, BrakeException}
+import org.mixql.engine.core.{BrakeException, IModuleExecutor}
 import org.mixql.engine.core.Module.{sendMsgToServerBroker, *}
 import org.zeromq.ZMQ
 
@@ -36,7 +36,7 @@ object EngineDemoExecutor extends IModuleExecutor {
           )
           engineParams.put(
             name,
-            ProtoBufConverter.unpackAnyMsg(value.get.toByteArray)
+            GtypeConverter.toGeneratedMsg(GtypeConverter.protobufAnyToGtype(value.get))
           )
           println(s"Module $identity: Sending reply on SetParam  $name msg")
           sendMsgToServerBroker(clientAddress, clientMsgs.ParamWasSet())
@@ -79,10 +79,10 @@ object EngineDemoExecutor extends IModuleExecutor {
         try
           println(s"Started executing function $name")
           import org.mixql.core.context.gtype
-          import org.mixql.protobuf.RemoteMsgsConverter
+          import org.mixql.protobuf.GtypeConverter
           val gParams: Seq[gtype.Type] = params match
             case Some(value) =>
-              val p = RemoteMsgsConverter.toGtype(value).asInstanceOf[gtype.array].arr
+              val p = GtypeConverter.toGtype(value).asInstanceOf[gtype.array].arr
               println(s"Params provided for function $name: " + p)
               p
             case None => Seq()
@@ -100,6 +100,12 @@ object EngineDemoExecutor extends IModuleExecutor {
                   e.getMessage
               )
             )
+      case clientMsgs.GetDefinedFunctions(_) =>
+        println(s"Module $identity: Received request to get defined functions from server")
+        sendMsgToServerBroker(
+          clientAddress,
+          clientMsgs.DefinedFunctions(Seq())
+        )
     }
   }
 }

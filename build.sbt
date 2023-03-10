@@ -171,9 +171,9 @@ lazy val mixQLPlatformDemo = project
     mixQLCluster,
     mixQLEngineStub % "compile->test",
     mixQLEngineSqlite % "compile->test",
-    mixQLEngineStubLocal % "compile->compile;compile->test",
-    mixQLEngineSqliteLocal % "compile->compile;compile->test",
-    mixQLPlatformDemoSimpleFuncs % "compile->compile;compile->test"
+    mixQLEngineStubLocal, //% "compile->compile;compile->test",
+    mixQLEngineSqliteLocal, //% "compile->compile;compile->test",
+    mixQLPlatformDemoSimpleFuncs,// % "compile->compile;compile->test"
   )
   .settings(stageEnginesDemo := {
     //      implicit val log = streams.value.log

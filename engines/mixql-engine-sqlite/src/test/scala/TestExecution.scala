@@ -4,7 +4,7 @@ class TestExecution extends MixqlEngineSqliteTest {
 
   it should ("execute statements that create table, insert value into it and" +
     " select values from table") in {
-    import org.mixql.protobuf.RemoteMsgsConverter
+    import org.mixql.protobuf.GtypeConverter
     import org.mixql.core.context.gtype
 
     {

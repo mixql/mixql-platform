@@ -60,6 +60,12 @@ message ExecuteFunction{
   Array params = 2;
 }
 
+message GetDefinedFunctions{}
+
+message DefinedFunctions{
+  repeated string arr = 1;
+}
+
 //Types
 
 message NULL{}

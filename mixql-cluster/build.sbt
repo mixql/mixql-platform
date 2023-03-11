@@ -1,12 +1,4 @@
-credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credentials")
-
-organization := "org.mixql"
-
 name := "mixql-cluster"
-
-version := "0.1.0"
-
-organizationName := "MixQL"
 
 organizationHomepage := Some(url("https://mixql.org/"))
 
@@ -15,9 +7,6 @@ description := "MixQL engine interface."
 run / fork := true
 
 scalaVersion := scala3Version
-
-resolvers +=
-  "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
 
 libraryDependencies ++= {
   val vScallop = "4.1.0"
@@ -37,13 +26,6 @@ licenses := List(
 homepage := Some(url("https://github.com/mixql/mixql-engine"))
 
 pomIncludeRepository := { _ => false }
-
-publishTo := {
-  val nexus = "https://s01.oss.sonatype.org/"
-  if (isSnapshot.value)
-    Some("snapshots" at nexus + "content/repositories/snapshots")
-  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-}
 
 scmInfo := Some(
   ScmInfo(

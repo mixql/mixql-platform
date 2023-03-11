@@ -3,11 +3,7 @@ import com.typesafe.sbt.packager.SettingsHelper.{
   makeDeploymentSettings
 }
 
-credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credentials")
-
 name := "mixql-engine-stub"
-
-version := "0.1.0"
 
 description := "MixQL stub engine."
 
@@ -29,13 +25,6 @@ licenses := List(
 homepage := Some(url("https://github.com/mixql/mixql-engine-stub"))
 
 pomIncludeRepository := { _ => false }
-
-publishTo := {
-  val nexus = "https://s01.oss.sonatype.org/"
-  if (isSnapshot.value)
-    Some("snapshots" at nexus + "content/repositories/snapshots")
-  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-}
 
 Universal / mappings += file("README.md") -> "README.md"
 

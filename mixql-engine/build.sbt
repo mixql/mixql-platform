@@ -2,8 +2,6 @@ organization := "org.mixql"
 
 name := "mixql-engine"
 
-version := "0.1.0"
-
 description := "MixQL engine interface."
 
 scalaVersion := Scala212
@@ -36,13 +34,6 @@ licenses := List(
 homepage := Some(url("https://github.com/mixql/mixql-engine"))
 
 pomIncludeRepository := { _ => false }
-
-publishTo := {
-  val nexus = "https://s01.oss.sonatype.org/"
-  if (isSnapshot.value)
-    Some("snapshots" at nexus + "content/repositories/snapshots")
-  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-}
 
 scmInfo := Some(
   ScmInfo(

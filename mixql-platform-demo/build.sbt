@@ -4,7 +4,6 @@ import com.typesafe.sbt.packager.SettingsHelper.{
 }
 
 name := "mixql-platform-demo"
-version := "0.1.0"
 
 description := "MixQL platform demo, that can run and test remote MixQl engines locally"
 scalaVersion := "3.2.1"
@@ -15,12 +14,6 @@ licenses := List(
 
 homepage := Some(url("https://github.com/mixql/mixql-platform-demo"))
 pomIncludeRepository := { _ => false }
-publishTo := {
-  val nexus = "https://s01.oss.sonatype.org/"
-  if (isSnapshot.value)
-    Some("snapshots" at nexus + "content/repositories/snapshots")
-  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-}
 
 Universal / mappings := {
   val origSeq = ((Universal / mappings).value ++

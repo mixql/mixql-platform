@@ -1,5 +1,4 @@
 name := "mixql-simple-functions-test"
-version := "0.1.0"
 
 description := "MixQL platform demo's simple function"
 scalaVersion := "3.2.1"

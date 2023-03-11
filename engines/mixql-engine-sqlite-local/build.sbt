@@ -1,6 +1,5 @@
 updateOptions in ThisBuild := updateOptions.value.withGigahorse(false)
 
-version := "0.1.0"
 name := "mixql-engine-sqlite-local"
 description := "MixQL sqlite internal engine."
 scalaVersion := "3.2.1"
@@ -21,13 +20,6 @@ licenses := List(
 homepage := Some(url("https://github.com/mixql/mixql-engine-stub"))
 
 pomIncludeRepository := { _ => false }
-
-publishTo := {
-  val nexus = "https://s01.oss.sonatype.org/"
-  if (isSnapshot.value)
-    Some("snapshots" at nexus + "content/repositories/snapshots")
-  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-}
 
 scmInfo := Some(
   ScmInfo(

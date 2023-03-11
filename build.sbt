@@ -3,6 +3,7 @@ ThisBuild / scalaVersion := "3.2.1"
 inThisBuild(
   List(
     organization := "org.mixql",
+    version := "0.2.0-SNAPSHOT", //change version for all projects
     organizationName := "MixQL",
     organizationHomepage := Some(url("https://mixql.org/")),
     developers := List(
@@ -36,7 +37,13 @@ inThisBuild(
         "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots",
         "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/releases"
       ),
-    credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credentials")
+    credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credentials"),
+    publishTo := {
+      val nexus = "https://s01.oss.sonatype.org/"
+      if (version.value.endsWith("-SNAPSHOT") || version.value.endsWith("-snapshot") )
+        Some("snapshots" at nexus + "content/repositories/snapshots")
+      else Some("releases" at nexus + "service/local/staging/deploy/maven2")
+    }
   )
 )
 

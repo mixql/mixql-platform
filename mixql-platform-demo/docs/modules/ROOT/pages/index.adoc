@@ -3,7 +3,7 @@
 :keywords: sql, engine, spark, protobuf
 :description: Protobuf desc
 
-== Text
+== MixQL Platform Demo
 
 ////
 This is the start page of project's documentation, and therefore likely the first thing people read.

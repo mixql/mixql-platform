@@ -1,5 +1,5 @@
 name: mixql-engine-sqlite
-title: MixQL Engine Sqlite
+title: MixQL Engine SQLite
 version: 'v0.1.0'
 prerelease: -alpha.1
 #display_version: '0.1.0 Spiny'

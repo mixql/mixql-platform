@@ -1,9 +1,10 @@
 = Overview
 :navtitle: Overview
 :keywords: sql, engine, spark, protobuf
-:description: Protobuf desc
+:description: MixQL Platform
 
-== MixQL Cluster
+== MixQL Platform
+
 ////
 This is the start page of project's documentation, and therefore likely the first thing people read.
 

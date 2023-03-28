@@ -1,9 +1,10 @@
-= Overview
-:navtitle: Overview
+= Getting started MixQL Platform
+:navtitle: Getting started
 :keywords: sql, engine, spark, protobuf
-:description: Protobuf desc
+:description: MixQL Platform Getting started
 
-== MixQL Cluster
+== What it is
+
 ////
 This is the start page of project's documentation, and therefore likely the first thing people read.
 

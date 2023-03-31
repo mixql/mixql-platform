@@ -44,7 +44,9 @@ object MixQLClusterTest{
         None, None, None, None
       ),
       "stub-local" -> EngineStubLocal,
-      "sqlite-local" -> EngineSqlightLocal
+      "sqlite-local" -> EngineSqlightLocal(),
+      "sqlite-local-titanic" -> EngineSqlightLocal(Some("mixql.org.engine.sqlight.titanic-db.path")),
+      "sqlite-local-sakila" -> EngineSqlightLocal(Some("mixql.org.engine.sqlight.sakila-db.path"))
     )
   }
 

@@ -1,6 +1,6 @@
 import org.mixql.engine.sqlite.local.SQLightJDBC
 
-class TestSqliteTitanicDB extends MixQlEngineSqliteTitanicDbTest {
+class TestSqliteTitanicDB extends MixqlEngineSqliteTest(Some("mixql.org.engine.sqlight.titanic-db.path")) {
 
   import org.mixql.core.context.gtype
 

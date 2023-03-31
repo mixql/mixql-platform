@@ -50,7 +50,7 @@ object MixQlEnginePlatformDemo:
         host, portFrontend, portBackend, basePath
       ),
       "stub-local" -> EngineStubLocal,
-      "sqlite-local" -> EngineSqlightLocal
+      "sqlite-local" -> EngineSqlightLocal()
     )
 
     logDebug(s"Init functions for mixql context")

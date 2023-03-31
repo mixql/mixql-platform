@@ -6,7 +6,7 @@ import org.mixql.core.context.gtype.Type
 import scala.collection.mutable
 import org.mixql.core.engine.Engine
 
-object EngineSqlightLocal
+class EngineSqlightLocal( dbPathParameter: Option[String] = None)
     extends Engine
     with java.lang.AutoCloseable:
 
@@ -35,7 +35,7 @@ object EngineSqlightLocal
     println(
       s"[ENGINE $name] : Init SQlightJDBC context"
     )
-    context = SQLightJDBC(name)
+    context = SQLightJDBC(name, dbPathParameter)
 
   override def executeFunc(name: String, params: Type*): Type = {
     try

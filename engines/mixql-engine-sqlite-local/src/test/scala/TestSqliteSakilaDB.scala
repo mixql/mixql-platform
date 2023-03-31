@@ -1,10 +1,10 @@
 import org.mixql.engine.sqlite.local.SQLightJDBC
 
-class TestSqliteSakilaDB extends MixQlEngineSqliteSakilaDbTest {
+class TestSqliteSakilaDB extends MixqlEngineSqliteTest(Some("mixql.org.engine.sqlight.sakila-db.path")) {
 
   import org.mixql.core.context.gtype
 
-  it should ("select rating an count from film") in {
+  it should ("select rating and count from film") in {
       val gType = execute(
         """
           |SELECT rating AS Rating, COUNT(title) AS Count

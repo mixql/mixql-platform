@@ -5,7 +5,7 @@ import org.mixql.cluster.ClientModule.broker
 import org.mixql.core.engine.Engine
 import org.mixql.core.context.gtype.Type
 import org.mixql.net.PortOperations
-import org.mixql.protobuf.{ProtoBufConverter, GtypeConverter}
+import org.mixql.protobuf.{GtypeConverter, ProtoBufConverter}
 import org.mixql.protobuf.messages.clientMsgs
 import org.zeromq.{SocketType, ZMQ}
 
@@ -17,6 +17,8 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 import org.mixql.core.context.gtype
+import logger.*
+import org.mixql.core.logger.logDebug
 import org.mixql.protobuf.messages.clientMsgs.ShutDown
 
 case class StashedParam(name: String, value: gtype.Type)
@@ -27,15 +29,13 @@ object ClientModule {
   val enginesStashedParams: mutable.Map[String, ListBuffer[StashedParam]] = mutable.Map()
   val config = ConfigFactory.load()
 
-  var haveSentStashedParams: Boolean = false
-
   def stashMessage(
                     moduleName: String,
                     clientName: String,
                     name: String,
                     value: gtype.Type,
                   ) = {
-    println(
+    logDebug(
       s"[ClientModule-$clientName]: started to stash parameter $name with value $value"
     )
     if enginesStashedParams.get(moduleName).isEmpty then
@@ -48,7 +48,7 @@ object ClientModule {
         case Some(messages) =>
           messages += StashedParam(name, value)
         case None =>
-          println(
+          logWarn(
             s"[ClientModule-$clientName]: warning! no key $moduleName in enginesStashedParams," +
               s" thow it should be here! Strange!"
           )
@@ -58,7 +58,7 @@ object ClientModule {
           )
       end match
     end if
-    println(
+    logDebug(
       s"[ClientModule-$clientName]: successfully stashed parameter $name with value $value"
     )
   }
@@ -87,18 +87,20 @@ class ClientModule(
 
   override def name: String = clientName
 
+  private var haveSentStashedParams: Boolean = false
+
   private def sendStashedParamsIfTheyAre() = {
-    ClientModule.haveSentStashedParams = true
+    haveSentStashedParams = true
     import ClientModule.enginesStashedParams
-    println(s"[ClientModule-$clientName]: Check if there are stashed params")
+    logDebug(s"[ClientModule-$clientName]: Check if there are stashed params")
     enginesStashedParams.get(moduleName) match
       case Some(messages) =>
         if messages.isEmpty then
-          println(
+          logDebug(
             s"[ClientModule-$clientName]: Checked engines map. No stashed messages for $moduleName"
           )
         else
-          println(
+          logDebug(
             s"[ClientModule-$clientName]: Have founded stashed messages (amount: ${messages.length}) " +
               s"for engine $moduleName. Sending them"
           )
@@ -109,13 +111,16 @@ class ClientModule(
           messages.clear()
 
       case None =>
-        println(
+        logWarn(
           s"[ClientModule-$clientName]: warning! no key $moduleName, thow it should be here! Strange!"
         )
     end match
   }
 
   override def execute(stmt: String): Type = {
+    if !engineStarted() then
+      logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by execute request")
+
     sendStashedParamsIfTheyAre()
 
     import org.mixql.protobuf.messages.clientMsgs
@@ -125,6 +130,8 @@ class ClientModule(
   }
 
   override def executeFunc(name: String, params: Type*): Type = {
+    if !engineStarted() then
+      logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by executeFunc request")
     sendStashedParamsIfTheyAre()
     sendMsg(clientMsgs.ExecuteFunction(name, Some(clientMsgs.Array(params.map(
       gParam => GtypeConverter.toProtobufAny(gParam)
@@ -134,9 +141,11 @@ class ClientModule(
 
 
   override def getDefinedFunctions: List[String] = {
+    if !engineStarted() then
+      logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by getDefinedFunctions request")
     import org.mixql.core.context.gtype
     sendStashedParamsIfTheyAre()
-    println(s"Server: ClientModule: $clientName: ask defined functions from remote engine")
+    logInfo(s"Server: ClientModule: $clientName: ask defined functions from remote engine")
     sendMsg(clientMsgs.GetDefinedFunctions())
     val functionsList = recvMsg().asInstanceOf[clientMsgs.DefinedFunctions].arr.toList
     if functionsList.isEmpty then
@@ -169,13 +178,15 @@ class ClientModule(
   }
 
   override def setParam(name: String, value: Type): Unit = {
-    if ClientModule.haveSentStashedParams then
+    if haveSentStashedParams then
       sendParam(name, value)
     else
       ClientModule.stashMessage(moduleName, clientName, name, value)
   }
 
   override def getParam(name: String): Type = {
+    if !engineStarted() then
+      logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by getParam request")
     sendStashedParamsIfTheyAre()
     import org.mixql.protobuf.messages.clientMsgs
     import org.mixql.protobuf.GtypeConverter
@@ -185,6 +196,8 @@ class ClientModule(
   }
 
   override def isParam(name: String): Boolean = {
+    if !engineStarted() then
+      logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by isParam request")
     sendStashedParamsIfTheyAre()
     import org.mixql.core.context.gtype
     import org.mixql.protobuf.messages.clientMsgs
@@ -194,15 +207,16 @@ class ClientModule(
     GtypeConverter.toGtype(recvMsg()).asInstanceOf[gtype.bool].value
   }
 
-  private def sendMsg(msg: scalapb.GeneratedMessage): Unit = {
+  def engineStarted(): Boolean =
     import ClientModule.engineStartedMap
-    val started = engineStartedMap.get(moduleName.trim) match
+    engineStartedMap.get(moduleName.trim) match
       case Some(value) => value
       case None => false
 
-
+  private def sendMsg(msg: scalapb.GeneratedMessage): Unit = {
+    import ClientModule.engineStartedMap
     import ClientModule.broker
-    if !started then
+    if !engineStarted() then
       if broker == null then
         startBroker()
       startModuleClient()
@@ -210,7 +224,7 @@ class ClientModule(
       client = ctx.socket(SocketType.REQ)
       // set id for client
       client.setIdentity(clientName.getBytes)
-      println(
+      logInfo(
         "server: Clientmodule " + clientName + " connected to " +
           s"tcp://${broker.getHost}:${broker.getPortFrontend} " + client
           .connect(s"tcp://${broker.getHost}:${broker.getPortFrontend}")
@@ -218,15 +232,15 @@ class ClientModule(
       engineStartedMap.put(moduleName.trim, true)
     end if
 
-    println(
+    logDebug(
       "server: Clientmodule " + clientName + " sending identity of remote module " + moduleName + " " +
         client.send(moduleName.getBytes, ZMQ.SNDMORE)
     )
-    println(
+    logDebug(
       "server: Clientmodule " + clientName + " sending empty frame to remote module " + moduleName + " " +
         client.send("".getBytes, ZMQ.SNDMORE)
     )
-    println(
+    logDebug(
       "server: Clientmodule " + clientName + " sending protobuf message to remote module " + moduleName + " " +
         client.send(ProtoBufConverter.toArray(msg).get, 0)
     )
@@ -265,7 +279,7 @@ class ClientModule(
     )
 
 
-    println(s"Mixql engine demo platform: Starting broker messager with" +
+    logInfo(s"Mixql engine demo platform: Starting broker messager with" +
       s" frontend port $portFrontend and backend port $portBackend on host $host")
     broker = new BrokerModule(portFrontend, portBackend, host)
     broker.start()
@@ -280,12 +294,12 @@ class ClientModule(
       Try({
         val file = new File(config.getString("org.mixql.cluster.basePath"))
         if !file.isDirectory then
-          println("ERROR: Provided basePath in config in parameter org.mixql.cluster.basePath" +
+          logError("Provided basePath in config in parameter org.mixql.cluster.basePath" +
             " must be directory!!!")
           throw new Exception("")
 
         if !file.exists() then
-          println("ERROR: Provided basePath in config in parameter org.mixql.cluster.basePath" +
+          logError("Provided basePath in config in parameter org.mixql.cluster.basePath" +
             " must exist!!!")
           throw new Exception("")
 
@@ -294,11 +308,11 @@ class ClientModule(
         Try({
           val file = new File(sys.env("MIXQL_CLUSTER_BASE_PATH"))
           if !file.isDirectory then
-            println("ERROR: Provided basePath in system variable MIXQL_CLUSTER_BASE_PATH must be directory!!!")
+            logError("Provided basePath in system variable MIXQL_CLUSTER_BASE_PATH must be directory!!!")
             throw new Exception("")
 
           if !file.exists() then
-            println("ERROR: Provided basePath in system variable MIXQL_CLUSTER_BASE_PATH must exist!!!")
+            logError("Provided basePath in system variable MIXQL_CLUSTER_BASE_PATH must exist!!!")
             throw new Exception("")
           file
         }).getOrElse(new File("."))
@@ -307,7 +321,7 @@ class ClientModule(
 
     startScriptName match
       case Some(scriptName) =>
-        println(
+        logInfo(
           s"server: ClientModule: $clientName trying to start remote module $moduleName at " + host +
             " and port at " + portBackend + " in " + basePath.getAbsolutePath + " by executing script " +
             scriptName + " in directory " + basePath.getAbsolutePath
@@ -324,7 +338,7 @@ class ClientModule(
       case None =>
         executor match
           case Some(engine) =>
-            println(
+            logInfo(
               s"server: ClientModule: $clientName trying to  start module $moduleName at " + host +
                 " and port at " + portBackend + " in " + basePath.getAbsolutePath + " by executing in scala future"
             )
@@ -346,13 +360,13 @@ class ClientModule(
   }
 
   override def close() = {
-    println(s"Server: ClientModule: $clientName: Executing close")
+    logDebug(s"Server: ClientModule: $clientName: Executing close")
     if (client != null) {
-      println(s"Server: ClientModule: $clientName: close client socket")
+      logDebug(s"Server: ClientModule: $clientName: close client socket")
       client.close()
     }
     if (ctx != null) {
-      println(s"Server: ClientModule: $clientName: close context")
+      logDebug(s"Server: ClientModule: $clientName: close context")
       ctx.close()
     }
 

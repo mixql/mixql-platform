@@ -3,6 +3,7 @@ package org.mixql.cluster
 import java.io.File
 import scala.language.postfixOps
 import scala.sys.process.Process
+import logger.*
 
 object CmdOperations {
 
@@ -23,8 +24,8 @@ object CmdOperations {
       }
     } catch {
       case ex: Throwable =>
-        println(
-          s"Error: Could not execute command ${
+        logError(
+          s"Could not execute command ${
               if (isWindows && cmdWindows.nonEmpty) cmdWindows.get
               else if cmdUnix.nonEmpty then cmdUnix.get
               else ""
@@ -56,8 +57,8 @@ object CmdOperations {
       }
     } catch {
       case ex: Throwable =>
-        println(
-          s"Error: Could not execute command ${
+        logError(
+          s"Could not execute command ${
               if (isWindows && cmdWindows.nonEmpty) cmdWindows.get
               else if cmdUnix.nonEmpty then cmdUnix.get
               else ""

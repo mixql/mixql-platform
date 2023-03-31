@@ -1,5 +1,6 @@
 package org.mixql.cluster
 
+import logger.*
 import org.zeromq.{SocketType, ZMQ}
 
 import scala.collection.mutable
@@ -30,7 +31,7 @@ class BrokerModule(portFrontend: Int, portBackend: Int, host: String)
 
   def start() = {
     if threadBroker == null then
-      println("Starting broker thread")
+      logInfo("Starting broker thread")
       threadBroker = new BrokerMainRunnable(
         "BrokerMainThread",
         host,
@@ -45,8 +46,8 @@ class BrokerModule(portFrontend: Int, portBackend: Int, host: String)
       threadBroker != null && threadBroker
         .isAlive() && !threadBroker.isInterrupted
     )
-      println("Broker: Executing close")
-      println("Broker: send interrupt to thread")
+      logDebug("Broker: Executing close")
+      logDebug("Broker: send interrupt to thread")
       threadBroker.interrupt()
     //      println("Waiting while broker thread is alive")
     //      try {
@@ -68,22 +69,22 @@ class BrokerMainRunnable(
   import BrokerModule.*
 
   def init(): (Int, Int) = {
-    println("Initialising broker")
+    logInfo("Initialising broker")
     ctx = ZMQ.context(1)
     frontend = ctx.socket(SocketType.ROUTER)
     backend = ctx.socket(SocketType.ROUTER)
-    println(
+    logInfo(
       "Broker: starting frontend router socket on " + portFrontend.toString
     )
     frontend.bind(s"tcp://$host:${portFrontend.toString}")
-    println("Broker: starting backend router socket on " + portBackend.toString)
+    logInfo("Broker: starting backend router socket on " + portBackend.toString)
     backend.bind(s"tcp://$host:${portBackend.toString}")
-    println("Initialising poller")
+    logDebug("Initialising poller")
     poller = ctx.poller(2)
     val polBackendIndex = poller.register(backend, ZMQ.Poller.POLLIN)
     val polFrontendIndex = poller.register(frontend, ZMQ.Poller.POLLIN)
-    println("initialised brocker")
-    println(
+    logDebug("initialised brocker")
+    logDebug(
       "broker : polBackendIndex: " + polBackendIndex +
         " polFrontendIndex: " + polFrontendIndex
     )
@@ -92,12 +93,12 @@ class BrokerMainRunnable(
 
   override def run(): Unit = {
     val initRes = init()
-    println("Broker thread was started")
+    logDebug("Broker thread was started")
     try {
       while (!Thread.currentThread().isInterrupted()) {
         val rc = poller.poll(1000)
         if (rc == -1) throw Exception("brake")
-        println("ThreadInterrupted: " + Thread.currentThread().isInterrupted())
+        logDebug("ThreadInterrupted: " + Thread.currentThread().isInterrupted())
         // Receive messages from engines
         if (poller.pollin(initRes._1)) {
           val (workerAddrStr, ready, clientIDStr, msg, pingHeartBeatMsg) =
@@ -105,7 +106,7 @@ class BrokerMainRunnable(
           ready match
             case Some(_) => // Its READY message from engine
               if !engines.contains(workerAddrStr) then
-                println(s"Broker: Add $workerAddrStr as key in engines set")
+                logDebug(s"Broker: Add $workerAddrStr as key in engines set")
                 engines.add(
                   workerAddrStr
                 ) // only this thread will write, so there will be no race condition
@@ -127,7 +128,7 @@ class BrokerMainRunnable(
           val (clientAddrStr, engineIdentityStr, request) =
             receiveMessageFromFrontend()
           if !engines.contains(engineIdentityStr) then
-            println(
+            logDebug(
               s"Broker frontend: engine was not initialized yet. Stash message in engines map"
             )
             stashMessage(engineIdentityStr, clientAddrStr, request)
@@ -142,55 +143,55 @@ class BrokerMainRunnable(
       }
     } catch {
       case e: Throwable =>
-        println("Broker main thread: Got Exception: " + e.getMessage)
+        logError("Broker main thread: Got Exception: " + e.getMessage)
     } finally {
       try {
         if (backend != null) {
-          println("Broker: closing backend")
+          logDebug("Broker: closing backend")
           backend.close()
         }
       } catch {
         case e: Throwable =>
-          println(
+          logError(
             "Warning error while closing backend socket in broker: " + e.getMessage
           )
       }
 
       try {
         if frontend != null then
-          println("Broker: closing frontend")
+          logDebug("Broker: closing frontend")
           frontend.close()
       } catch {
         case e: Throwable =>
-          println(
+          logError(
             "Warning error while closing frontend socket in broker: " + e.getMessage
           )
       }
 
       try {
         if poller != null then {
-          println("Broker: close poll")
+          logDebug("Broker: close poll")
           poller.close()
         }
       } catch {
         case e: Throwable =>
-          println(
+          logError(
             "Warning error while closing poller in broker: " + e.getMessage
           )
       }
 
       try {
         if ctx != null then {
-          println("Broker: terminate context")
+          logDebug("Broker: terminate context")
           //          ctx.term()
           ctx.close()
         }
       } catch {
         case e: Throwable =>
-          println("Warning error while closing broker context: " + e.getMessage)
+          logError("Warning error while closing broker context: " + e.getMessage)
       }
     }
-    println("Broker thread finished...")
+    logDebug("Broker thread finished...")
   }
 
   def receiveMessageFromBackend(): (
@@ -204,11 +205,11 @@ class BrokerMainRunnable(
     val workerAddr =
       backend.recv(NOFLAGS) // Received engine module identity frame
     val workerAddrStr = String(workerAddr)
-    println(
+    logDebug(
       s"Broker backend : received identity $workerAddrStr from engine module"
     )
     backend.recv(NOFLAGS) // received empty frame
-    println(
+    logDebug(
       s"Broker backend : received empty frame  from engine module $workerAddrStr"
     )
     // Third frame is READY message or client identity frame or heart beat message from engine
@@ -220,24 +221,24 @@ class BrokerMainRunnable(
 
     if clientIDStr.get != "READY" then
       if (clientIDStr.get == "PING-HEARTBEAT") then
-        println(
+        logDebug(
           s"Broker: received PING-HEARTBEAT msg from engine module $workerAddrStr"
         )
         pingHeartBeat = Some(clientIDStr.get)
       else
         // Its client's identity
-        println(s"Broker backend : received client's identity $clientIDStr")
+        logDebug(s"Broker backend : received client's identity $clientIDStr")
         backend.recv(NOFLAGS) // received empty frame
-        println(
+        logDebug(
           s"Broker backend : received empty frame  from engine module $workerAddrStr"
         )
         msg = Some(backend.recv(NOFLAGS))
-        println(
+        logDebug(
           s"Broker backend : received protobuf message from engine module $workerAddrStr"
         )
       end if
     else
-      println(s"Broker: received READY msg from engine module $workerAddrStr")
+      logDebug(s"Broker: received READY msg from engine module $workerAddrStr")
       ready = Some(clientIDStr.get)
       clientIDStr = None
     end if
@@ -248,29 +249,29 @@ class BrokerMainRunnable(
   def receiveMessageFromFrontend(): (String, String, Array[Byte]) = {
     val clientAddr = frontend.recv()
     val clientAddrStr = String(clientAddr)
-    println("Broker frontend: received client's identity " + clientAddrStr)
+    logDebug("Broker frontend: received client's identity " + clientAddrStr)
     frontend.recv()
-    println(s"Broker frontend: received empty frame from $clientAddrStr")
+    logDebug(s"Broker frontend: received empty frame from $clientAddrStr")
     val engineIdentity = frontend.recv()
     val engineIdentityStr = String(engineIdentity)
-    println(
+    logDebug(
       s"Broker frontend: received engine module identity $engineIdentityStr from $clientAddrStr"
     )
     frontend.recv()
-    println(s"Broker frontend: received empty frame from $clientAddrStr")
+    logDebug(s"Broker frontend: received empty frame from $clientAddrStr")
     val request = frontend.recv()
-    println(
+    logDebug(
       s"Broker frontend: received request for engine module $engineIdentityStr from $clientAddrStr"
     )
     (clientAddrStr, engineIdentityStr, request)
   }
 
   def sendMessageToFrontend(clientIDStr: String, msg: Array[Byte]) = {
-    println(s"Broker backend : sending clientId $clientIDStr to frontend")
+    logDebug(s"Broker backend : sending clientId $clientIDStr to frontend")
     frontend.send(clientIDStr.getBytes, ZMQ.SNDMORE)
-    println(s"Broker backend : sending empty frame to frontend")
+    logDebug(s"Broker backend : sending empty frame to frontend")
     frontend.send("".getBytes, ZMQ.SNDMORE)
-    println(s"Broker backend : sending protobuf message to frontend")
+    logDebug(s"Broker backend : sending protobuf message to frontend")
     frontend.send(msg)
   }
 
@@ -280,23 +281,23 @@ class BrokerMainRunnable(
     clientAddrStr: String,
     request: Array[Byte]
   ) = {
-    println(
+    logDebug(
       s"$logMessagePrefix: sending $engineIdentityStr from $clientAddrStr to backend"
     )
     backend.send(engineIdentityStr.getBytes, ZMQ.SNDMORE)
-    println(
+    logDebug(
       s"$logMessagePrefix: sending epmpty frame to $engineIdentityStr from $clientAddrStr to backend"
     )
     backend.send("".getBytes(), ZMQ.SNDMORE)
-    println(
+    logDebug(
       s"$logMessagePrefix: sending clientAddr to $engineIdentityStr from $clientAddrStr to backend"
     )
     backend.send(clientAddrStr.getBytes, ZMQ.SNDMORE)
-    println(
+    logDebug(
       s"$logMessagePrefix: sending epmpty frame to $engineIdentityStr from $clientAddrStr to backend"
     )
     backend.send("".getBytes(), ZMQ.SNDMORE)
-    println(
+    logDebug(
       s"$logMessagePrefix: sending protobuf frame to $engineIdentityStr from $clientAddrStr to backend"
     )
     backend.send(request, NOFLAGS)
@@ -307,28 +308,28 @@ class BrokerMainRunnable(
     engineIdentityStr: String,
     request: Array[Byte]
   ) = {
-    println(s"$logMessagePrefix: sending $engineIdentityStr  to backend")
+    logDebug(s"$logMessagePrefix: sending $engineIdentityStr  to backend")
     backend.send(engineIdentityStr.getBytes, ZMQ.SNDMORE)
-    println(
+    logDebug(
       s"$logMessagePrefix: sending epmpty frame to $engineIdentityStr to backend"
     )
     backend.send("".getBytes(), ZMQ.SNDMORE)
-    println(
+    logDebug(
       s"$logMessagePrefix: sending message frame to $engineIdentityStr to backend"
     )
     backend.send(request, NOFLAGS)
   }
 
   def sendStashedMessagesToBackendIfTheyAre(workerAddrStr: String) = {
-    println(s"Broker: Check if there are stashed messages for our engine")
+    logDebug(s"Broker: Check if there are stashed messages for our engine")
     enginesStashedMsgs.get(workerAddrStr) match
       case Some(messages) =>
         if messages.isEmpty then
-          println(
+          logDebug(
             s"Broker: Checked engines map. No stashed messages for $workerAddrStr"
           )
         else
-          println(
+          logDebug(
             s"Broker: Have founded stashed messages (amount: ${messages.length}) " +
               s"for engine $workerAddrStr. Sending them"
           )
@@ -344,7 +345,7 @@ class BrokerMainRunnable(
           messages.clear()
 
       case None =>
-        println(
+        logWarn(
           s"Broker: warning! no key $workerAddrStr, thow it should be here! Strange!"
         )
     end match
@@ -365,7 +366,7 @@ class BrokerMainRunnable(
         case Some(messages) =>
           messages += StashedClientMessage(clientAddrStr, request)
         case None =>
-          println(
+          logWarn(
             s"Broker frontend: warning! no key $engineIdentityStr in enginesStashedMsgs," +
               s" thow it should be here! Strange!"
           )

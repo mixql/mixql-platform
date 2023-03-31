@@ -16,6 +16,7 @@ import org.mixql.platform.demo.procedures.SimpleFuncs
 
 import scala.collection.mutable
 import org.mixql.platform.demo.logger.*
+import scala.util.Try
 
 object MixQlEnginePlatformDemo:
   def main(args: Array[String]): Unit =
@@ -63,7 +64,9 @@ object MixQlEnginePlatformDemo:
 
     logDebug(s"Mixql engine demo platform: init Cluster context")
     val context =
-      new Context(engines, "stub", functions = functions)
+      new Context(engines, Try({
+        config.getString("org.mixql.platform.demo.engines.default")
+      }).getOrElse("stub"), functions = functions)
 
     try {
       logDebug(s"Mixql engine demo platform: reading and executing sql files if they exist")

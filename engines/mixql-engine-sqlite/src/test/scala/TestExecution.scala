@@ -48,7 +48,29 @@ class TestExecution extends MixqlEngineSqliteTest {
         MixqlEngineSqliteTest.identity + " select from customers res : " + gType.toString
       )
       assert(
-        gType.toString == "[[\"Cardinal\", \"Tom B. Erichsen\", \"Skagen 21\", 0, \"4006\"]]"
+        gType.toString == "[[\"Cardinal\", \"Tom B. Erichsen\", \"Skagen 21\", \"Stavanger\", 4006, \"Norway\"]]"
+      )
+    }
+
+    {
+      val gType = execute(
+        """
+          |select ContactName from Customers;
+  """.stripMargin
+      )
+      assert(
+        gType.toString == "[[\"Tom B. Erichsen\"]]"
+      )
+    }
+
+    {
+      val gType = execute(
+        """
+          |select count(*) from Customers;
+  """.stripMargin
+      )
+      assert(
+        gType.toString == "[[1]]"
       )
     }
   }

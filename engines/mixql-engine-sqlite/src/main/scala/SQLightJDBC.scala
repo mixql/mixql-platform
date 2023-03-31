@@ -98,8 +98,8 @@ class SQLightJDBC(identity: String) extends java.lang.AutoCloseable :
                            columnTypes: Seq[scalapb.GeneratedMessage]
                          ): Seq[scalapb.GeneratedMessage] =
     import org.mixql.protobuf.messages.clientMsgs
-    for (i <- 1 to columnCount - 1) yield {
-      columnTypes(i) match
+    for (i <- 1 to columnCount) yield {
+      columnTypes(i - 1) match
         case clientMsgs.String(_, _, _) =>
           clientMsgs.String(res.getString(i), "")
         case clientMsgs.Bool(_, _) =>

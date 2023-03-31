@@ -24,7 +24,7 @@ class TestSqliteInMemoryDB extends MixqlEngineSqliteTest {
       """.stripMargin
       )
       assert(
-        gType.toString == "[[\"Cardinal\", \"Tom B. Erichsen\", \"Skagen 21\", 0, \"4006\"]]"
+        gType.toString == "[[\"Cardinal\", \"Tom B. Erichsen\", \"Skagen 21\", \"Stavanger\", 4006, \"Norway\"]]"
       )
   }
 

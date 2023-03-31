@@ -95,8 +95,8 @@ class SQLightJDBC(identity: String, dbPathParameter: Option[String] = None) exte
                            columnCount: Int,
                            columnTypes: Seq[gtype.Type]
                          ): Seq[gtype.Type] =
-    for (i <- 1 to columnCount - 1) yield {
-      columnTypes(i) match
+    for (i <- 1 to columnCount) yield {
+      columnTypes(i - 1) match
         case gtype.string(_, _) =>
           gtype.string(res.getString(i), "")
         case gtype.bool(_) =>

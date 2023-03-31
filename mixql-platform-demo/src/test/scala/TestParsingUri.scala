@@ -1,3 +1,5 @@
+import org.mixql.platform.demo.logger.logDebug
+
 // For more information on writing tests, see
 // https://scalameta.org/munit/docs/getting-started.html
 class TestParsingUri extends munit.FunSuite {
@@ -7,7 +9,7 @@ class TestParsingUri extends munit.FunSuite {
 
     val endPart = uri.split("""/""").last
 
-    println("endPart: " + endPart)
+    logDebug("endPart: " + endPart)
     var name = """[A-Za-z\-]+""".r.findFirstIn(endPart).get
     if name.endsWith("-") then name = name.dropRight(1)
 

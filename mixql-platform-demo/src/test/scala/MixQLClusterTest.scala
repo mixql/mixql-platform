@@ -9,12 +9,13 @@ import scala.collection.mutable
 import org.mixql.core.context.Context
 import org.mixql.engine.sqlite.local.EngineSqlightLocal
 import org.mixql.engine.stub.local.EngineStubLocal
+import org.mixql.platform.demo.logger.logDebug
 import org.mixql.platform.demo.procedures.SimpleFuncs
 import org.mixql.protobuf.messages.clientMsgs.ShutDown
 
 object MixQLClusterTest{
   val engines = {
-    println(s"Mixql engine demo platform: initialising engines")
+    logDebug(s"Mixql engine demo platform: initialising engines")
     mutable.Map[String, Engine](
       "stub" -> new ClientModule(
       //Name of client, is used for identification in broker,
@@ -55,7 +56,7 @@ object MixQLClusterTest{
 
 
   val context = {
-    println(s"Mixql engine demo platform: init Cluster context")
+    logDebug(s"Mixql engine demo platform: init Cluster context")
     new Context(engines, "stub-local", functions = functions)
   }
 }
@@ -74,7 +75,7 @@ class MixQLClusterTest extends AnyFlatSpec with BeforeAndAfterAll {
     context.engines.values.foreach(
       e => if (e.isInstanceOf[ClientModule]) {
         val cl: ClientModule = e.asInstanceOf[ClientModule]
-        println(s"mixql core context: sending shutdwon to remote engine " + cl.name)
+        logDebug(s"mixql core context: sending shutdwon to remote engine " + cl.name)
         cl.ShutDown()
       }
     )

@@ -15,13 +15,14 @@ import org.mixql.engine.sqlite.local.EngineSqlightLocal
 import org.mixql.platform.demo.procedures.SimpleFuncs
 
 import scala.collection.mutable
+import org.mixql.platform.demo.logger.*
 
 object MixQlEnginePlatformDemo:
   def main(args: Array[String]): Unit =
-    println("Mixql engine demo platform: parsing args")
+    logDebug("Mixql engine demo platform: parsing args")
     val (host, portFrontend, portBackend, basePath, sqlScriptFiles) = parseArgs(args.toList)
 
-    println(s"Mixql engine demo platform: initialising engines")
+    logDebug(s"Mixql engine demo platform: initialising engines")
     val engines = mutable.Map[String, Engine]("stub" -> new ClientModule(
       //Name of client, is used for identification in broker,
       //must be unique
@@ -52,7 +53,7 @@ object MixQlEnginePlatformDemo:
       "sqlite-local" -> EngineSqlightLocal
     )
 
-    println(s"Init functions for mixql context")
+    logDebug(s"Init functions for mixql context")
 
     val functions: collection.mutable.Map[String, Any] = collection.mutable.Map(
       "simple_func" -> SimpleFuncs.simple_func,
@@ -60,12 +61,12 @@ object MixQlEnginePlatformDemo:
       "get_engines_list" -> SimpleFuncs.get_engines_list,
     )
 
-    println(s"Mixql engine demo platform: init Cluster context")
+    logDebug(s"Mixql engine demo platform: init Cluster context")
     val context =
       new Context(engines, "stub", functions = functions)
 
     try {
-      println(s"Mixql engine demo platform: reading and executing sql files if they exist")
+      logDebug(s"Mixql engine demo platform: reading and executing sql files if they exist")
       (sqlScriptFiles match {
         case None => List((None, code))
         case Some(value) => value.map {
@@ -73,20 +74,20 @@ object MixQlEnginePlatformDemo:
         }
       }).foreach(sql => {
         if sql._1.nonEmpty then
-          println("Mixql engine demo platform: running script: " + sql._1.get)
+          logDebug("Mixql engine demo platform: running script: " + sql._1.get)
         else
-          println("Mixql engine demo platform: running standard code for testing: " + code)
+          logDebug("Mixql engine demo platform: running standard code for testing: " + code)
         run(sql._2, context)
       })
 
-      println(context.getScope().head)
+      logDebug(context.getScope().head.toString())
     } catch {
-      case e: Throwable => println(s"Error: Mixql engine demo platform: " + e.getMessage)
+      case e: Throwable => logError(e.getMessage)
     } finally {
       context.engines.values.foreach(
         e => if (e.isInstanceOf[ClientModule]) {
           val cl: ClientModule = e.asInstanceOf[ClientModule]
-          println(s"mixql core context: sending shutdwon to remote engine " + cl.name)
+          logDebug(s"sending shutdwon to remote engine " + cl.name)
           cl.ShutDown()
         }
       )

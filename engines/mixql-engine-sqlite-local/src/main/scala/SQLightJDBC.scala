@@ -2,6 +2,7 @@ package org.mixql.engine.sqlite.local
 
 import java.sql.*
 import org.mixql.core.context.gtype
+import scala.util.Try
 
 object SQLightJDBC {
 
@@ -11,21 +12,31 @@ object SQLightJDBC {
   var c: Connection = null
 }
 
-class SQLightJDBC(identity: String) extends java.lang.AutoCloseable :
+class SQLightJDBC(identity: String, dbPathParameter: Option[String] = None) extends java.lang.AutoCloseable :
 
   def init() = {
     import SQLightJDBC.config
-    val url =
-      try {
-        config.getString("mixql.org.engine.sqlight.db.path")
-      } catch {
-        case e: Exception =>
-          println(
-            s"[ENGINE $identity] : Warning: could not read db path from config: " + e.getMessage
-          )
+    def getStringParam(name: String): String = {
+      val r = config.getString(name)
+      println(
+        s"[ENGINE $identity] : Got db path from config's param: " + name
+      )
+      r
+    }
+
+    val url: String =
+      Try {
+        getStringParam(dbPathParameter.get.trim)
+      }.getOrElse(
+        Try {
+          getStringParam("mixql.org.engine.sqlight.db.path")
+        }.getOrElse({
+          val path = "jdbc:sqlite::memory:"
           println(s"[ENGINE $identity] : use in memory db")
-          "jdbc:sqlite::memory:"
-      }
+          path
+        })
+      )
+
     SQLightJDBC.c = DriverManager.getConnection(url)
     println(s"[ENGINE $identity] : opened database successfully")
   }
@@ -124,7 +135,7 @@ class SQLightJDBC(identity: String) extends java.lang.AutoCloseable :
         case gtype.double(_) =>
           JavaSqlArrayConverter
             .toDoubleArray(javaSqlArray)
-            .map { value =>  gtype.double(value)
+            .map { value => gtype.double(value)
             }
             .toArray
         case _: Any =>

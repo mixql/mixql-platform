@@ -1,21 +1,20 @@
 import org.mixql.engine.sqlite.local.SQLightJDBC
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.mixql.core.context.gtype
 
-object MixqlEngineSqliteTest:
+class MixqlEngineSqliteTest extends AnyFlatSpec with BeforeAndAfter:
   var context: SQLightJDBC = null
   val identity = "MixqlEngineSqliteTest"
 
-class MixqlEngineSqliteTest extends AnyFlatSpec with BeforeAndAfterAll:
-  import MixqlEngineSqliteTest._
-  override def beforeAll(): Unit =
+  before{
     context = SQLightJDBC(identity)
-    super.beforeAll()
+  }
 
   def execute(code: String): gtype.Type =
     context.execute(code)
 
-  override def afterAll(): Unit =
+  after{
     context.close()
-    super.afterAll()
+    SQLightJDBC.c = null
+  }

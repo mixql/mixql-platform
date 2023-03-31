@@ -79,7 +79,7 @@ object MixQlEnginePlatformDemo:
         run(sql._2, context)
       })
 
-      println(context.scope.head)
+      println(context.getScope().head)
     } catch {
       case e: Throwable => println(s"Error: Mixql engine demo platform: " + e.getMessage)
     } finally {

@@ -12,7 +12,7 @@ object SimpleFuncs{
   val print_current_vars = new ((Context, Boolean) => String) {
     override def apply(ctx: Context, currentScope: Boolean = false): String = {
       println("[print_current_vars] started")
-      println("[print_current_vars] context scope: " + ctx.scope.toString())
+      println("[print_current_vars] context scope: " + ctx.getScope().toString())
       "SUCCESS"
     }
   }

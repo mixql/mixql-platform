@@ -142,6 +142,14 @@ lazy val mixQLEngine = projectMatrix
 
 lazy val mixQLEngineSCALA3 = mixQLEngine.jvm(Scala3)
 
+
+lazy val mixQLEngineInternal = projectMatrix
+  .in(file("mixql-engine-internal"))
+  .dependsOn(mixQLCore)
+  .jvmPlatform(Seq(Scala3, Scala213, Scala212))
+
+lazy val mixQLEngineInternalSCALA3 = mixQLEngineInternal.jvm(Scala3)
+
 lazy val mixQLEngineStub = project
   .in(file("engines/mixql-engine-stub"))
   .dependsOn(mixQLEngineSCALA3)
@@ -159,11 +167,11 @@ lazy val stageEnginesDemo =
 
 lazy val mixQLEngineStubLocal = project
   .in(file("engines/mixql-engine-stub-local"))
-  .dependsOn(mixQLCoreSCALA3)
+  .dependsOn(mixQLEngineInternalSCALA3)
 
 lazy val mixQLEngineSqliteLocal = project
   .in(file("engines/mixql-engine-sqlite-local"))
-  .dependsOn(mixQLCoreSCALA3)
+  .dependsOn(mixQLEngineInternalSCALA3)
 
 ///////////////////////////////////MIXQL PLATFORM DEMO FUNCTIONS/////////////////////////
 

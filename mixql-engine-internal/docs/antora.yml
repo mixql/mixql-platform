@@ -1,0 +1,9 @@
+name: mixql-engine-internal
+title: MixQL Platform's internal engine
+version: 'v0.2.1'
+prerelease: -alpha.1
+#display_version: '0.1.0 Spiny'
+#prerelease: false
+start_page: index.adoc
+nav:
+  - modules/ROOT/nav.adoc

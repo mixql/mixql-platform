@@ -17,7 +17,7 @@ object EngineSqlightExecutor
 
   var context: SQLightJDBC = null
 
-  val functions: Map[String, Any] = Map(
+  def functions: Map[String, Any] = Map(
     "sqlite_simple_proc" -> SqliteSimpleProc.simple_func,
     "sqlite_simple_proc_params" -> SqliteSimpleProc.simple_func_params,
     "sqlite_simple_proc_context_params" -> SqliteSimpleProc.simple_func_context_params,
@@ -124,7 +124,7 @@ object EngineSqlightExecutor
         sendMsgToServerBroker(
           clientAddress,
           clientMsgs.DefinedFunctions(
-            List("sqlite_simple_proc", "sqlite_simple_proc_params", "sqlite_simple_proc_context_params"))
+            functions.keys.toList)
         )
     }
 

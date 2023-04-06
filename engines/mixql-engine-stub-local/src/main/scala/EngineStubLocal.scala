@@ -15,12 +15,12 @@ object EngineStubLocal extends InternalEngine {
   override def name: String = "mixql-engine-stub-local"
 
   override def executeStmt(statement: String): gtype.Type = {
-    logInfo(
+    logDebug(
       s"Received statement to execute: ${statement}"
     )
-    logDebug(s"Executing command ${statement} for 1sec")
+    logDebug(s"Executing command :${statement} for 1sec")
     Thread.sleep(1000)
-    logInfo(s"Successfully executed command ${statement}")
+    logInfo(s"executed: ${statement}")
     gtype.Null
   }
 

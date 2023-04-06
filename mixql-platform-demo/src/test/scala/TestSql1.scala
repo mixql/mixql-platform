@@ -1,4 +1,4 @@
-class TestSql1 extends MixQLClusterTest {
+class TestSql1TestSql1 extends MixQLClusterTest {
 
   behavior of "test of create table, insert table and print select from table"
 

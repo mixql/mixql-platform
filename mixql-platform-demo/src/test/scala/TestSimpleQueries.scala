@@ -9,15 +9,15 @@ class TestSimpleQueries extends MixQLClusterTest {
       """
         |let a='dfdff';
         |print("a is [$a]");
-        |let b=${$a || ""};
+        |let b="${$a || ""}";
         |print("b is [$b]");
-        |print(${$a || ""});
+        |print("${$a || ""}");
         |print(${$a || ""});
         |print('${a}test_concat1');
         |
         |use database ${$a || ""};
         |use database $a;
-        |use $a;
+        |use "${$a || $b}";
         |use $b;
         |
         |print_current_vars();

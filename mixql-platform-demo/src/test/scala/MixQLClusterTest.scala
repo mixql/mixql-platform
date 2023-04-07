@@ -59,7 +59,7 @@ object MixQLClusterTest{
 
   val context = {
     logDebug(s"Mixql engine demo platform: init Cluster context")
-    new Context(engines, "stub-local", functions = functions)
+    new Context(engines, "stub-local", functionsInit = functions)
   }
 }
 class MixQLClusterTest extends AnyFlatSpec with BeforeAndAfterAll {

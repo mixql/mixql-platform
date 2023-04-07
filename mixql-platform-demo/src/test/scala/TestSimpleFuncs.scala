@@ -13,6 +13,7 @@ class TestSimpleFuncs extends MixQLClusterTest {
     run(
       """
         |print_current_vars();
+        |print(concat("a", "b"));
         |""".stripMargin)
   }
 

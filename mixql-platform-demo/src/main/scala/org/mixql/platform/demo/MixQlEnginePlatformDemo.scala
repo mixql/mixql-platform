@@ -66,7 +66,7 @@ object MixQlEnginePlatformDemo:
     val context =
       new Context(engines, Try({
         config.getString("org.mixql.platform.demo.engines.default")
-      }).getOrElse("stub"), functions = functions)
+      }).getOrElse("stub"), functionsInit = functions)
 
     try {
       logDebug(s"Mixql engine demo platform: reading and executing sql files if they exist")

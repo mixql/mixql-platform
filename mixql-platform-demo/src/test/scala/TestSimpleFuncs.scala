@@ -17,6 +17,14 @@ class TestSimpleFuncs extends MixQLClusterTest {
         |""".stripMargin)
   }
 
+  it should("execute startsWith") in {
+    run(
+      """
+        |
+        |print(startsWith("adddd", "b"));
+        |""".stripMargin)
+  }
+
   it should ("execute get_engines_list and work with returned array") in {
     run(FilesOperations.readFileContent(TestOps.getFileFromResource("test_get_engines_list.sql").get))
   }

@@ -48,6 +48,14 @@ class TestSimpleQueries extends MixQLClusterTest {
         |""".stripMargin)
   }
 
+  it should ("get current engine during executing") in {
+    run(
+      """
+        |print($mixql.execution.engine);
+        |""".stripMargin)
+  }
+
+
   it should("make for several variables in array in array") in {
     run(
       """

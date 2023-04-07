@@ -8,19 +8,43 @@ class TestSimpleQueries extends MixQLClusterTest {
     run(
       """
         |let a='dfdff';
+        |let c="dfdff";
+        |let d=dfdff;
         |print("a is [$a]");
         |let b="${$a || ""}";
         |print("b is [$b]");
         |print("${$a || ""}");
         |print(${$a || ""});
         |print('${a}test_concat1');
+        |print('${$a}test_concat1');
         |
         |use database ${$a || ""};
         |use database $a;
         |use "${$a || $b}";
         |use $b;
+        |use $c;
+        |use "$b + $c";
+        |use ${"$b" + "$c"};
+        |use ${$b + $c};
+        |use ${$a};
+        |use $d;
         |
         |print_current_vars();
+        |""".stripMargin)
+  }
+
+  it should("work correctly with variables 2 test") in {
+    run(
+      """
+        |let a="fgfg";
+        |
+        |use database ${$a || ""}; -- нет кавычек
+        |use database $a; -- нет кавычек
+        |use database ${$a}; -- нет кавычек
+        |use database "${$a}.inter"; -- кавычки
+        |use database "$a"; -- кавычки
+        |use database "${$a || ""}"; -- кавычки
+        |use ${$b + $c}; -- нет кавычек
         |""".stripMargin)
   }
 

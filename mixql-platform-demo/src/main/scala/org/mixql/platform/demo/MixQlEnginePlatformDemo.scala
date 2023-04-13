@@ -24,19 +24,46 @@ object MixQlEnginePlatformDemo:
     val (host, portFrontend, portBackend, basePath, sqlScriptFiles) = parseArgs(args.toList)
 
     logDebug(s"Mixql engine demo platform: initialising engines")
-    val engines = mutable.Map[String, Engine]("stub" -> new ClientModule(
-      //Name of client, is used for identification in broker,
-      //must be unique
-      "mixql-engine-stub-demo-platform",
-      //Name of remote engine, is used for identification in broker,
-      //must be unique
-      "mixql-engine-stub",
-      //will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
-      //in base path
-      Some("mixql-engine-stub"),
-      None,
-      host, portFrontend, portBackend, basePath
-    ),
+    val engines = mutable.Map[String, Engine](
+      "stub" -> new ClientModule(
+        //Name of client, is used for identification in broker,
+        //must be unique
+        "mixql-engine-stub-demo-platform",
+        //Name of remote engine, is used for identification in broker,
+        //must be unique
+        "mixql-engine-stub",
+        //will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
+        //in base path
+        Some("mixql-engine-stub"),
+        None,
+        host, portFrontend, portBackend, basePath
+      ),
+      "stub-scala-2-12" -> new ClientModule(
+        //Name of client, is used for identification in broker,
+        //must be unique
+        "mixql-engine-stub-scala-2-12-demo-platform",
+        //Name of remote engine, is used for identification in broker,
+        //must be unique
+        "mixql-engine-stub-scala-2-12",
+        //will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
+        //in base path
+        Some("mixql-engine-stub-scala-2-12"),
+        None,
+        host, portFrontend, portBackend, basePath
+      ),
+      "stub-scala-2-13" -> new ClientModule(
+        //Name of client, is used for identification in broker,
+        //must be unique
+        "mixql-engine-stub-scala-2-13-demo-platform",
+        //Name of remote engine, is used for identification in broker,
+        //must be unique
+        "mixql-engine-stub-scala-2-13",
+        //will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
+        //in base path
+        Some("mixql-engine-stub-scala-2-13"),
+        None,
+        host, portFrontend, portBackend, basePath
+      ),
       "sqlite" -> new ClientModule(
         //Name of client, is used for identification in broker,
         //must be unique

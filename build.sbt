@@ -141,6 +141,8 @@ lazy val mixQLEngine = projectMatrix
   .jvmPlatform(Seq(Scala3, Scala213, Scala212))
 
 lazy val mixQLEngineSCALA3 = mixQLEngine.jvm(Scala3)
+lazy val mixQLEngineSCALA213 = mixQLEngine.jvm(Scala213)
+lazy val mixQLEngineSCALA212 = mixQLEngine.jvm(Scala212)
 
 
 lazy val mixQLEngineInternal = projectMatrix
@@ -153,6 +155,16 @@ lazy val mixQLEngineInternalSCALA3 = mixQLEngineInternal.jvm(Scala3)
 lazy val mixQLEngineStub = project
   .in(file("engines/mixql-engine-stub"))
   .dependsOn(mixQLEngineSCALA3)
+  .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
+
+lazy val mixQLEngineStubScala213 = project
+  .in(file("engines/mixql-engine-stub-scala-2-13"))
+  .dependsOn(mixQLEngineSCALA213)
+  .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
+
+lazy val mixQLEngineStubScala212 = project
+  .in(file("engines/mixql-engine-stub-scala-2-12"))
+  .dependsOn(mixQLEngineSCALA212)
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
 
 lazy val mixQLEngineSqlite = project
@@ -198,9 +210,13 @@ lazy val mixQLPlatformDemo = project
     var cache: Seq[(File, String)] = Seq()
     (mixQLEngineStub / Universal / stage).value
     (mixQLEngineSqlite / Universal / stage).value
+    (mixQLEngineStubScala213 / Universal / stage).value
+    (mixQLEngineStubScala212 / Universal / stage).value
     val baseDirs = Seq(
       (mixQLEngineStub / baseDirectory).value,
-      (mixQLEngineSqlite / baseDirectory).value
+      (mixQLEngineSqlite / baseDirectory).value,
+      (mixQLEngineStubScala213 / baseDirectory).value,
+      (mixQLEngineStubScala212 / baseDirectory).value
     )
 
     baseDirs.foreach(baseDir => {

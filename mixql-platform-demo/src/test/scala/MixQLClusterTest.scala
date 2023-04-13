@@ -1,3 +1,4 @@
+import com.typesafe.config.ConfigFactory
 import org.mixql.cluster.{BrokerModule, ClientModule}
 import org.mixql.core.engine.Engine
 import org.mixql.net.PortOperations
@@ -6,7 +7,8 @@ import org.scalatest.BeforeAndAfterAll
 
 import java.io.File
 import scala.collection.mutable
-import org.mixql.core.context.Context
+import org.mixql.core.context.{Context, gtype}
+import org.mixql.core.context.gtype.Type
 import org.mixql.engine.sqlite.local.EngineSqlightLocal
 import org.mixql.engine.stub.local.EngineStubLocal
 import org.mixql.platform.demo.logger.logDebug
@@ -14,6 +16,8 @@ import org.mixql.platform.demo.procedures.SimpleFuncs
 import org.mixql.protobuf.messages.clientMsgs.ShutDown
 
 object MixQLClusterTest{
+  val config = ConfigFactory.load()
+
   val engines = {
     logDebug(s"Mixql engine demo platform: initialising engines")
     mutable.Map[String, Engine](
@@ -56,10 +60,24 @@ object MixQLClusterTest{
     "get_engines_list" -> SimpleFuncs.get_engines_list,
   )
 
+  val variables: mutable.Map[String, Type] = mutable.Map[String, Type](
+    "mixql.org.engine.sqlight.titanic-db.path" -> gtype.string(
+      config.getString("mixql.org.engine.sqlight.titanic-db.path")
+    ),
+    "mixql.org.engine.sqlight.sakila-db.path" -> gtype.string(
+      config.getString("mixql.org.engine.sqlight.sakila-db.path")
+    ),
+    "mixql.org.engine.sqlight.db.path" -> gtype.string(
+      config.getString("mixql.org.engine.sqlight.db.path")
+    )
+  )
+
 
   val context = {
     logDebug(s"Mixql engine demo platform: init Cluster context")
-    new Context(engines, "stub-local", functionsInit = functions)
+    new Context(engines, "stub-local", functionsInit = functions,
+      variables = variables
+    )
   }
 }
 class MixQLClusterTest extends AnyFlatSpec with BeforeAndAfterAll {

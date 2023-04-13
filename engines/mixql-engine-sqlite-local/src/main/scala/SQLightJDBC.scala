@@ -5,27 +5,24 @@ import org.mixql.cluster.internal.engine.logger.ILogger
 import java.sql.*
 import org.mixql.core.context.gtype
 
+import scala.collection.mutable
 import scala.util.Try
 
 object SQLightJDBC {
-
-  import com.typesafe.config.{Config, ConfigFactory}
-
-  val config = ConfigFactory.load()
   var c: Connection = null
 }
 
-class SQLightJDBC(identity: String, dbPathParameter: Option[String] = None) extends java.lang.AutoCloseable
+class SQLightJDBC(identity: String, engineParams: mutable.Map[String, gtype.Type] = mutable.Map(),
+                  dbPathParameter: Option[String] = None) extends java.lang.AutoCloseable
   with ILogger :
 
   override def name: String = identity
 
   def init() = {
-    import SQLightJDBC.config
     def getStringParam(name: String): String = {
-      val r = config.getString(name)
-      logInfo(s"Got db path from config's param: " + name)
-      r
+      val r = engineParams(name).asInstanceOf[gtype.string]
+      logInfo(s"Got db path from provided params: " + name)
+      r.toString
     }
 
     val url: String =

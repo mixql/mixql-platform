@@ -6,7 +6,6 @@ scalaVersion := "3.2.1"
 
 libraryDependencies ++= {
   Seq(
-    "com.typesafe"   % "config"       % "1.4.2",
     "org.scalameta" %% "munit"        % "0.7.29" % Test,
     "org.xerial"     % "sqlite-jdbc"  % "3.40.0.0",
     "org.scalatest" %% "scalatest"    % "3.2.14" % Test

@@ -16,8 +16,14 @@ homepage := Some(url("https://github.com/mixql/mixql-platform-demo"))
 pomIncludeRepository := { _ => false }
 
 Universal / mappings := {
+  val applicationConf = baseDirectory.value / "src" / "main" / "resources" / "reference.conf"
+  val log4jConf = baseDirectory.value / "src" / "main" / "resources" / "log4j2.xml"
+
   val origSeq = ((Universal / mappings).value ++
-    prePackArchive.value :+ file("README.md") -> "README.md")
+    prePackArchive.value :+
+    file("README.md") -> "README.md")  :+
+    applicationConf -> "application.conf" :+
+    log4jConf -> s"${log4jConf.getName}"
 
   import scala.collection.mutable
   val targetDirs: mutable.Set[String] = mutable.Set()
@@ -34,10 +40,10 @@ Universal / mappings := {
 libraryDependencies ++= {
   val vScallop = "4.1.0"
   Seq(
-    "org.rogach"    %% "scallop"   % vScallop,
-    "com.typesafe"   % "config"    % "1.4.2",
+    "org.rogach" %% "scallop" % vScallop,
+    "com.typesafe" % "config" % "1.4.2",
     "org.scalatest" %% "scalatest" % "3.2.14" % Test,
-    "org.scalameta" %% "munit"     % "0.7.29" % Test
+    "org.scalameta" %% "munit" % "0.7.29" % Test
   )
 }
 
@@ -111,9 +117,9 @@ prePackArchive := {
               .map(f =>
                 (f, "bin/" + f.getName)
               ) ++ (baseDirectory.value / "target" / s"$name-$version" / "lib")
-              .listFiles()
-              .toSeq
-              .map(f => (f, "lib/" + f.getName))
+            .listFiles()
+            .toSeq
+            .map(f => (f, "lib/" + f.getName))
         })
         cache
     }
@@ -122,11 +128,11 @@ prePackArchive := {
 }
 
 def downloadAndExtractModule(
-  name: String,
-  version: String,
-  uri: String,
-  localTarGzFile: File
-): Unit = {
+                              name: String,
+                              version: String,
+                              uri: String,
+                              localTarGzFile: File
+                            ): Unit = {
   if (version.endsWith("-SNAPSHOT")) {
     IO.delete(localTarGzFile)
     IO.delete(new File(s"target/$name-$version"))

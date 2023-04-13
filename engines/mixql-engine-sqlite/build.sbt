@@ -13,7 +13,6 @@ libraryDependencies ++= {
   val vScallop = "4.1.0"
   Seq(
     "org.rogach"    %% "scallop"      % vScallop,
-    "com.typesafe"   % "config"       % "1.4.2",
     "org.scalameta" %% "munit"        % "0.7.29" % Test,
     "org.xerial"     % "sqlite-jdbc"  % "3.40.0.0",
     "org.scalatest" %% "scalatest"    % "3.2.14" % Test

@@ -35,7 +35,7 @@ class EngineSqlightLocal( dbPathParameter: Option[String] = None)
     logDebug(
       s"Init SQlightJDBC context"
     )
-    context = SQLightJDBC(name, dbPathParameter)
+    context = SQLightJDBC(name, engineParams, dbPathParameter)
 
   override def execFunc(name: String, params: Type*): Type = {
     try

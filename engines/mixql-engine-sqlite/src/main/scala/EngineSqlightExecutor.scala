@@ -28,7 +28,7 @@ object EngineSqlightExecutor
     identity: String,
     clientAddress: Array[Byte]
   ): Unit = {
-    if context == null then context = SQLightJDBC(identity)
+    if context == null then context = SQLightJDBC(identity, engineParams)
     val clientAddressStr = String(clientAddress)
     ProtoBufConverter.unpackAnyMsg(msg) match {
       case clientMsgs.Execute(statement, _) =>

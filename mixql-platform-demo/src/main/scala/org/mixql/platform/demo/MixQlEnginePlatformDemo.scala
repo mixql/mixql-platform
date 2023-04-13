@@ -8,7 +8,7 @@ import org.mixql.cluster.{BrokerModule, ClientModule}
 import org.mixql.core.Main.code
 import org.mixql.core.engine.Engine
 import org.mixql.net.PortOperations
-import org.mixql.core.context.Context
+import org.mixql.core.context.{Context, gtype}
 import org.mixql.protobuf.messages.clientMsgs.ShutDown
 import org.mixql.engine.stub.local.EngineStubLocal
 import org.mixql.engine.sqlite.local.EngineSqlightLocal
@@ -16,12 +16,18 @@ import org.mixql.platform.demo.procedures.SimpleFuncs
 
 import scala.collection.mutable
 import org.mixql.platform.demo.logger.*
+
 import scala.util.Try
 
 object MixQlEnginePlatformDemo:
   def main(args: Array[String]): Unit =
     logDebug("Mixql engine demo platform: parsing args")
-    val (host, portFrontend, portBackend, basePath, sqlScriptFiles) = parseArgs(args.toList)
+    val (host, portFrontend, portBackend, homePath, sqlScriptFiles) = parseArgs(args.toList)
+
+    val binPath: Option[File] = if homePath.isEmpty then
+      None
+    else
+      Some(File(homePath.get.getAbsolutePath + "/bin"))
 
     logDebug(s"Mixql engine demo platform: initialising engines")
     val engines = mutable.Map[String, Engine](
@@ -36,7 +42,7 @@ object MixQlEnginePlatformDemo:
         //in base path
         Some("mixql-engine-stub"),
         None,
-        host, portFrontend, portBackend, basePath
+        host, portFrontend, portBackend, binPath
       ),
       "stub-scala-2-12" -> new ClientModule(
         //Name of client, is used for identification in broker,
@@ -49,7 +55,7 @@ object MixQlEnginePlatformDemo:
         //in base path
         Some("mixql-engine-stub-scala-2-12"),
         None,
-        host, portFrontend, portBackend, basePath
+        host, portFrontend, portBackend, binPath
       ),
       "stub-scala-2-13" -> new ClientModule(
         //Name of client, is used for identification in broker,
@@ -62,7 +68,7 @@ object MixQlEnginePlatformDemo:
         //in base path
         Some("mixql-engine-stub-scala-2-13"),
         None,
-        host, portFrontend, portBackend, basePath
+        host, portFrontend, portBackend, binPath
       ),
       "sqlite" -> new ClientModule(
         //Name of client, is used for identification in broker,
@@ -75,7 +81,7 @@ object MixQlEnginePlatformDemo:
         //in base path
         Some("mixql-engine-sqlite"),
         None,
-        host, portFrontend, portBackend, basePath
+        host, portFrontend, portBackend, binPath
       ),
       "stub-local" -> EngineStubLocal,
       "sqlite-local" -> EngineSqlightLocal()
@@ -89,11 +95,19 @@ object MixQlEnginePlatformDemo:
       "get_engines_list" -> SimpleFuncs.get_engines_list,
     )
 
+    logDebug(s"Init variables for mixql context")
+    val variables: mutable.Map[String, gtype.Type] = mutable.Map[String, gtype.Type](
+      "mixql.org.engine.sqlight.db.path" -> gtype.string(
+        config.getString("mixql.org.engine.sqlight.db.path")
+      )
+    )
+
+
     logDebug(s"Mixql engine demo platform: init Cluster context")
     val context =
       new Context(engines, Try({
         config.getString("org.mixql.platform.demo.engines.default")
-      }).getOrElse("stub"), functionsInit = functions)
+      }).getOrElse("stub"), functionsInit = functions, variables = variables)
 
     try {
       logDebug(s"Mixql engine demo platform: reading and executing sql files if they exist")
@@ -136,9 +150,28 @@ object MixQlEnginePlatformDemo:
     val portBackend = //PortOperations.isPortAvailable(
       appArgs.portBackend.toOption
     //)
-    val basePath = appArgs.basePath.toOption
+    val homePath: Option[File] = Try(
+      {
+        Some(appArgs.homePath.toOption.get)
+      }
+    ).getOrElse(
+      Try({
+        val file = new File(sys.env("MIXQL_PLATFORM_DEMO_HOME_PATH"))
+        if !file.isDirectory then
+          logError("Provided platform demo's home path in system variable" +
+            " MIXQL_PLATFORM_DEMO_HOME_PATH must be directory!!!")
+          throw new Exception("")
+
+        if !file.exists() then
+          logError("Provided platform demo's home path in system variable" +
+            " MIXQL_PLATFORM_DEMO_HOME_PATH must exist!!!")
+          throw new Exception("")
+        Some(file)
+      }).getOrElse(None)
+    )
+
     val sqlScripts = appArgs.sqlFile.toOption
-    (host, portFrontend, portBackend, basePath, sqlScripts)
+    (host, portFrontend, portBackend, homePath, sqlScripts)
 
 case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments) :
 
@@ -153,14 +186,14 @@ case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments) :
     required = false) //, default = Some(0))
   val host = opt[String](descr = "host of platform's broker",
     required = false) //, default = Some("0.0.0.0"))
-  val basePath = opt[File](descr = "path with sripts for launching remote engines",
+  val homePath = opt[File](descr = "home path of platform demo",
     required = false) //, default = Some(new File(".")))
   val sqlFile = opt[List[File]](descr = "path to sql script file", required = false)
 
   validateFilesIsFile(sqlFile)
   validateFilesExist(sqlFile)
 
-  validateFileIsDirectory(basePath)
+  validateFileIsDirectory(homePath)
 
   verify()
 

@@ -1,6 +1,5 @@
 package org.mixql.cluster.internal.engine
 
-import com.typesafe.config.ConfigFactory
 import org.mixql.core.engine.Engine
 import org.mixql.core.context.gtype.Type
 import java.io.File
@@ -16,7 +15,6 @@ import logger.ILogger
 case class StashedParam(name: String, value: gtype.Type)
 
 object InternalEngine {
-  val config = ConfigFactory.load()
 }
 
 //if start script name is not none then client must start remote engine by executing script

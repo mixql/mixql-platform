@@ -4,26 +4,26 @@ import org.mixql.protobuf.GtypeConverter
 import org.mixql.protobuf.messages.clientMsgs
 
 import java.sql.*
+import scala.collection.mutable
 
 object SQLightJDBC {
-
-  import com.typesafe.config.{Config, ConfigFactory}
-
-  val config = ConfigFactory.load()
   var c: Connection = null
 }
 
-class SQLightJDBC(identity: String) extends java.lang.AutoCloseable :
+class SQLightJDBC(identity: String,
+                  engineParams: mutable.Map[String, scalapb.GeneratedMessage] = mutable.Map())
+  extends java.lang.AutoCloseable :
 
   def init() = {
-    import SQLightJDBC.config
     val url =
       try {
-        config.getString("mixql.org.engine.sqlight.db.path")
+        engineParams("mixql.org.engine.sqlight.db.path")
+          .asInstanceOf[clientMsgs.String]
+          .value
       } catch {
         case e: Exception =>
           println(
-            s"Module $identity: Warning: could not read db path from config: " + e.getMessage
+            s"Module $identity: Warning: could not read db path from provided params: " + e.getMessage
           )
           println(s"Module $identity: use in memory db")
           "jdbc:sqlite::memory:"

@@ -102,18 +102,16 @@ lazy val mixQLProtobuf = projectMatrix
   .in(file("mixql-protobuf"))
   .dependsOn(mixQLCore)
   .settings(
-    Compile / PB.targets := Seq(scalapb.gen(grpc = true) -> {
-      // val file = (Compile / sourceManaged).value
-      //        println("PB  target: " + file.getPath)
-      //        val file = new File("target/scala-3.2.1/src_managed/main")
-      val file = (Compile / scalaSource).value / "scalaPB"
+    Compile / PB.targets := Seq(PB.gens.java -> {
+      val file = (Compile / javaSource).value /// "scalaPB"
       println("PB  target: " + file.getAbsolutePath)
       file
     }),
     libraryDependencies ++= Seq(
-      "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % scalapb.compiler.Version.scalapbVersion,
-      "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.9.6-0" % "protobuf",
-      "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.9.6-0",
+      "com.google.protobuf" % "protobuf-java" % "3.13.0" % "protobuf",
+//      "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % scalapb.compiler.Version.scalapbVersion,
+//      "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.9.6-0" % "protobuf",
+//      "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.9.6-0",
       "org.scalameta" %% "munit" % "0.7.29" % Test
     )
   )

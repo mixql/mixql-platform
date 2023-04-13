@@ -1,7 +1,7 @@
 syntax = "proto3";
 option java_multiple_files = true;
 
-option java_package = "org.mixql.protobuf.messages";
+option java_package = "org.mixql.protobuf.generated.messages";
 
 option java_outer_classname = "ZioRemoteProto"; //??
 option objc_class_prefix = "RTG"; //??

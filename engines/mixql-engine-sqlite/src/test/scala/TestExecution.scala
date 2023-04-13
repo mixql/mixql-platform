@@ -1,4 +1,4 @@
-import scalapb.GeneratedMessage
+import com.google.protobuf.GeneratedMessageV3
 class TestExecution extends MixqlEngineSqliteTest {
   behavior of "start engine, execute sql statements and close engine"
 

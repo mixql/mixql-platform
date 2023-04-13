@@ -3,23 +3,24 @@ package org.mixql.protobuf
 object GtypeConverter {
 
   import org.mixql.core.context.gtype
-  import org.mixql.protobuf.messages.clientMsgs
+  import org.mixql.protobuf.generated.messages
 
-  def toGtype(remoteMsg: scalapb.GeneratedMessage): gtype.Type = {
+  def toGtype(remoteMsg: com.google.protobuf.GeneratedMessageV3): gtype.Type = {
+    import collection.JavaConverters._
 
     remoteMsg match {
-      case _: clientMsgs.NULL => gtype.Null
-      case msg: clientMsgs.Bool => gtype.bool(msg.value)
-      case msg: clientMsgs.Int => gtype.int(msg.value)
-      case msg: clientMsgs.Double => gtype.double(msg.value)
-      case msg: clientMsgs.String => gtype.string(msg.value)
-      case msg: clientMsgs.Array =>
+      case _: messages.NULL => gtype.Null
+      case msg: messages.Bool => gtype.bool(msg.getValue)
+      case msg: messages.Int => gtype.int(msg.getValue)
+      case msg: messages.Double => gtype.double(msg.getValue)
+      case msg: messages.String => gtype.string(msg.getValue)
+      case msg: messages.Array =>
         gtype.array(
-          msg.arr
+          msg.getArrList.asScala
             .map(f => protobufAnyToGtype(f))
             .toArray
         )
-      case clientMsgs.Error(msg, _) => throw new Exception(msg)
+      case msg: messages.Error => throw new Exception(msg.getMsg)
       case a: scala.Any =>
         throw new Exception(
           s"RemoteMsgsConverter: toGtype error: " +
@@ -28,33 +29,33 @@ object GtypeConverter {
     }
   }
 
-  def protobufAnyToGtype(f: com.google.protobuf.any.Any): gtype.Type = {
-    if (f.is[clientMsgs.NULL])
+  def protobufAnyToGtype(f: com.google.protobuf.Any): gtype.Type = {
+    if (f.is(messages.NULL.getDefaultInstance.getClass))
       return gtype.Null
 
-    if (f.is[clientMsgs.Bool]) {
-      val msg = f.unpack[clientMsgs.Bool]
-      return gtype.bool(msg.value)
+    if (f.is(messages.Bool.getDefaultInstance.getClass)) {
+      val msg = f.unpack(messages.Bool.getDefaultInstance.getClass)
+      return gtype.bool(msg.getValue)
     }
 
-    if (f.is[clientMsgs.Int]) {
-      val msg = f.unpack[clientMsgs.Int]
-      return gtype.int(msg.value)
+    if (f.is(messages.Int.getDefaultInstance.getClass)) {
+      val msg = f.unpack(messages.Int.getDefaultInstance.getClass)
+      return gtype.int(msg.getValue)
     }
 
-    if (f.is[clientMsgs.Double]) {
-      val msg = f.unpack[clientMsgs.Double]
-      return gtype.double(msg.value)
+    if (f.is(messages.Double.getDefaultInstance.getClass)) {
+      val msg = f.unpack(messages.Double.getDefaultInstance.getClass)
+      return gtype.double(msg.getValue)
     }
 
-    if (f.is[clientMsgs.String]) {
-      val msg = f.unpack[clientMsgs.String]
-      return gtype.string(msg.value)
+    if (f.is(messages.String.getDefaultInstance.getClass)) {
+      val msg = f.unpack(messages.String.getDefaultInstance.getClass)
+      return gtype.string(msg.getValue)
     }
 
 
-    if (f.is[clientMsgs.Array]) {
-      val msg = f.unpack[clientMsgs.Array]
+    if (f.is(messages.Array.getDefaultInstance.getClass)) {
+      val msg = f.unpack(messages.Array.getDefaultInstance.getClass)
       return toGtype(msg)
     }
 
@@ -64,38 +65,42 @@ object GtypeConverter {
     )
   }
 
-  def toGeneratedMsg(gValue: gtype.Type): scalapb.GeneratedMessage = {
+  def toGeneratedMsg(gValue: gtype.Type): com.google.protobuf.GeneratedMessageV3 = {
     gValue match {
       case gtype.Null =>
-        clientMsgs.NULL()
+        messages.NULL.newBuilder().build()
       case gtype.bool(value) =>
-        clientMsgs.Bool(value)
+        messages.Bool.newBuilder().setValue(value).build()
       case gtype.int(value) =>
-        clientMsgs.Int(value)
+        messages.Int.newBuilder().setValue(value).build()
       case gtype.double(value) =>
-        clientMsgs.Double(value)
+        messages.Double.newBuilder().setValue(value).build()
       case gtype.string(value, quote) =>
-        clientMsgs.String(value, quote)
+        messages.String.newBuilder()
+          .setValue(value)
+          .setQuote(quote)
+          .build()
       case gtype.array(arr) =>
-        clientMsgs.Array(
-          arr
-            .map(gType =>
-              com.google.protobuf.any.Any.pack(toGeneratedMsg(gType))
-            )
-            .toSeq
-        )
+        var arrayBuilder = messages.Array.newBuilder
+
+        arr.map(gType =>
+          com.google.protobuf.Any.pack(toGeneratedMsg(gType))
+        ) foreach (
+          v => arrayBuilder = arrayBuilder.addArr(v)
+          )
+        arrayBuilder.build()
     }
   }
 
-  def toProtobufAny(remoteMsg: scalapb.GeneratedMessage): com.google.protobuf.any.Any = {
+  def toProtobufAny(remoteMsg: com.google.protobuf.GeneratedMessageV3): com.google.protobuf.Any = {
     remoteMsg match {
-      case _: clientMsgs.NULL => com.google.protobuf.any.Any.pack(clientMsgs.NULL())
-      case msg: clientMsgs.Bool => com.google.protobuf.any.Any.pack(msg)
-      case msg: clientMsgs.Int => com.google.protobuf.any.Any.pack(msg)
-      case msg: clientMsgs.Double => com.google.protobuf.any.Any.pack(msg)
-      case msg: clientMsgs.String => com.google.protobuf.any.Any.pack(msg)
-      case msg: clientMsgs.Array => com.google.protobuf.any.Any.pack(msg)
-      case clientMsgs.Error(msg, _) => throw new Exception(msg)
+      case _: messages.NULL => com.google.protobuf.Any.pack(messages.NULL.getDefaultInstance)
+      case msg: messages.Bool => com.google.protobuf.Any.pack(msg)
+      case msg: messages.Int => com.google.protobuf.Any.pack(msg)
+      case msg: messages.Double => com.google.protobuf.Any.pack(msg)
+      case msg: messages.String => com.google.protobuf.Any.pack(msg)
+      case msg: messages.Array => com.google.protobuf.Any.pack(msg)
+      case msg: messages.Error => throw new Exception(msg.getMsg)
       case a: scala.Any =>
         throw new Exception(
           s"RemoteMsgsConverter: toProtobufAny error: " +
@@ -104,27 +109,31 @@ object GtypeConverter {
     }
   }
 
-  def toProtobufAny(gValue: gtype.Type): com.google.protobuf.any.Any = {
+  def toProtobufAny(gValue: gtype.Type): com.google.protobuf.Any = {
     gValue match {
       case gtype.Null =>
-        com.google.protobuf.any.Any.pack(clientMsgs.NULL())
+        com.google.protobuf.Any.pack(messages.NULL.newBuilder().build())
       case gtype.bool(value) =>
-        com.google.protobuf.any.Any.pack(clientMsgs.Bool(value))
+        com.google.protobuf.Any.pack(messages.Bool.newBuilder().setValue(value).build())
       case gtype.int(value) =>
-        com.google.protobuf.any.Any.pack(clientMsgs.Int(value))
+        com.google.protobuf.Any.pack(messages.Int.newBuilder().setValue(value).build())
       case gtype.double(value) =>
-        com.google.protobuf.any.Any.pack(clientMsgs.Double(value))
+        com.google.protobuf.Any.pack(messages.Double.newBuilder().setValue(value).build())
       case gtype.string(value, quote) =>
-        com.google.protobuf.any.Any.pack(clientMsgs.String(value, quote))
+        com.google.protobuf.Any.pack(messages.String.newBuilder()
+          .setValue(value).setQuote(quote).build()
+        )
       case gtype.array(arr) =>
-        com.google.protobuf.any.Any.pack(
-          clientMsgs.Array(
-            arr
-              .map(gType =>
-                com.google.protobuf.any.Any.pack(toGeneratedMsg(gType))
-              )
-              .toSeq
+        var arrayBuilder = messages.Array.newBuilder
+
+        arr.map(gType =>
+          com.google.protobuf.Any.pack(toGeneratedMsg(gType))
+        ) foreach (
+          v => arrayBuilder = arrayBuilder.addArr(v)
           )
+
+        com.google.protobuf.Any.pack(
+          arrayBuilder.build()
         )
     }
   }

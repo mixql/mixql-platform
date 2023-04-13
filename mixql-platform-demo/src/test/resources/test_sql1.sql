@@ -1,6 +1,6 @@
 let engine "sqlite-local";
 
-CREATE TABLE "Customers" (
+CREATE TABLE if not exists "Customers" (
                            CustomerName varchar(255),
                            ContactName varchar(255),
                            Address varchar(255),

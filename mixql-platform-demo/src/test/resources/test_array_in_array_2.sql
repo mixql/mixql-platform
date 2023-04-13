@@ -1,7 +1,7 @@
 let arr = [TRUE, [TRUE, "gg", 12], 12];
 print("first element in array is " || $arr[0]);
 
-let engine "stub";
+-- let engine "stub-scala-2-12";
 
 --trigger execute on remote stub engine, so that params will be sent to engine
 INSERT INTO Customers (CustomerName, ContactName, Address, City, PostalCode, Country)

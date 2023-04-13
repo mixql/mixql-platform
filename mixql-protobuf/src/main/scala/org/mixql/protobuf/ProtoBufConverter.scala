@@ -1,56 +1,69 @@
 package org.mixql.protobuf
 
-import org.mixql.protobuf.messages.clientMsgs
-import org.mixql.protobuf.messages.clientMsgs.AnyMsg
+import com.google.protobuf.GeneratedMessageV3
+
+import org.mixql.protobuf.generated.messages
+import org.mixql.protobuf.generated.messages.AnyMsg
 
 import scala.util.Try
 
 object ProtoBufConverter {
-  def unpackAnyMsg(array: Array[Byte]): scalapb.GeneratedMessage = {
+  def unpackAnyMsg(array: Array[Byte]): GeneratedMessageV3 = {
     try {
       val anyMsg = AnyMsg.parseFrom(array)
-      anyMsg.`type` match {
-        case "org.mixql.protobuf.messages.clientMsgs.EngineName" =>
-          anyMsg.getMsg.unpack[clientMsgs.EngineName]
-        case "org.mixql.protobuf.messages.clientMsgs.ShutDown" =>
-          anyMsg.getMsg.unpack[clientMsgs.ShutDown]
-        case "org.mixql.protobuf.messages.clientMsgs.Execute" =>
-          anyMsg.getMsg.unpack[clientMsgs.Execute]
-        case "org.mixql.protobuf.messages.clientMsgs.Param" =>
-          anyMsg.getMsg.unpack[clientMsgs.Param]
-        case "org.mixql.protobuf.messages.clientMsgs.Error" =>
-          anyMsg.getMsg.unpack[clientMsgs.Error]
-        case "org.mixql.protobuf.messages.clientMsgs.SetParam" =>
-          anyMsg.getMsg.unpack[clientMsgs.SetParam]
-        case "org.mixql.protobuf.messages.clientMsgs.GetParam" =>
-          anyMsg.getMsg.unpack[clientMsgs.GetParam]
-        case "org.mixql.protobuf.messages.clientMsgs.IsParam" =>
-          anyMsg.getMsg.unpack[clientMsgs.IsParam]
-        case "org.mixql.protobuf.messages.clientMsgs.ParamWasSet" =>
-          anyMsg.getMsg.unpack[clientMsgs.ParamWasSet]
-        case "org.mixql.protobuf.messages.clientMsgs.ExecuteFunction" =>
-          anyMsg.getMsg.unpack[clientMsgs.ExecuteFunction]
-        case "org.mixql.protobuf.messages.clientMsgs.GetDefinedFunctions" =>
-          anyMsg.getMsg.unpack[clientMsgs.GetDefinedFunctions]
-        case "org.mixql.protobuf.messages.clientMsgs.DefinedFunctions" =>
-          anyMsg.getMsg.unpack[clientMsgs.DefinedFunctions]
-        case typeMsg: String => GtypeConverter.toGeneratedMsg(GtypeConverter.protobufAnyToGtype(anyMsg.getMsg))
+      anyMsg.getType match {
+        case "org.mixql.protobuf.generated.messages.EngineName" =>
+          anyMsg.getMsg.unpack(messages.EngineName.getDefaultInstance.getClass)
+        case "org.mixql.protobuf.generated.messages.ShutDown" =>
+          anyMsg.getMsg.unpack(messages.ShutDown.getDefaultInstance.getClass)
+        case "org.mixql.protobuf.generated.messages.Execute" =>
+          anyMsg.getMsg.unpack(messages.Execute.getDefaultInstance.getClass)
+        case "org.mixql.protobuf.generated.messages.Param" =>
+          anyMsg.getMsg.unpack(messages.Param.getDefaultInstance.getClass)
+        case "org.mixql.protobuf.generated.messages.Error" =>
+          anyMsg.getMsg.unpack(messages.Error.getDefaultInstance.getClass)
+        case "org.mixql.protobuf.generated.messages.SetParam" =>
+          anyMsg.getMsg.unpack(messages.SetParam.getDefaultInstance.getClass)
+        case "org.mixql.protobuf.generated.messages.GetParam" =>
+          anyMsg.getMsg.unpack(messages.GetParam.getDefaultInstance.getClass)
+        case "org.mixql.protobuf.generated.messages.IsParam" =>
+          anyMsg.getMsg.unpack(messages.IsParam.getDefaultInstance.getClass)
+        case "org.mixql.protobuf.generated.messages.ParamWasSet" =>
+          anyMsg.getMsg.unpack(messages.ParamWasSet.getDefaultInstance.getClass)
+        case "org.mixql.protobuf.generated.messages.ExecuteFunction" =>
+          anyMsg.getMsg.unpack(messages.ExecuteFunction.getDefaultInstance.getClass)
+        case "org.mixql.protobuf.generated.messages.GetDefinedFunctions" =>
+          anyMsg.getMsg.unpack(messages.GetDefinedFunctions.getDefaultInstance.getClass)
+        case "org.mixql.protobuf.generated.messages.DefinedFunctions" =>
+          anyMsg.getMsg.unpack(messages.DefinedFunctions.getDefaultInstance.getClass)
+        case typeMsg: String => GtypeConverter
+          .toGeneratedMsg(GtypeConverter.protobufAnyToGtype(anyMsg.getMsg))
         case _: scala.Any =>
-          clientMsgs.Error(
-            s"Protobuf any msg converter: Error: Got unknown type ${anyMsg.`type`} of message"
-          )
+          messages
+            .Error
+            .newBuilder()
+            .setMsg(
+              s"Protobuf any msg converter: Error: Got unknown type ${anyMsg.getType} of message"
+            )
+            .build()
       }
     } catch {
       case e: Throwable =>
-        clientMsgs.Error(s"Protobuf anymsg converter: Error: " + e.getMessage)
+        messages.Error
+          .newBuilder()
+          .setMsg(s"Protobuf anymsg converter: Error: " + e.getMessage)
+          .build()
     }
   }
-  def toArray(msg: scalapb.GeneratedMessage): Try[scala.Array[Byte]] = {
+
+  def toArray(msg: GeneratedMessageV3): Try[scala.Array[Byte]] = {
     Try {
-      AnyMsg(
-        msg.getClass.getName,
-        Some(com.google.protobuf.any.Any.pack(msg))
-      ).toByteArray
+      AnyMsg
+        .newBuilder()
+        .setType(msg.getClass.getName)
+        .setMsg(com.google.protobuf.Any.pack(msg))
+        .build()
+        .toByteArray
     }
   }
 }

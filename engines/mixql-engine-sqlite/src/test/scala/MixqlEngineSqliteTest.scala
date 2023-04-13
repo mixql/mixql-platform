@@ -4,14 +4,17 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.mixql.core.context.gtype
 
 import scala.collection.mutable
-import org.mixql.protobuf.messages.clientMsgs
+import org.mixql.protobuf.generated.messages
 
 object MixqlEngineSqliteTest:
   var context: SQLightJDBC = null
   val identity = "MixqlEngineSqliteTest"
-  val engineParams: mutable.Map[String, scalapb.GeneratedMessage] =
+  val engineParams: mutable.Map[String, com.google.protobuf.GeneratedMessageV3] =
     mutable.Map(
-      "mixql.org.engine.sqlight.db.path" -> clientMsgs.String("jdbc:sqlite::memory:")
+      "mixql.org.engine.sqlight.db.path" -> messages.String
+        .newBuilder()
+        .setValue("jdbc:sqlite::memory:")
+        .build()
     )
 
 class MixqlEngineSqliteTest extends AnyFlatSpec with BeforeAndAfterAll:

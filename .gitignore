@@ -36,7 +36,7 @@ metals.sbt
 .bloop
 .antlr
 *.iml
-mixql-protobuf/src/main/scala/scalaPB/org/mixql/protobuf/messages
+mixql-protobuf/src/main/java/org/mixql/protobuf/generated/messages
 
 #projectmatrix
 .sbt

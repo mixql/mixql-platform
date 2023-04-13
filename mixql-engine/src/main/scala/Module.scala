@@ -42,7 +42,7 @@ object Module {
 
   def sendMsgToServerBroker(
     clientAdrress: Array[Byte],
-    msg: scalapb.GeneratedMessage
+    msg: com.google.protobuf.GeneratedMessageV3
   )(implicit
     server: ZMQ.Socket,
     identity: String,

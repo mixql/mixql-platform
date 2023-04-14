@@ -262,7 +262,7 @@ class ClientModule(
     )
     logDebug(
       "server: Clientmodule " + clientName + " sending protobuf message to remote module " + moduleName + " " +
-        client.send(ProtoBufConverter.toArray(msg).get, 0)
+        client.send(ProtoBufConverter.toArray(msg), 0)
     )
   }
 

@@ -1,3 +1,4 @@
+let engine "stub";
 let arr = [TRUE, [TRUE, "gg", 12], 12];
 print("first element in array is " || $arr[0]);
 

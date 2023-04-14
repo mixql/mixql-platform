@@ -51,7 +51,7 @@ object Module {
     println(
       s"Module $identity: sendMsgToServerBroker: convert msg of type Protobuf to Array of bytes"
     )
-    sendMsgToServerBroker(ProtoBufConverter.toArray(msg).get)
+    sendMsgToServerBroker(ProtoBufConverter.toArray(msg))
   }
 
   def readMsgFromServerBroker()(implicit

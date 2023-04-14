@@ -102,10 +102,10 @@ class SQLightJDBC(identity: String, engineParams: mutable.Map[String, gtype.Type
           gtype.string(res.getString(i), "")
         case gtype.bool(_) =>
           gtype.bool(res.getBoolean(i))
-        case gtype.int(_) =>
-          gtype.int(res.getInt(i))
-        case gtype.double(_) =>
-          gtype.double(res.getDouble(i))
+        case gtype.gInt(_) =>
+          gtype.gInt(res.getInt(i))
+        case gtype.gDouble(_) =>
+          gtype.gDouble(res.getDouble(i))
         case gtype.array(_) =>
           readArrayFromResultSet(res.getArray(i))
     }
@@ -127,16 +127,16 @@ class SQLightJDBC(identity: String, engineParams: mutable.Map[String, gtype.Type
             .map { value => gtype.bool(value)
             }
             .toArray
-        case gtype.int(_) =>
+        case gtype.gInt(_) =>
           JavaSqlArrayConverter
             .toIntArray(javaSqlArray)
-            .map { value => gtype.int(value)
+            .map { value => gtype.gInt(value)
             }
             .toArray
-        case gtype.double(_) =>
+        case gtype.gDouble(_) =>
           JavaSqlArrayConverter
             .toDoubleArray(javaSqlArray)
-            .map { value => gtype.double(value)
+            .map { value => gtype.gDouble(value)
             }
             .toArray
         case _: Any =>
@@ -155,11 +155,11 @@ class SQLightJDBC(identity: String, engineParams: mutable.Map[String, gtype.Type
         logWarn(s"SQLightJDBC error while execute: unsupported column type NUMERIC")
         gtype.string("")
       case Types.TINYINT | Types.SMALLINT | Types.INTEGER =>
-        gtype.int(-1)
+        gtype.gInt(-1)
       case Types.BIGINT =>
         logWarn(s"SQLightJDBC error while execute: unsupported column type BIGINT")
         gtype.string("")
-      case Types.REAL | Types.FLOAT | Types.DOUBLE => gtype.double(0.0)
+      case Types.REAL | Types.FLOAT | Types.DOUBLE => gtype.gDouble(0.0)
       case Types.VARBINARY | Types.BINARY =>
         logWarn(s"SQLightJDBC error while execute: unsupported column type VARBINARY or BINARY")
         gtype.string("")

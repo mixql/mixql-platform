@@ -1,4 +1,4 @@
-let engine "sqlite-local";
+let engine "sqlite";
 
 CREATE TABLE if not exists "Customers" (
                            CustomerName varchar(255),

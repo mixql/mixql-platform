@@ -40,7 +40,7 @@ inThisBuild(
     credentials += Credentials(Path.userHome / ".sbt" / "sonatype_credentials"),
     publishTo := {
       val nexus = "https://s01.oss.sonatype.org/"
-      if (version.value.endsWith("-SNAPSHOT") || version.value.endsWith("-snapshot") )
+      if (version.value.endsWith("-SNAPSHOT") || version.value.endsWith("-snapshot"))
         Some("snapshots" at nexus + "content/repositories/snapshots")
       else Some("releases" at nexus + "service/local/staging/deploy/maven2")
     }
@@ -66,7 +66,7 @@ lazy val mixQLCore = projectMatrix
       "org.antlr" % "antlr4-runtime" % "4.8-1",
       "org.apache.logging.log4j" % "log4j-api" % "2.19.0",
       "org.apache.logging.log4j" % "log4j-core" % "2.19.0",
-      "com.typesafe"   % "config"         % "1.4.2"
+      "com.typesafe" % "config" % "1.4.2"
       // "org.ow2.asm"              % "asm"        % "9.3",
       // "org.ow2.asm"              % "asm-tree"   % "9.3",
     )
@@ -98,8 +98,8 @@ lazy val mixQLCoreSCALA3 = mixQLCore.jvm(Scala3)
 lazy val mixQLCoreSCALA212 = mixQLCore.jvm(Scala212)
 lazy val mixQLCoreSCALA213 = mixQLCore.jvm(Scala213)
 
-lazy val mixQLProtobuf = projectMatrix
-  .in(file("mixql-protobuf"))
+lazy val mixQLProtobufCore = projectMatrix
+  .in(file("mixql-protobuf-core"))
   .dependsOn(mixQLCore)
   .settings(
     Compile / PB.targets := Seq(PB.gens.java -> {
@@ -109,9 +109,16 @@ lazy val mixQLProtobuf = projectMatrix
     }),
     libraryDependencies ++= Seq(
       "com.google.protobuf" % "protobuf-java" % "3.13.0" % "protobuf",
-//      "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % scalapb.compiler.Version.scalapbVersion,
-//      "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.9.6-0" % "protobuf",
-//      "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.9.6-0",
+      "org.scalameta" %% "munit" % "0.7.29" % Test
+    )
+  )
+  .jvmPlatform(Seq(Scala3, Scala213, Scala212))
+
+lazy val mixQLProtobuf = projectMatrix
+  .in(file("mixql-protobuf"))
+  .dependsOn(mixQLProtobufCore)
+  .settings(
+    libraryDependencies ++= Seq(
       "org.scalameta" %% "munit" % "0.7.29" % Test
     )
   )
@@ -200,7 +207,7 @@ lazy val mixQLPlatformDemo = project
     mixQLEngineSqlite % "compile->test",
     mixQLEngineStubLocal, //% "compile->compile;compile->test",
     mixQLEngineSqliteLocal, //% "compile->compile;compile->test",
-    mixQLPlatformDemoSimpleFuncs,// % "compile->compile;compile->test"
+    mixQLPlatformDemoSimpleFuncs, // % "compile->compile;compile->test"
   )
   .settings(stageEnginesDemo := {
     //      implicit val log = streams.value.log

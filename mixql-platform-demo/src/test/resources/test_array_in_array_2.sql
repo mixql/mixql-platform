@@ -1,4 +1,4 @@
-let engine stub;
+let engine "stub-scala-2-12";
 
 let arr = [TRUE, [TRUE, "gg", 12], 12];
 print("first element in array is " || $arr[0]);

@@ -76,11 +76,11 @@ class SQLightJDBC(identity: String, engineParams: mutable.Map[String, gtype.Type
             arr = arr :+ gtype.array(rowValues.toArray)
             remainedRows = res.next()
           end while
-          gtype.array(arr.toArray)
+          new gtype.array(arr.toArray)
         } finally {
           if (res != null) res.close()
         }
-      else gtype.Null
+      else new gtype.Null()
     } catch {
       case e: Throwable =>
         throw new Exception(
@@ -98,15 +98,15 @@ class SQLightJDBC(identity: String, engineParams: mutable.Map[String, gtype.Type
                          ): Seq[gtype.Type] =
     for (i <- 1 to columnCount) yield {
       columnTypes(i - 1) match
-        case gtype.string(_, _) =>
+        case _: gtype.string =>
           gtype.string(res.getString(i), "")
-        case gtype.bool(_) =>
+        case _: gtype.bool =>
           gtype.bool(res.getBoolean(i))
-        case gtype.gInt(_) =>
+        case _: gtype.gInt =>
           gtype.gInt(res.getInt(i))
-        case gtype.gDouble(_) =>
+        case _: gtype.gDouble =>
           gtype.gDouble(res.getDouble(i))
-        case gtype.array(_) =>
+        case _: gtype.array =>
           readArrayFromResultSet(res.getArray(i))
     }
 
@@ -115,25 +115,25 @@ class SQLightJDBC(identity: String, engineParams: mutable.Map[String, gtype.Type
     gtype.array({
       //      val javaSqlArray = res.getArray(i)
       javaSqlTypeToClientMsg(javaSqlArray.getBaseType) match
-        case gtype.string(_, _) =>
+        case _: gtype.string =>
           JavaSqlArrayConverter
             .toStringArray(javaSqlArray)
             .map { str => gtype.string(str, "")
             }
             .toArray
-        case gtype.bool(_) =>
+        case _: gtype.bool =>
           JavaSqlArrayConverter
             .toBooleanArray(javaSqlArray)
             .map { value => gtype.bool(value)
             }
             .toArray
-        case gtype.gInt(_) =>
+        case _: gtype.gInt =>
           JavaSqlArrayConverter
             .toIntArray(javaSqlArray)
             .map { value => gtype.gInt(value)
             }
             .toArray
-        case gtype.gDouble(_) =>
+        case _: gtype.gDouble =>
           JavaSqlArrayConverter
             .toDoubleArray(javaSqlArray)
             .map { value => gtype.gDouble(value)

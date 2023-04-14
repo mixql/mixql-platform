@@ -224,7 +224,7 @@ class ClientModule(
     import org.mixql.protobuf.GtypeConverter
 
     sendMsg(messages.IsParam.newBuilder().setName(name).build())
-    GtypeConverter.toGtype(recvMsg()).asInstanceOf[gtype.bool].value
+    GtypeConverter.toGtype(recvMsg()).asInstanceOf[gtype.bool].getValue
   }
 
   def engineStarted(): Boolean =

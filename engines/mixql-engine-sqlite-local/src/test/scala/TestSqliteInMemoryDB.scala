@@ -6,14 +6,14 @@ class TestSqliteInMemoryDB extends MixqlEngineSqliteTest {
 
   it should ("create table") in {
     val gType = createTableCustomers()
-    assert(gType.isInstanceOf[gtype.Null.type])
+    assert(gType.isInstanceOf[gtype.Null])
   }
 
 
   it should ("insert values in table") in {
       createTableCustomers()
       val gType = insertValuesIntoCustomers()
-      assert(gType.isInstanceOf[gtype.Null.type])
+      assert(gType.isInstanceOf[gtype.Null])
   }
 
   it should ("select all values from table") in {

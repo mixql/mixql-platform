@@ -13,20 +13,20 @@ public class GtypeConverter {
 
     public static Type toGtype(com.google.protobuf.GeneratedMessageV3 remoteMsg) throws Exception {
         if (remoteMsg instanceof NULL)
-            return Null$.MODULE$;
+            return new Null();
 
         if (remoteMsg instanceof Int)
-            return gInt$.MODULE$.apply(((Int) remoteMsg).getValue());
+            return new gInt(((Int) remoteMsg).getValue());
 
         if (remoteMsg instanceof Double)
-            return gDouble$.MODULE$.apply(((Double) remoteMsg).getValue());
+            return new gDouble(((Double) remoteMsg).getValue());
 
         if (remoteMsg instanceof Bool)
-            return bool$.MODULE$.apply(((Bool) remoteMsg).getValue());
+            return new bool(((Bool) remoteMsg).getValue());
 
         if (remoteMsg instanceof String) {
             String msg = (String) remoteMsg;
-            return string$.MODULE$.apply(msg.getValue(), msg.getQuote());
+            return new string(msg.getValue(), msg.getQuote());
         }
 
         if (remoteMsg instanceof Array) {
@@ -38,7 +38,7 @@ public class GtypeConverter {
                 gtypeList[i++] = protobufAnyToGtype(anyValue);
             }
 
-            return array$.MODULE$.apply(gtypeList);
+            return new array(gtypeList);
         }
 
         if (remoteMsg instanceof Error)
@@ -55,26 +55,26 @@ public class GtypeConverter {
     public static Type protobufAnyToGtype(com.google.protobuf.Any f) throws Exception {
         System.out.println("mixql-protobuf: protobufAnyToGtype");
         if (f.is(NULL.getDefaultInstance().getClass()))
-            return Null$.MODULE$;
+            return new Null();
 
         if (f.is(Bool.getDefaultInstance().getClass())) {
             Bool msg = f.unpack(Bool.getDefaultInstance().getClass());
-            return bool$.MODULE$.apply(msg.getValue());
+            return new bool(msg.getValue());
         }
 
         if (f.is(Int.getDefaultInstance().getClass())) {
             Int msg = f.unpack(Int.getDefaultInstance().getClass());
-            return gInt$.MODULE$.apply(msg.getValue());
+            return new gInt(msg.getValue());
         }
 
         if (f.is(Double.getDefaultInstance().getClass())) {
             Double msg = f.unpack(Double.getDefaultInstance().getClass());
-            return gDouble$.MODULE$.apply(msg.getValue());
+            return new gDouble(msg.getValue());
         }
 
         if (f.is(String.getDefaultInstance().getClass())) {
             String msg = f.unpack(String.getDefaultInstance().getClass());
-            return string$.MODULE$.apply(msg.getValue(), msg.getQuote());
+            return new string(msg.getValue(), msg.getQuote());
         }
 
 
@@ -94,25 +94,25 @@ public class GtypeConverter {
 
     public static com.google.protobuf.GeneratedMessageV3 toGeneratedMsg(Type gValue) throws Exception {
         System.out.println("mixql-protobuf: toGeneratedMsg");
-        if (gValue instanceof Null$)
+        if (gValue instanceof Null)
             return NULL.newBuilder().getDefaultInstanceForType();
 
         if (gValue instanceof bool)
-            return Bool.newBuilder().setValue(((bool) gValue).value()).build();
+            return Bool.newBuilder().setValue(((bool) gValue).getValue()).build();
 
         if (gValue instanceof gInt)
-            return Int.newBuilder().setValue(((gInt) gValue).value()).build();
+            return Int.newBuilder().setValue(((gInt) gValue).getValue()).build();
 
         if (gValue instanceof gDouble)
-            return Double.newBuilder().setValue(((gDouble) gValue).value()).build();
+            return Double.newBuilder().setValue(((gDouble) gValue).getValue()).build();
 
         if (gValue instanceof string) {
             string msg = (string) gValue;
-            return String.newBuilder().setValue(msg.value()).setQuote(msg.quote()).build();
+            return String.newBuilder().setValue(msg.getValue()).setQuote(msg.getQuote()).build();
         }
 
         if (gValue instanceof array) {
-            Type[] gtypeArr = ((array) gValue).arr();
+            Type[] gtypeArr = ((array) gValue).getArr();
             List<Any> anyValueList = new ArrayList<>();
 
             for (Type gType : gtypeArr) {
@@ -163,27 +163,27 @@ public class GtypeConverter {
     }
 
     public static com.google.protobuf.Any toProtobufAny(Type gValue) throws Exception {
-        if (gValue instanceof Null$)
+        if (gValue instanceof Null)
             return Any.pack(NULL.getDefaultInstance());
 
         if (gValue instanceof bool)
-            return Any.pack(Bool.newBuilder().setValue(((bool) gValue).value()).build());
+            return Any.pack(Bool.newBuilder().setValue(((bool) gValue).getValue()).build());
 
         if (gValue instanceof gInt)
-            return Any.pack(Int.newBuilder().setValue(((gInt) gValue).value()).build());
+            return Any.pack(Int.newBuilder().setValue(((gInt) gValue).getValue()).build());
 
         if (gValue instanceof gDouble)
-            return Any.pack(Double.newBuilder().setValue(((gDouble) gValue).value()).build());
+            return Any.pack(Double.newBuilder().setValue(((gDouble) gValue).getValue()).build());
 
         if (gValue instanceof string) {
             string msg = (string) gValue;
             return com.google.protobuf.Any.pack(String.newBuilder()
-                    .setValue(msg.value()).setQuote(msg.quote()).build()
+                    .setValue(msg.getValue()).setQuote(msg.getQuote()).build()
             );
         }
 
         if (gValue instanceof array) {
-            Type[] gtypeArr = ((array) gValue).arr();
+            Type[] gtypeArr = ((array) gValue).getArr();
             List<Any> anyValueList = new ArrayList<>();
 
             for (Type gType : gtypeArr) {

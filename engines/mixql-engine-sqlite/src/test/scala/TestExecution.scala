@@ -18,7 +18,7 @@ class TestExecution extends MixqlEngineSqliteTest {
       println(
         MixqlEngineSqliteTest.identity + " create table res : " + gType.toString
       )
-      assert(gType.isInstanceOf[gtype.Null.type])
+      assert(gType.isInstanceOf[gtype.Null])
     }
 
     {
@@ -32,7 +32,7 @@ class TestExecution extends MixqlEngineSqliteTest {
       println(
         MixqlEngineSqliteTest.identity + " insert into res : " + gType.toString
       )
-      assert(gType.isInstanceOf[gtype.Null.type])
+      assert(gType.isInstanceOf[gtype.Null])
     }
 
     {

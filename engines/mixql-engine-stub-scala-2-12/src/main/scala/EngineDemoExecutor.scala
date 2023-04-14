@@ -83,7 +83,7 @@ object EngineDemoExecutor extends IModuleExecutor {
           import org.mixql.core.context.gtype
           import org.mixql.protobuf.GtypeConverter
           val gParams: Seq[gtype.Type] = if (msg.hasParams) {
-            val p = GtypeConverter.toGtype(msg.getParams).asInstanceOf[gtype.array].arr
+            val p = GtypeConverter.toGtype(msg.getParams).asInstanceOf[gtype.array].getArr
             println(s"[Module-$identity] Params provided for function ${msg.getName}: " + p)
             p
           } else Seq()

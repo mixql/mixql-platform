@@ -1,4 +1,4 @@
-let engine "stub-scala-2-12";
+-- let engine "stub-scala-2-12";
 let res = "";
 for r in [[1], [3], [5]] loop --simulate select that returns array in array
   for v in $r loop

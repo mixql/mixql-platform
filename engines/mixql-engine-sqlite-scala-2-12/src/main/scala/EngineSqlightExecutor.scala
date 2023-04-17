@@ -5,13 +5,12 @@ import org.mixql.protobuf.generated.messages
 
 import scala.collection.mutable
 import org.mixql.engine.core.{BrakeException, IModuleExecutor}
-import org.mixql.engine.core.Module.{sendMsgToServerBroker, *}
+import org.mixql.engine.core.Module.{sendMsgToServerBroker, _}
 import org.zeromq.ZMQ
 import org.mixql.core.function.FunctionInvoker
 
-object EngineSqlightExecutor
-  extends IModuleExecutor
-    with java.lang.AutoCloseable :
+object EngineSqlightExecutor extends IModuleExecutor
+  with java.lang.AutoCloseable {
   val engineParams: mutable.Map[String, com.google.protobuf.GeneratedMessageV3] =
     mutable.Map()
 
@@ -28,8 +27,8 @@ object EngineSqlightExecutor
                                        identity: String,
                                        clientAddress: Array[Byte]
   ): Unit = {
-    if context == null then context = SQLightJDBC(identity, engineParams)
-    val clientAddressStr = String(clientAddress)
+    if (context == null) context = new SQLightJDBC(identity, engineParams)
+    val clientAddressStr = new String(clientAddress)
     ProtoBufConverter.unpackAnyMsg(msg) match {
       case msg: messages.Execute =>
         println(
@@ -93,7 +92,7 @@ object EngineSqlightExecutor
         println(s"[Module-$identity]: Started shutdown")
         throw new BrakeException()
       case msg: messages.ExecuteFunction =>
-        try
+        try {
           println(s"[Module-$identity] Started executing function ${msg.getName}")
           import org.mixql.core.context.gtype
           import org.mixql.protobuf.GtypeConverter
@@ -116,7 +115,8 @@ object EngineSqlightExecutor
             clientAddress,
             GtypeConverter.toGeneratedMsg(gres)
           )
-        catch
+        }
+        catch {
           case e: Throwable =>
             sendMsgToServerBroker(
               clientAddress,
@@ -125,6 +125,7 @@ object EngineSqlightExecutor
                   e.getMessage
               ).build()
             )
+        }
       case msg: messages.GetDefinedFunctions =>
         import collection.JavaConverters._
         println(s"[Module-$identity]: Received request to get defined functions from server")
@@ -138,4 +139,5 @@ object EngineSqlightExecutor
   }
 
   override def close(): Unit =
-    if context != null then context.close()
+    if (context != null) context.close()
+}

@@ -36,7 +36,7 @@ object EngineStubLocal extends InternalEngine {
       logInfo(s"Started executing function $name")
       logDebug(s"Params provided for function $name : " + params.toString())
       logDebug(s"Executing function $name with params " + params.toString)
-      val res = FunctionInvoker.invoke(functions, name, StubContext(), params.map(p => gtype.unpack(p)))
+      val res = FunctionInvoker.invoke(functions, name, StubContext(), params.map(p => gtype.unpack(p)).toList)
       logInfo(s" Successfully executed function $name with params " + params.toString +
         s"\nResult: $res")
       gtype.pack(res)

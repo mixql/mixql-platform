@@ -3,7 +3,7 @@ ThisBuild / scalaVersion := "3.2.1"
 inThisBuild(
   List(
     organization := "org.mixql",
-    version := "0.3.2-SNAPSHOT", //change version for all projects
+    version := "0.4.0-SNAPSHOT", //change version for all projects
     organizationName := "MixQL",
     organizationHomepage := Some(url("https://mixql.org/")),
     developers := List(
@@ -60,6 +60,7 @@ lazy val mixQLCore = projectMatrix
     Antlr4 / antlr4GenListener := false, // default: true
     Antlr4 / antlr4GenVisitor := true, // default: true
     Antlr4 / antlr4PackageName := Some("org.mixql.core.generated"),
+    Antlr4 / antlr4FolderToClean := (Antlr4 / javaSource).value / "org" / "mixql"/  "core" / "generated",
     //    Antlr4 / javaSource := baseDirectory.value / "src" / "main" / "java" / "antlr4",
     Compile / unmanagedSourceDirectories += baseDirectory.value / "src" / "main" / "java" / "antlr4", // For stupid IDEA
     libraryDependencies ++= Seq(

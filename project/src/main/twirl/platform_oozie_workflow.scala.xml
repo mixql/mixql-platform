@@ -1,0 +1,35 @@
+@(name: String, version: String, files: List[String])
+<workflow-app name="L=${loading_id} WF=${wf_id} NM=${description} Platform=@name-@version" xmlns="uri:oozie:workflow:0.5">
+    <start to='run-platform-oozie'/>
+    <action name='run-platform-oozie'>
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <configuration>
+                <property>
+                    <name>mapreduce.job.queuename</name>
+                    <value>${wf:conf("mapreduce.job.queuename")}</value>
+                </property>
+                <property>
+                    <name>oozie.action.max.output.data</name>
+                    <value>3000000</value>
+                </property>
+            </configuration>
+            <exec>./mixql-platform-oozie</exec>
+            <argument>${wf:id()}</argument>
+            <env-var>JOB_ID=${wf:id()}</env-var>
+            <env-var>SPARK_QUEUE=${wf:conf("mapreduce.job.queuename")}</env-var>
+            <env-var>WF_ID=${wf:conf("wf_id")}</env-var>
+            <env-var>WF_NAME=${description}</env-var>
+            <file>application.conf</file>
+            @for(file<- files) {
+            <file>@file</file>}
+        </shell>
+        <ok to="end"/>
+        <error to="kill"/>
+    </action>
+    <kill name="kill">
+        <message>Workflow failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>

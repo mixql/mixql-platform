@@ -1,0 +1,65 @@
+@(PLATFORM_OOZIE_CLASS: String, JARS: List[String])#!/usr/bin/env bash
+
+# Fail upon error
+# set -e;
+
+#!!!!!!!!!!!!TO-DO!!!!!!!!!Path to oozie
+JARS_OOZIE=$(find /usr/oozie/ -type f -name "*.jar" | awk -vORS=":" '{print}');
+export ENV_JARS="$CLASSPATH:$JARS_OOZIE"
+#!!!!!!!!!!!!TO-DO!!!!!!!!!
+
+echo [MIXQL-PLATFORM-OOZIE-DETAIL]
+echo "Run MIXQL-PLATFORM-OOZIE on $(hostname -f) as $(whoami) in $(pwd)";
+
+USER_CONFIG_FILE=application.conf
+if [[ ! -s ./$USER_CONFIG_FILE ]]; then
+    echo "Error: $USER_CONFIG_FILE is empty or missing" >&2;
+    exit 1;
+fi;
+
+echo "----------------"
+echo [MIXQL-PLATFORM-OOZIE-DETAIL]
+echo "HADOOP_CONF_DIR is ${HADOOP_CONF_DIR:-undefined}";
+export HADOOP_CONF_DIR=/etc/hadoop/conf;
+
+for var in $(env | awk -F'=' '$1 ~ /^[A-Z]+(_[A-Z]+)*$/ {print $1}' | sort); do
+    echo "$var='${!var}'";
+done;
+echo "----------------"
+
+echo "--------------------------"
+echo [DcmSQL-DETAIL]
+cat $USER_CONFIG_FILE
+echo "--------------------------"
+
+echo "--------------------------"
+echo [MIXQL-PLATFORM-OOZIE-DETAIL]
+cat log4j2.xml
+echo "--------------------------"
+
+#throw error
+set -o pipefail
+# run app
+echo "--------------------------"
+
+echo [MIXQL-PLATFORM-OOZIE-COPY-JARS]
+#Fix long classpath error in java -cp arguments
+echo "Copy platform jars to platform-jars folder"
+arrayPlJars=(@(JARS.mkString(" \\\n")))
+targetPlJars="platform-jars"
+mkdir $targetPlJars
+for element in "${arrayPlJars[@@]}"
+do
+    echo "copying $element to $targetPlJars"
+    cp $element $targetPlJars/$element
+done
+echo "--------------------------"
+
+echo [MIXQL-PLATFORM-OOZIE-RUN]
+
+OOZIE_ID=$1;
+java -Dconfig.file=./$USER_CONFIG_FILE -Dlog4j2.configurationFile=file:log4j2.xml -Dlog4j2.debug=false -cp \
+    "$PWD/$targetPlJars/*:$ENV_JARS" \
+    @PLATFORM_OOZIE_CLASS --oozie-id $OOZIE_ID
+
+exit $?;

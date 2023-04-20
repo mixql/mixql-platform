@@ -1,0 +1,30 @@
+@(ENGINE_NAME: String, ENGINE_CLASS: String, JARS: List[String])#!/usr/bin/env bash
+
+# Fail upon error
+# set -e;
+
+echo [@ENGINE_NAME-DETAIL]
+echo "Run @ENGINE_NAME on $(hostname -f) as $(whoami) in $(pwd)";
+
+echo "----------------"
+echo [@ENGINE_NAME-DETAIL]
+for var in $(env | awk -F'=' '$1 ~ /^[A-Z]+(_[A-Z]+)*$/ {print $1}' | sort); do
+    echo "$var='${!var}'";
+done;
+echo "----------------"
+
+#throw error
+set -o pipefail
+# run app
+echo "--------------------------"
+echo [@ENGINE_NAME-RUN]
+
+java -Dconfig.file=./application.conf -Dlog4j2.configurationFile=file:log4j2.xml -Dlog4j2.debug=false \
+    -cp "@(JARS.map(
+            jar => "$PWD/" + jar
+         ).mkString(":\\\n"))" \
+    @ENGINE_CLASS $@@
+
+EXIT_CODE=$?;
+
+exit $EXIT_CODE;

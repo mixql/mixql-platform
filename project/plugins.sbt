@@ -21,3 +21,6 @@ libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.4.2",
   "com.thesamet.scalapb" %% "compilerplugin" % "0.11.10"
 )
+dependencyOverrides += "org.scala-lang.modules" % "scala-xml_2.12" % "2.1.0"
+
+enablePlugins(SbtTwirl)

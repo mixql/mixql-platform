@@ -3,6 +3,10 @@ import com.typesafe.sbt.packager.SettingsHelper.{
   makeDeploymentSettings
 }
 
+lazy val engineClassName = settingKey[String]("Name of engine's main class")
+
+engineClassName:= "org.mixql.engine.sqlite.MixQlEngineSqlight"
+
 updateOptions in ThisBuild := updateOptions.value.withGigahorse(false)
 
 name := "mixql-engine-sqlite"

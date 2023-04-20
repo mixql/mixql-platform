@@ -60,7 +60,7 @@ lazy val mixQLCore = projectMatrix
     Antlr4 / antlr4GenListener := false, // default: true
     Antlr4 / antlr4GenVisitor := true, // default: true
     Antlr4 / antlr4PackageName := Some("org.mixql.core.generated"),
-    Antlr4 / antlr4FolderToClean := (Antlr4 / javaSource).value / "org" / "mixql"/  "core" / "generated",
+    Antlr4 / antlr4FolderToClean := (Antlr4 / javaSource).value / "org" / "mixql" / "core" / "generated",
     //    Antlr4 / javaSource := baseDirectory.value / "src" / "main" / "java" / "antlr4",
     Compile / unmanagedSourceDirectories += baseDirectory.value / "src" / "main" / "java" / "antlr4", // For stupid IDEA
     libraryDependencies ++= Seq(
@@ -188,6 +188,11 @@ lazy val stageEnginesDemo =
     "stage engines and get jars for mixqlPlatformDemo"
   )
 
+lazy val stageEnginesOozie =
+  taskKey[Seq[(File, String)]](
+    "stage engines and get jars for mixqlPlatformOozie"
+  )
+
 lazy val mixQLEngineStubLocal = project
   .in(file("engines/mixql-engine-stub-local"))
   .dependsOn(mixQLEngineInternalSCALA3)
@@ -248,6 +253,60 @@ lazy val mixQLPlatformDemo = project
     cache
   })
 
+lazy val mixQLOozie = project.in(file("mixql-oozie"))
+
+lazy val engineClassName = settingKey[String]("Name of engine's main class")
+
+lazy val mixQLPlatformOozie = project
+  .in(file("mixql-platform-oozie"))
+  .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
+  .dependsOn(
+    mixQLCluster,
+    mixQLEngineSqliteLocal, //% "compile->compile;compile->test",
+    mixQLOozie
+  )
+  .settings(stageEnginesOozie := {
+    (mixQLEngineSqlite / Universal / stage).value
+    val baseDirs: Map[String, File] = Map(
+      (mixQLEngineSqlite / name).value -> (mixQLEngineSqlite / baseDirectory).value
+    )
+
+    val engineClasses: Map[String, String] = Map(
+      (mixQLEngineSqlite / name).value -> (mixQLEngineSqlite / engineClassName).value
+    )
+
+    //      implicit val log = streams.value.log
+    //      log.info("-------stageEnginesDemo---------")
+    var cache: Seq[(File, String)] = Seq()
+
+    //Generate shell script in engine's lib folder
+    baseDirs.keys.foreach(engineName => {
+      val baseDir = baseDirs(engineName)
+      val jars = (baseDir / "target" / "universal" / "stage" / "lib")
+        .listFiles()
+        .toSeq
+        .map(f => f.getName).toList
+
+      val target = baseDir / "target" / "universal" / "stage" / "lib" / engineName
+      RemoteEngineShell.gen_shell(target, engineName, engineClasses(engineName), jars)
+    })
+
+//    Add engine's libs to cache
+    baseDirs.values.foreach(baseDir => {
+      cache = cache ++
+        (baseDir / "target" / "universal" / "stage" / "lib")
+          .listFiles()
+          .toSeq
+          .map(f => (f, f.getName))
+    })
+
+    cache
+  },
+    excludeDependencies ++= Seq(
+      ExclusionRule("org.scala-lang.modules", "scala-xml_3")
+    )
+  )
+
 //
 //lazy val cleanAll = taskKey[Unit]("Stage all projects")
 //
@@ -283,5 +342,14 @@ archiveMixQLPlatformDemo := Def
   .sequential(
     mixQLPlatformDemo / Universal / packageBin,
     mixQLPlatformDemo / Universal / packageZipTarball
+  )
+  .value
+
+lazy val archiveMixQLPlatformOozie =
+  taskKey[Unit]("Create dist archive of platform-oozie")
+archiveMixQLPlatformOozie := Def
+  .sequential(
+    mixQLPlatformOozie / Universal / packageBin,
+    mixQLPlatformOozie / Universal / packageZipTarball
   )
   .value

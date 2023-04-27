@@ -1,4 +1,4 @@
-import com.google.protobuf.GeneratedMessageV3
+import messages.Message
 class TestExecution extends MixqlEngineSqliteTest {
   behavior of "start engine, execute sql statements and close engine"
 

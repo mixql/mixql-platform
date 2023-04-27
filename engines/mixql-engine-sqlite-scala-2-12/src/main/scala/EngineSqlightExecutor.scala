@@ -1,7 +1,7 @@
 package org.mixql.engine.sqlite
 
 import org.mixql.protobuf.{GtypeConverter, ProtoBufConverter}
-import org.mixql.protobuf.generated.messages
+import org.mixql.protobuf.messages
 
 import scala.collection.mutable
 import org.mixql.engine.core.{BrakeException, IModuleExecutor}
@@ -11,7 +11,7 @@ import org.mixql.core.function.FunctionInvoker
 
 object EngineSqlightExecutor extends IModuleExecutor
   with java.lang.AutoCloseable {
-  val engineParams: mutable.Map[String, com.google.protobuf.GeneratedMessageV3] =
+  val engineParams: mutable.Map[String, messages.Message] =
     mutable.Map()
 
   var context: SQLightJDBC = null
@@ -32,12 +32,12 @@ object EngineSqlightExecutor extends IModuleExecutor
     ProtoBufConverter.unpackAnyMsg(msg) match {
       case msg: messages.Execute =>
         println(
-          s"[Module-$identity]: Received Execute msg from server statement: ${msg.getStatement}"
+          s"[Module-$identity]: Received Execute msg from server statement: ${msg.statement}"
         )
-        println(s"[Module-$identity]: Executing command ${msg.getStatement}")
+        println(s"[Module-$identity]: Executing command ${msg.statement}")
         //        Thread.sleep(1000)
-        val res = context.execute(msg.getStatement)
-        println(s"[Module-$identity]: Successfully executed command ${msg.getStatement}")
+        val res = context.execute(msg.statement)
+        println(s"[Module-$identity]: Successfully executed command ${msg.statement}")
         println(
           s"[Module-$identity]: Sending reply on Execute msg " + res.getClass.getName
         )
@@ -46,67 +46,65 @@ object EngineSqlightExecutor extends IModuleExecutor
         try {
           println(
             s"[Module-$identity] :Received SetParam msg from server $clientAddressStr: " +
-              s"must set parameter ${msg.getName} "
+              s"must set parameter ${msg.name} "
           )
           engineParams.put(
-            msg.getName,
-            GtypeConverter.toGeneratedMsg(GtypeConverter.clientMessageToGtype(msg.getValue))
+            msg.name,
+            ProtoBufConverter.unpackAnyMsg(msg.json)
           )
-          println(s"[Module-$identity]: Sending reply on SetParam  ${msg.getName} msg")
-          sendMsgToServerBroker(clientAddress, messages.ParamWasSet.getDefaultInstance)
+          println(s"[Module-$identity]: Sending reply on SetParam  ${msg.name} msg")
+          sendMsgToServerBroker(clientAddress, messages.ParamWasSet())
         } catch {
           case e: Throwable =>
             sendMsgToServerBroker(
               clientAddress,
-              messages.Error.newBuilder().setMsg(
+              messages.Error(
                 s"[Module-$identity] to ${clientAddressStr}: error while executing Set Param command: " +
                   e.getMessage
-              ).build()
+              )
             )
         }
       case msg: messages.GetParam =>
-        println(s"[Module-$identity]: Received GetParam ${msg.getName} msg from server")
-        println(s"[Module-$identity]:  Sending reply on GetParam ${msg.getName} msg")
+        println(s"[Module-$identity]: Received GetParam ${msg.name} msg from server")
+        println(s"[Module-$identity]:  Sending reply on GetParam ${msg.name} msg")
         try {
-          sendMsgToServerBroker(clientAddress, engineParams(msg.getName))
+          sendMsgToServerBroker(clientAddress, engineParams(msg.name))
         } catch {
           case e: Throwable =>
             sendMsgToServerBroker(
               clientAddress,
-              messages.Error.newBuilder().setMsg(
+              messages.Error(
                 s"[Module-$identity] to ${clientAddressStr}: error while executing get Param command: " +
                   e.getMessage
-              ).build()
+              )
             )
         }
       case msg: messages.IsParam =>
-        println(s"[Module-$identity]: Received GetParam ${msg.getName} msg from server")
-        println(s"[Module-$identity]:  Sending reply on GetParam ${msg.getName} msg")
+        println(s"[Module-$identity]: Received GetParam ${msg.name} msg from server")
+        println(s"[Module-$identity]:  Sending reply on GetParam ${msg.name} msg")
         sendMsgToServerBroker(
           clientAddress,
-          messages.Bool.newBuilder()
-            .setValue(engineParams.keys.toSeq.contains(msg.getName))
-            .build()
+          messages.Bool(engineParams.keys.toSeq.contains(msg.name))
         )
       case _: messages.ShutDown =>
         println(s"[Module-$identity]: Started shutdown")
         throw new BrakeException()
       case msg: messages.ExecuteFunction =>
         try {
-          println(s"[Module-$identity] Started executing function ${msg.getName}")
+          println(s"[Module-$identity] Started executing function ${msg.name}")
           import org.mixql.core.context.gtype
           import org.mixql.protobuf.GtypeConverter
-          val gParams: Seq[gtype.Type] = if (msg.hasParams) {
-            val p = GtypeConverter.toGtype(msg.getParams).asInstanceOf[gtype.array].getArr
-            println(s"[Module-$identity] Params provided for function ${msg.getName}: " + p)
+          val gParams: Seq[gtype.Type] = if (msg.params.arr.nonEmpty) {
+            val p = GtypeConverter.toGtype(msg.params).asInstanceOf[gtype.array].arr
+            println(s"[Module-$identity] Params provided for function ${msg.name}: " + p)
             p
           } else Seq()
-          println(s"[Module-$identity] Executing function ${msg.getName} with params " +
+          println(s"[Module-$identity] Executing function ${msg.name} with params " +
             gParams.toString)
-          val res = FunctionInvoker.invoke(functions, msg.getName, context,
+          val res = FunctionInvoker.invoke(functions, msg.name, context,
             gParams.map(p => gtype.unpack(p)).toList
           )
-          println(s"[Module-$identity] : Successfully executed function ${msg.getName} with params " +
+          println(s"[Module-$identity] : Successfully executed function ${msg.name} with params " +
             gParams.toString +
             s"\nResult: $res"
           )
@@ -120,10 +118,10 @@ object EngineSqlightExecutor extends IModuleExecutor
           case e: Throwable =>
             sendMsgToServerBroker(
               clientAddress,
-              messages.Error.newBuilder().setMsg(
-                s"[Module-$identity] to ${clientAddressStr}: error while executing function ${msg.getName}: " +
+              messages.Error(
+                s"[Module-$identity] to ${clientAddressStr}: error while executing function ${msg.name}: " +
                   e.getMessage
-              ).build()
+              )
             )
         }
       case msg: messages.GetDefinedFunctions =>
@@ -131,7 +129,7 @@ object EngineSqlightExecutor extends IModuleExecutor
         println(s"[Module-$identity]: Received request to get defined functions from server")
         sendMsgToServerBroker(
           clientAddress,
-          messages.DefinedFunctions.newBuilder().addAllArr(functions.keys.asJava).build()
+          messages.DefinedFunctions(functions.keys.toArray)
         )
     }
 

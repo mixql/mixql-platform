@@ -1,7 +1,7 @@
 package org.mixql.engine.sqlite
 
 import org.mixql.protobuf.GtypeConverter
-import org.mixql.protobuf.generated.messages
+import org.mixql.protobuf.messages
 
 import java.sql.*
 import scala.collection.mutable
@@ -11,7 +11,7 @@ object SQLightJDBC {
 }
 
 class SQLightJDBC(identity: String,
-                  engineParams: mutable.Map[String, com.google.protobuf.GeneratedMessageV3] = mutable.Map())
+                  engineParams: mutable.Map[String, messages.Message] = mutable.Map())
   extends java.lang.AutoCloseable :
 
   def init() = {
@@ -38,7 +38,7 @@ class SQLightJDBC(identity: String,
 
   // returns messages.Type
   // TO-DO Should return iterator?
-  def execute(stmt: String): com.google.protobuf.GeneratedMessageV3 = {
+  def execute(stmt: String): messages.Message = {
     var jdbcStmt: Statement = null
 
     try {
@@ -54,7 +54,7 @@ class SQLightJDBC(identity: String,
 
           val resultSetMetaData = res.getMetaData
           val columnCount = resultSetMetaData.getColumnCount
-          val columnTypes: Seq[com.google.protobuf.GeneratedMessageV3] =
+          val columnTypes: Seq[messages.Message] =
             getColumnTypes(resultSetMetaData, columnCount)
           val columnNames: Seq[String] =
             for (i <- 1 to columnCount) yield resultSetMetaData.getColumnName(i)
@@ -74,18 +74,18 @@ class SQLightJDBC(identity: String,
         } finally {
           if (res != null) res.close()
         }
-      else messages.NULL.getDefaultInstance
+      else messages.NULL
     } catch {
       case e: Throwable =>
-        messages.Error.newBuilder().setMsg(
+        messages.Error(
           s"Module $identity: SQLightJDBC error while execute: " + e.getMessage
-        ).build()
+        )
     } finally {
       if jdbcStmt != null then jdbcStmt.close()
     }
   }
 
-  def seqGeneratedMsgToArray(msgs: Seq[com.google.protobuf.GeneratedMessageV3]): messages.Array =
+  def seqGeneratedMsgToArray(msgs: Seq[messages.Message]): messages.Array =
     var arrayBuilder = messages.Array.newBuilder
 
     msgs.map(anyMsg =>
@@ -99,23 +99,23 @@ class SQLightJDBC(identity: String,
   def getRowFromResultSet(
                            res: ResultSet,
                            columnCount: Int,
-                           columnTypes: Seq[com.google.protobuf.GeneratedMessageV3]
-                         ): Seq[com.google.protobuf.GeneratedMessageV3] =
+                           columnTypes: Seq[messages.Message]
+                         ): Seq[messages.Message] =
 
     for (i <- 1 to columnCount) yield {
       columnTypes(i - 1) match
         case _: messages.String =>
           messages.String
-            .newBuilder()
+            .
             .setValue(res.getString(i))
             .setQuote("")
             .build()
         case _: messages.Bool =>
-          messages.Bool.newBuilder().setValue(res.getBoolean(i)).build()
+          messages.Bool..setValue(res.getBoolean(i))
         case _: messages.Int =>
-          messages.Int.newBuilder().setValue(res.getInt(i)).build()
+          messages.Int..setValue(res.getInt(i))
         case _: messages.Double =>
-          messages.Double.newBuilder().setValue(res.getDouble(i)).build()
+          messages.Double..setValue(res.getDouble(i))
         case _: messages.Array =>
           readArrayFromResultSet(res.getArray(i))
     }
@@ -137,7 +137,7 @@ class SQLightJDBC(identity: String,
           JavaSqlArrayConverter
             .toStringArray(javaSqlArray)
             .map { str =>
-              messages.String.newBuilder().setValue(str).setQuote("").build()
+              messages.String..setValue(str).setQuote("")
             }
             .toSeq
             .map { anyMsg =>
@@ -149,7 +149,7 @@ class SQLightJDBC(identity: String,
           JavaSqlArrayConverter
             .toBooleanArray(javaSqlArray)
             .map {
-              value => messages.Bool.newBuilder().setValue(value).build()
+              value => messages.Bool..setValue(value)
             }
             .toSeq
             .map { anyMsg =>
@@ -161,7 +161,7 @@ class SQLightJDBC(identity: String,
           JavaSqlArrayConverter
             .toIntArray(javaSqlArray)
             .map {
-              value => messages.Int.newBuilder().setValue(value).build()
+              value => messages.Int..setValue(value)
             }
             .toSeq
             .map { anyMsg =>
@@ -173,7 +173,7 @@ class SQLightJDBC(identity: String,
           JavaSqlArrayConverter
             .toDoubleArray(javaSqlArray)
             .map {
-              value => messages.Double.newBuilder().setValue(value).build()
+              value => messages.Double..setValue(value)
             }
             .toSeq
             .map { anyMsg =>
@@ -186,75 +186,75 @@ class SQLightJDBC(identity: String,
         )
   }
 
-  def javaSqlTypeToClientMsg(intType: Int): com.google.protobuf.GeneratedMessageV3 =
+  def javaSqlTypeToClientMsg(intType: Int): messages.Message =
 
     intType match
       case Types.VARCHAR | Types.CHAR | Types.LONGVARCHAR =>
-        messages.String.getDefaultInstance
-      case Types.BIT | Types.BOOLEAN => messages.Bool.getDefaultInstance
+        messages.String
+      case Types.BIT | Types.BOOLEAN => messages.Bool
       case Types.NUMERIC =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type NUMERIC"
         )
-        messages.String.getDefaultInstance
+        messages.String
       case Types.TINYINT | Types.SMALLINT | Types.INTEGER =>
-        messages.Int.getDefaultInstance
+        messages.Int
       case Types.BIGINT =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type BIGINT"
         )
-        messages.String.getDefaultInstance
-      case Types.REAL | Types.FLOAT | Types.DOUBLE => messages.Double.getDefaultInstance
+        messages.String
+      case Types.REAL | Types.FLOAT | Types.DOUBLE => messages.Double
       case Types.VARBINARY | Types.BINARY =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type VARBINARY or BINARY"
         )
-        messages.String.getDefaultInstance
+        messages.String
       case Types.DATE =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type Date"
         )
-        messages.String.getDefaultInstance
+        messages.String
       case Types.TIMESTAMP =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type TIMESTAMP"
         )
-        messages.String.getDefaultInstance
+        messages.String
       case Types.CLOB =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type CLOB"
         )
-        messages.String.getDefaultInstance
+        messages.String
       case Types.BLOB =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type BLOB"
         )
-        messages.String.getDefaultInstance
-      case Types.ARRAY => messages.Array.getDefaultInstance
+        messages.String
+      case Types.ARRAY => messages.Array
       case Types.STRUCT =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type STRUCT"
         )
-        messages.String.getDefaultInstance
+        messages.String
       case Types.REF =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type REF"
         )
-        messages.String.getDefaultInstance
+        messages.String
 
   def getColumnTypes(
                       resultSetMetaData: ResultSetMetaData,
                       columnCount: Int
-                    ): Seq[com.google.protobuf.GeneratedMessageV3] = {
+                    ): Seq[messages.Message] = {
     (for (i <- 1 to columnCount) yield resultSetMetaData.getColumnType(i)).map {
       intType => javaSqlTypeToClientMsg(intType)
     }

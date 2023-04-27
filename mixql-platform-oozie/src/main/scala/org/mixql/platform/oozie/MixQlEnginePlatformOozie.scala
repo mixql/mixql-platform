@@ -7,7 +7,7 @@ import java.io.File
 import org.mixql.cluster.ClientModule
 import org.mixql.core.engine.Engine
 import org.mixql.core.context.{Context, gtype}
-import org.mixql.protobuf.generated.messages.ShutDown
+import org.mixql.protobuf.messages.ShutDown
 import org.mixql.engine.sqlite.local.EngineSqlightLocal
 
 import scala.collection.mutable

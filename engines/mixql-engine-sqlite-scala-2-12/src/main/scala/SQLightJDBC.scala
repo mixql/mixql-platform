@@ -1,7 +1,6 @@
 package org.mixql.engine.sqlite
 
-import org.mixql.protobuf.GtypeConverter
-import org.mixql.protobuf.generated.messages
+import org.mixql.protobuf.{GtypeConverter, ProtoBufConverter, messages}
 
 import java.sql._
 import scala.collection.mutable
@@ -11,15 +10,14 @@ object SQLightJDBC {
 }
 
 class SQLightJDBC(identity: String,
-                  engineParams: mutable.Map[String, com.google.protobuf.GeneratedMessageV3] = mutable.Map())
+                  engineParams: mutable.Map[String, messages.Message] = mutable.Map())
   extends java.lang.AutoCloseable {
 
   def init() = {
     val url =
       try {
         engineParams("mixql.org.engine.sqlight.db.path")
-          .asInstanceOf[messages.String]
-          .getValue
+          .asInstanceOf[messages.gString].value
       } catch {
         case e: Exception =>
           println(
@@ -40,7 +38,7 @@ class SQLightJDBC(identity: String,
 
   // returns messages.Type
   // TO-DO Should return iterator?
-  def execute(stmt: String): com.google.protobuf.GeneratedMessageV3 = {
+  def execute(stmt: String): messages.Message = {
     var jdbcStmt: Statement = null
 
     try {
@@ -56,137 +54,117 @@ class SQLightJDBC(identity: String,
 
           val resultSetMetaData = res.getMetaData
           val columnCount = resultSetMetaData.getColumnCount
-          val columnTypes: Seq[com.google.protobuf.GeneratedMessageV3] =
+          val columnTypes: Seq[messages.Message] =
             getColumnTypes(resultSetMetaData, columnCount)
           val columnNames: Seq[String] =
             for (i <- 1 to columnCount) yield resultSetMetaData.getColumnName(i)
 
           import org.mixql.engine.sqlite.JavaSqlArrayConverter
 
-          var arrayBuilder = messages.Array.newBuilder
+          var arr: Seq[String] = Seq()
           while (remainedRows) {
             // simulate do while, as it is no longer supported in scala 3
             val rowValues = getRowFromResultSet(res, columnCount, columnTypes)
-            arrayBuilder = arrayBuilder.addArr(
-              GtypeConverter.toProtobufAny(seqGeneratedMsgToArray(rowValues))
-            )
+            arr = arr :+ ProtoBufConverter.toJson(seqGeneratedMsgToArray(rowValues)).get
             remainedRows = res.next()
           }
-          arrayBuilder.build()
+          messages.gArray(arr.toArray)
         } finally {
           if (res != null) res.close()
         }
       }
-      else messages.NULL.getDefaultInstance
+      else messages.NULL()
     } catch {
       case e: Throwable =>
-        messages.Error.newBuilder().setMsg(
+        messages.Error(
           s"Module $identity: SQLightJDBC error while execute: " + e.getMessage
-        ).build()
+        )
     } finally {
       if (jdbcStmt != null) jdbcStmt.close()
     }
   }
 
-  def seqGeneratedMsgToArray(msgs: Seq[com.google.protobuf.GeneratedMessageV3]): messages.Array = {
+  def seqGeneratedMsgToArray(msgs: Seq[messages.Message]): messages.gArray = {
 
-    var arrayBuilder = messages.Array.newBuilder
-
-    msgs.map(anyMsg =>
-      GtypeConverter.toProtobufAny(anyMsg)
-    ) foreach (
-      v => arrayBuilder = arrayBuilder.addArr(v)
-      )
-
-    arrayBuilder.build()
+    messages.gArray({
+      msgs
+        .map { anyMsg =>
+          ProtoBufConverter.toJson(anyMsg).get
+        }.toArray
+    })
   }
 
   def getRowFromResultSet(
                            res: ResultSet,
                            columnCount: Int,
-                           columnTypes: Seq[com.google.protobuf.GeneratedMessageV3]
-                         ): Seq[com.google.protobuf.GeneratedMessageV3] =
+                           columnTypes: Seq[messages.Message]
+                         ): Seq[messages.Message] =
 
     for (i <- 1 to columnCount) yield {
       columnTypes(i - 1) match {
-        case _: messages.String =>
-          messages.String
-            .newBuilder()
-            .setValue(res.getString(i))
-            .setQuote("")
-            .build()
-        case _: messages.Bool =>
-          messages.Bool.newBuilder().setValue(res.getBoolean(i)).build()
-        case _: messages.Int =>
-          messages.Int.newBuilder().setValue(res.getInt(i)).build()
-        case _: messages.Double =>
-          messages.Double.newBuilder().setValue(res.getDouble(i)).build()
-        case _: messages.Array =>
+        case messages.gString(_, _) =>
+          messages.gString(res.getString(i), "")
+        case messages.Bool(_) =>
+          messages.Bool(res.getBoolean(i))
+        case messages.int( _) =>
+          messages.int(res.getInt(i))
+        case messages.double(_) =>
+          messages.double(res.getDouble(i))
+        case messages.gArray(_) =>
           readArrayFromResultSet(res.getArray(i))
       }
     }
 
-  def seqGeneratedMsgAnyToArray(msgs: Seq[com.google.protobuf.Any]): messages.Array = {
-
-    var arrayBuilder = messages.Array.newBuilder
-
-    msgs foreach (
-      v => arrayBuilder = arrayBuilder.addArr(v)
-      )
-
-    arrayBuilder.build()
-  }
-
-  def readArrayFromResultSet(javaSqlArray: java.sql.Array): messages.Array = {
+  def readArrayFromResultSet(javaSqlArray: java.sql.Array): messages.gArray = {
 
     javaSqlTypeToClientMsg(javaSqlArray.getBaseType) match {
-      case _: messages.String =>
-        seqGeneratedMsgAnyToArray(
+      case _: messages.gString =>
+        messages.gArray(
           JavaSqlArrayConverter
             .toStringArray(javaSqlArray)
             .map { str =>
-              messages.String.newBuilder().setValue(str).setQuote("").build()
+              messages.gString(str, "")
             }
             .toSeq
             .map { anyMsg =>
-              GtypeConverter.toProtobufAny(anyMsg)
-            }
+              ProtoBufConverter.toJson(anyMsg).get
+            }.toArray
         )
       case _: messages.Bool =>
-        seqGeneratedMsgAnyToArray(
+        messages.gArray(
           JavaSqlArrayConverter
             .toBooleanArray(javaSqlArray)
             .map {
-              value => messages.Bool.newBuilder().setValue(value).build()
+              value => messages.Bool(value)
             }
             .toSeq
             .map { anyMsg =>
-              GtypeConverter.toProtobufAny(anyMsg)
-            }
+              ProtoBufConverter.toJson(anyMsg).get
+            }.toArray
         )
-      case _: messages.Int =>
-        seqGeneratedMsgAnyToArray(
+      case _: messages.int =>
+        messages.gArray(
           JavaSqlArrayConverter
             .toIntArray(javaSqlArray)
             .map {
-              value => messages.Int.newBuilder().setValue(value).build()
+              value => messages.int(value)
             }
             .toSeq
             .map { anyMsg =>
-              GtypeConverter.toProtobufAny(anyMsg)
-            }
+              ProtoBufConverter.toJson(anyMsg).get
+            }.toArray
         )
-      case _: messages.Double =>
-        seqGeneratedMsgAnyToArray(
+      case _: messages.double =>
+        messages.gArray(
           JavaSqlArrayConverter
             .toDoubleArray(javaSqlArray)
             .map {
-              value => messages.Double.newBuilder().setValue(value).build()
+              value => messages.double(value)
             }
             .toSeq
             .map { anyMsg =>
-              GtypeConverter.toProtobufAny(anyMsg)
-            }
+              ProtoBufConverter.toJson(anyMsg).get
+            }.toArray
         )
       case _: Any =>
         throw new Exception(
@@ -195,78 +173,78 @@ class SQLightJDBC(identity: String,
     }
   }
 
-  def javaSqlTypeToClientMsg(intType: Int): com.google.protobuf.GeneratedMessageV3 = {
+  def javaSqlTypeToClientMsg(intType: Int): messages.Message = {
 
     intType match {
 
       case Types.VARCHAR | Types.CHAR | Types.LONGVARCHAR =>
-        messages.String.getDefaultInstance
-      case Types.BIT | Types.BOOLEAN => messages.Bool.getDefaultInstance
+        messages.gString("","")
+      case Types.BIT | Types.BOOLEAN => messages.Bool(false)
       case Types.NUMERIC =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type NUMERIC"
         )
-        messages.String.getDefaultInstance
+        messages.gString("","")
       case Types.TINYINT | Types.SMALLINT | Types.INTEGER =>
-        messages.Int.getDefaultInstance
+        messages.int(-1)
       case Types.BIGINT =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type BIGINT"
         )
-        messages.String.getDefaultInstance
-      case Types.REAL | Types.FLOAT | Types.DOUBLE => messages.Double.getDefaultInstance
+        messages.gString("","")
+      case Types.REAL | Types.FLOAT | Types.DOUBLE => messages.double(0.0)
       case Types.VARBINARY | Types.BINARY =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type VARBINARY or BINARY"
         )
-        messages.String.getDefaultInstance
+        messages.gString("","")
       case Types.DATE =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type Date"
         )
-        messages.String.getDefaultInstance
+        messages.gString("","")
       case Types.TIMESTAMP =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type TIMESTAMP"
         )
-        messages.String.getDefaultInstance
+        messages.gString("","")
       case Types.CLOB =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type CLOB"
         )
-        messages.String.getDefaultInstance
+        messages.gString("","")
       case Types.BLOB =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type BLOB"
         )
-        messages.String.getDefaultInstance
-      case Types.ARRAY => messages.Array.getDefaultInstance
+        messages.gString("","")
+      case Types.ARRAY => messages.gArray(Seq().toArray)
       case Types.STRUCT =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type STRUCT"
         )
-        messages.String.getDefaultInstance
+        messages.gString("","")
       case Types.REF =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type REF"
         )
-        messages.String.getDefaultInstance
+        messages.gString("","")
     }
   }
 
   def getColumnTypes(
                       resultSetMetaData: ResultSetMetaData,
                       columnCount: Int
-                    ): Seq[com.google.protobuf.GeneratedMessageV3] = {
+                    ): Seq[messages.Message] = {
     (for (i <- 1 to columnCount) yield resultSetMetaData.getColumnType(i)).map {
       intType => javaSqlTypeToClientMsg(intType)
     }

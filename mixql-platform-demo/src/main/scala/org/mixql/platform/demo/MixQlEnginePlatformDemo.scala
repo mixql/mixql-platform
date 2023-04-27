@@ -9,7 +9,7 @@ import org.mixql.core.Main.code
 import org.mixql.core.engine.Engine
 import org.mixql.net.PortOperations
 import org.mixql.core.context.{Context, gtype}
-import org.mixql.protobuf.generated.messages.ShutDown
+import org.mixql.protobuf.messages.ShutDown
 import org.mixql.engine.stub.local.EngineStubLocal
 import org.mixql.engine.sqlite.local.EngineSqlightLocal
 import org.mixql.platform.demo.procedures.SimpleFuncs

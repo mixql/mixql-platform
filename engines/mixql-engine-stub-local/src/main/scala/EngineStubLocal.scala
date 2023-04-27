@@ -21,7 +21,7 @@ object EngineStubLocal extends InternalEngine {
     logDebug(s"Executing command :${statement} for 1sec")
     Thread.sleep(1000)
     logInfo(s"executed: ${statement}")
-    new gtype.Null()
+    gtype.Null
   }
 
   def functions: Map[String, Any] = Map(

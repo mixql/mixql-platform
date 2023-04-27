@@ -36,7 +36,7 @@ object EngineDemoExecutor extends IModuleExecutor {
           )
           engineParams.put(
             msg.getName,
-            GtypeConverter.toGeneratedMsg(GtypeConverter.protobufAnyToGtype(msg.getValue))
+            GtypeConverter.toGeneratedMsg(GtypeConverter.clientMessageToGtype(msg.getValue))
           )
           println(s"Module $identity: Sending reply on SetParam  ${msg.getName} msg")
           sendMsgToServerBroker(clientAddress, messages.ParamWasSet.getDefaultInstance)

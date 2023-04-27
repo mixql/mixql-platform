@@ -7,6 +7,7 @@ import com.github.nscala_time.time.Imports.{
 }
 import org.zeromq.{SocketType, ZMQ}
 import org.mixql.protobuf.ProtoBufConverter
+import org.mixql.protobuf.messages
 
 import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
@@ -42,7 +43,7 @@ object Module {
 
   def sendMsgToServerBroker(
     clientAdrress: Array[Byte],
-    msg: com.google.protobuf.GeneratedMessageV3
+    msg: messages.Message
   )(implicit
     server: ZMQ.Socket,
     identity: String,
@@ -51,7 +52,7 @@ object Module {
     println(
       s"Module $identity: sendMsgToServerBroker: convert msg of type Protobuf to Array of bytes"
     )
-    sendMsgToServerBroker(ProtoBufConverter.toArray(msg))
+    sendMsgToServerBroker(ProtoBufConverter.toArray(msg).get)
   }
 
   def readMsgFromServerBroker()(implicit

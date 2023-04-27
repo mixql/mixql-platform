@@ -99,43 +99,31 @@ lazy val mixQLCoreSCALA3 = mixQLCore.jvm(Scala3)
 lazy val mixQLCoreSCALA212 = mixQLCore.jvm(Scala212)
 lazy val mixQLCoreSCALA213 = mixQLCore.jvm(Scala213)
 
-lazy val mixQLProtobufCore = projectMatrix
-  .in(file("mixql-protobuf-core"))
+lazy val mixQLRemoteMessages = projectMatrix
+  .in(file("mixql-remote-messages"))
   .dependsOn(mixQLCore)
-  .settings(
-    Compile / PB.targets := Seq(PB.gens.java -> {
-      val file = (Compile / javaSource).value /// "scalaPB"
-      println("PB  target: " + file.getAbsolutePath)
-      file
-    }),
+  .settings({
+    val circeVersion = "0.14.1"
     libraryDependencies ++= Seq(
-      "com.google.protobuf" % "protobuf-java" % "3.13.0" % "protobuf",
-      "org.scalameta" %% "munit" % "0.7.29" % Test
+      "org.scalameta" %% "munit" % "0.7.29" % Test,
+      "io.circe" %% "circe-core" % circeVersion,
+      "io.circe" %% "circe-generic" % circeVersion,
+      "io.circe" %% "circe-parser" % circeVersion
     )
-  )
+  })
   .jvmPlatform(Seq(Scala3, Scala213, Scala212))
 
-lazy val mixQLProtobuf = projectMatrix
-  .in(file("mixql-protobuf"))
-  .dependsOn(mixQLProtobufCore)
-  .settings(
-    libraryDependencies ++= Seq(
-      "org.scalameta" %% "munit" % "0.7.29" % Test
-    )
-  )
-  .jvmPlatform(Seq(Scala3, Scala213, Scala212))
-
-lazy val mixQLProtobufSCALA3 = mixQLProtobuf.jvm(Scala3)
-lazy val mixQLProtobufSCALA212 = mixQLProtobuf.jvm(Scala212)
-lazy val mixQLProtobufSCALA213 = mixQLProtobuf.jvm(Scala213)
+lazy val mixQLRemoteMessagesSCALA3 = mixQLRemoteMessages.jvm(Scala3)
+lazy val mixQLRemoteMessagesSCALA212 = mixQLRemoteMessages.jvm(Scala212)
+lazy val mixQLRemoteMessagesSCALA213 = mixQLRemoteMessages.jvm(Scala213)
 
 lazy val mixQLCluster = project
   .in(file("mixql-cluster"))
-  .dependsOn(mixQLProtobufSCALA3)
+  .dependsOn(mixQLRemoteMessagesSCALA3)
 
 lazy val mixQLEngine = projectMatrix
   .in(file("mixql-engine"))
-  .dependsOn(mixQLProtobuf)
+  .dependsOn(mixQLRemoteMessages)
   .settings(libraryDependencies ++= {
     Seq(
       "com.typesafe" % "config" % "1.4.2",
@@ -291,7 +279,7 @@ lazy val mixQLPlatformOozie = project
       RemoteEngineShell.gen_shell(target, engineName, engineClasses(engineName), jars)
     })
 
-//    Add engine's libs to cache
+    //    Add engine's libs to cache
     baseDirs.values.foreach(baseDir => {
       cache = cache ++
         (baseDir / "target" / "universal" / "stage" / "lib")
@@ -326,13 +314,11 @@ buildAllMixQLCore := {
   (mixQLCoreSCALA213 / Compile / packageBin).value
 }
 
-lazy val buildAllMixQLProtobuf = taskKey[Unit]("Build all mixql protobuf projects ")
-buildAllMixQLProtobuf := {
-  //  (mixQLCluster / Compile / packageBin).value
-  //  (mixQLProtobuf / Compile / packageBin).value
-  (mixQLProtobufSCALA3 / Compile / packageBin).value
-  (mixQLProtobufSCALA213 / Compile / packageBin).value
-  (mixQLProtobufSCALA212 / Compile / packageBin).value
+lazy val buildAllMixQLRemoteMessages = taskKey[Unit]("Build all mixql remote messages library projects ")
+buildAllMixQLRemoteMessages := {
+  (mixQLRemoteMessagesSCALA3 / Compile / packageBin).value
+  (mixQLRemoteMessagesSCALA213 / Compile / packageBin).value
+  (mixQLRemoteMessagesSCALA212 / Compile / packageBin).value
 }
 
 

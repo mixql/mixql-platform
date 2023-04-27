@@ -80,7 +80,7 @@ class SQLightJDBC(identity: String, engineParams: mutable.Map[String, gtype.Type
         } finally {
           if (res != null) res.close()
         }
-      else new gtype.Null()
+      else gtype.Null
     } catch {
       case e: Throwable =>
         throw new Exception(
@@ -102,10 +102,10 @@ class SQLightJDBC(identity: String, engineParams: mutable.Map[String, gtype.Type
           gtype.string(res.getString(i), "")
         case _: gtype.bool =>
           gtype.bool(res.getBoolean(i))
-        case _: gtype.gInt =>
-          gtype.gInt(res.getInt(i))
-        case _: gtype.gDouble =>
-          gtype.gDouble(res.getDouble(i))
+        case _: gtype.int =>
+          gtype.int(res.getInt(i))
+        case _: gtype.double =>
+          gtype.double(res.getDouble(i))
         case _: gtype.array =>
           readArrayFromResultSet(res.getArray(i))
     }
@@ -127,16 +127,16 @@ class SQLightJDBC(identity: String, engineParams: mutable.Map[String, gtype.Type
             .map { value => gtype.bool(value)
             }
             .toArray
-        case _: gtype.gInt =>
+        case _: gtype.int =>
           JavaSqlArrayConverter
             .toIntArray(javaSqlArray)
-            .map { value => gtype.gInt(value)
+            .map { value => gtype.int(value)
             }
             .toArray
-        case _: gtype.gDouble =>
+        case _: gtype.double =>
           JavaSqlArrayConverter
             .toDoubleArray(javaSqlArray)
-            .map { value => gtype.gDouble(value)
+            .map { value => gtype.double(value)
             }
             .toArray
         case _: Any =>
@@ -155,11 +155,11 @@ class SQLightJDBC(identity: String, engineParams: mutable.Map[String, gtype.Type
         logWarn(s"SQLightJDBC error while execute: unsupported column type NUMERIC")
         gtype.string("")
       case Types.TINYINT | Types.SMALLINT | Types.INTEGER =>
-        gtype.gInt(-1)
+        gtype.int(-1)
       case Types.BIGINT =>
         logWarn(s"SQLightJDBC error while execute: unsupported column type BIGINT")
         gtype.string("")
-      case Types.REAL | Types.FLOAT | Types.DOUBLE => gtype.gDouble(0.0)
+      case Types.REAL | Types.FLOAT | Types.DOUBLE => gtype.double(0.0)
       case Types.VARBINARY | Types.BINARY =>
         logWarn(s"SQLightJDBC error while execute: unsupported column type VARBINARY or BINARY")
         gtype.string("")

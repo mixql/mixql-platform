@@ -33,12 +33,12 @@ object EngineSqlightExecutor
     ProtoBufConverter.unpackAnyMsg(msg) match {
       case msg: messages.Execute =>
         println(
-          s"[Module-$identity]: Received Execute msg from server statement: ${msg.getStatement}"
+          s"[Module-$identity]: Received Execute msg from server statement: ${msg.statement}"
         )
-        println(s"[Module-$identity]: Executing command ${msg.getStatement}")
+        println(s"[Module-$identity]: Executing command ${msg.statement}")
         //        Thread.sleep(1000)
-        val res = context.execute(msg.getStatement)
-        println(s"[Module-$identity]: Successfully executed command ${msg.getStatement}")
+        val res = context.execute(msg.statement)
+        println(s"[Module-$identity]: Successfully executed command ${msg.statement}")
         println(
           s"[Module-$identity]: Sending reply on Execute msg " + res.getClass.getName
         )
@@ -51,10 +51,10 @@ object EngineSqlightExecutor
           )
           engineParams.put(
             msg.name,
-            GtypeConverter.toGeneratedMsg(GtypeConverter.clientMessageToGtype(msg.value))
+            ProtoBufConverter.unpackAnyMsg(msg.json)
           )
           println(s"[Module-$identity]: Sending reply on SetParam  ${msg.name} msg")
-          sendMsgToServerBroker(clientAddress, messages.ParamWasSet)
+          sendMsgToServerBroker(clientAddress, messages.ParamWasSet())
         } catch {
           case e: Throwable =>
             sendMsgToServerBroker(
@@ -85,9 +85,7 @@ object EngineSqlightExecutor
         println(s"[Module-$identity]:  Sending reply on GetParam ${msg.name} msg")
         sendMsgToServerBroker(
           clientAddress,
-          messages.Bool.
-            .setValue(engineParams.keys.toSeq.contains(msg.name))
-            .build()
+          messages.Bool(engineParams.keys.toSeq.contains(msg.name))
         )
       case _: messages.ShutDown =>
         println(s"[Module-$identity]: Started shutdown")
@@ -97,8 +95,8 @@ object EngineSqlightExecutor
           println(s"[Module-$identity] Started executing function ${msg.name}")
           import org.mixql.core.context.gtype
           import org.mixql.protobuf.GtypeConverter
-          val gParams: Seq[gtype.Type] = if (msg.hasParams) {
-            val p = GtypeConverter.toGtype(msg.getParams).asInstanceOf[gtype.array].getArr
+          val gParams: Seq[gtype.Type] = if (msg.params.arr.nonEmpty) {
+            val p = GtypeConverter.toGtype(msg.params).asInstanceOf[gtype.array].arr
             println(s"[Module-$identity] Params provided for function ${msg.name}: " + p)
             p
           } else Seq()
@@ -130,7 +128,7 @@ object EngineSqlightExecutor
         println(s"[Module-$identity]: Received request to get defined functions from server")
         sendMsgToServerBroker(
           clientAddress,
-          messages.DefinedFunctions..addAllArr(functions.keys.asJava)
+          messages.DefinedFunctions(functions.keys.toArray)
         )
     }
 

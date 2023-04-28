@@ -11,14 +11,14 @@ object MixqlEngineSqliteTest:
   val identity = "MixqlEngineSqliteTest"
   val engineParams: mutable.Map[String, messages.Message] =
     mutable.Map(
-      "mixql.org.engine.sqlight.db.path" -> messages.String
-        .
-        .setValue("jdbc:sqlite::memory:")
-        .build()
+      "mixql.org.engine.sqlight.db.path" -> messages.gString(
+        "jdbc:sqlite::memory:","")
     )
 
-class MixqlEngineSqliteTest extends AnyFlatSpec with BeforeAndAfterAll:
+class MixqlEngineSqliteTest extends AnyFlatSpec with BeforeAndAfterAll :
+
   import MixqlEngineSqliteTest._
+
   override def beforeAll(): Unit =
     context = SQLightJDBC(identity, engineParams)
     super.beforeAll()

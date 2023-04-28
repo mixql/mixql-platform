@@ -13,21 +13,21 @@ object EngineDemoExecutor extends IModuleExecutor {
     mutable.Map()
 
   def reactOnMessage(msg: Array[Byte])(implicit
-    server: ZMQ.Socket,
-    identity: String,
-    clientAddress: Array[Byte]
+                                       server: ZMQ.Socket,
+                                       identity: String,
+                                       clientAddress: Array[Byte]
   ): Unit = {
     val clientAddressStr = new String(clientAddress)
     ProtoBufConverter.unpackAnyMsg(msg) match {
       case msg: messages.Execute =>
         println(
-          s"Module $identity: Received Execute msg from server statement: ${msg.getStatement}"
+          s"Module $identity: Received Execute msg from server statement: ${msg.statement}"
         )
-        println(s"Module $identity: Executing command ${msg.getStatement} for 1sec")
+        println(s"Module $identity: Executing command ${msg.statement} for 1sec")
         Thread.sleep(1000)
-        println(s"Module $identity: Successfully executed command ${msg.getStatement}")
+        println(s"Module $identity: Successfully executed command ${msg.statement}")
         println(s"Module $identity: Sending reply on Execute msg")
-        sendMsgToServerBroker(clientAddress, messages.NULL)
+        sendMsgToServerBroker(clientAddress, messages.NULL())
       case msg: messages.SetParam =>
         try {
           println(
@@ -36,10 +36,10 @@ object EngineDemoExecutor extends IModuleExecutor {
           )
           engineParams.put(
             msg.name,
-            GtypeConverter.toGeneratedMsg(GtypeConverter.clientMessageToGtype(msg.value))
+            ProtoBufConverter.unpackAnyMsg(msg.json)
           )
           println(s"Module $identity: Sending reply on SetParam  ${msg.name} msg")
-          sendMsgToServerBroker(clientAddress, messages.ParamWasSet)
+          sendMsgToServerBroker(clientAddress, messages.ParamWasSet())
         } catch {
           case e: Throwable =>
             sendMsgToServerBroker(
@@ -54,7 +54,7 @@ object EngineDemoExecutor extends IModuleExecutor {
         println(s"Module $identity: Received GetParam ${msg.name} msg from server")
         println(s"Module $identity:  Sending reply on GetParam ${msg.name} msg")
         try {
-          sendMsgToServerBroker(clientAddress, engineParams(msg.name))
+          sendMsgToServerBroker(clientAddress, engineParams.get(msg.name).get)
         } catch {
           case e: Throwable =>
             sendMsgToServerBroker(
@@ -70,9 +70,7 @@ object EngineDemoExecutor extends IModuleExecutor {
         println(s"Module $identity:  Sending reply on GetParam ${msg.name} msg")
         sendMsgToServerBroker(
           clientAddress,
-          messages.Bool.
-            .setValue(engineParams.keys.toSeq.contains(msg.name))
-            .build()
+          messages.Bool(engineParams.keys.toSeq.contains(msg.name))
         )
       case _: messages.ShutDown =>
         println(s"Module $identity: Started shutdown")
@@ -82,15 +80,15 @@ object EngineDemoExecutor extends IModuleExecutor {
           println(s"Started executing function ${msg.name}")
           import org.mixql.core.context.gtype
           import org.mixql.protobuf.GtypeConverter
-          val gParams: Seq[gtype.Type] = if (msg.hasParams) {
-            val p = GtypeConverter.toGtype(msg.getParams).asInstanceOf[gtype.array].getArr
+          val gParams: Seq[gtype.Type] = if (msg.params.arr.nonEmpty) {
+            val p = GtypeConverter.toGtype(msg.params).asInstanceOf[gtype.array].arr
             println(s"[Module-$identity] Params provided for function ${msg.name}: " + p)
             p
           } else Seq()
           println(s"Executing function ${msg.name} with params " + gParams.toString)
           sendMsgToServerBroker(
             clientAddress,
-            messages.NULL
+            messages.NULL()
           )
         }
         catch {
@@ -103,11 +101,11 @@ object EngineDemoExecutor extends IModuleExecutor {
               )
             )
         }
-      case msg: messages.GetDefinedFunctions =>
+      case _: messages.GetDefinedFunctions =>
         println(s"Module $identity: Received request to get defined functions from server")
         sendMsgToServerBroker(
           clientAddress,
-          messages.DefinedFunctions
+          messages.DefinedFunctions(Seq().toArray)
         )
     }
   }

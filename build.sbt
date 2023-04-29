@@ -103,12 +103,13 @@ lazy val mixQLRemoteMessages = projectMatrix
   .in(file("mixql-remote-messages"))
   .dependsOn(mixQLCore)
   .settings({
-    val circeVersion = "0.14.1"
+//    val circeVersion = "0.14.1"
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit" % "0.7.29" % Test,
-      "io.circe" %% "circe-core" % circeVersion,
-      "io.circe" %% "circe-generic" % circeVersion,
-      "io.circe" %% "circe-parser" % circeVersion
+      "com.googlecode.json-simple" % "json-simple" % "1.1.1"
+//      "io.circe" %% "circe-core" % circeVersion,
+//      "io.circe" %% "circe-generic" % circeVersion,
+//      "io.circe" %% "circe-parser" % circeVersion
     )
   })
   .jvmPlatform(Seq(Scala3, Scala213, Scala212))

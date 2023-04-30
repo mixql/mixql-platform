@@ -45,7 +45,7 @@ class EngineSqlightLocal( dbPathParameter: Option[String] = None)
       initContextIfEmpty()
       Thread.sleep(1000)
       logInfo(s"Successfully executed function $name with params " + params.toString)
-      gtype.Null
+      new gtype.Null()
     catch
       case e: Throwable =>
         throw new Exception(

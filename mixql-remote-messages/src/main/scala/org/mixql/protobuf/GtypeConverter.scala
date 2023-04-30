@@ -7,13 +7,13 @@ object GtypeConverter {
   def toGtype(remoteMsg: messages.Message): gtype.Type = {
 
     remoteMsg match {
-      case _: messages.NULL => gtype.Null
-      case msg: messages.Bool => gtype.bool(msg.value)
-      case msg: messages.gInt => gtype.int(msg.value)
-      case msg: messages.gDouble => gtype.double(msg.value)
-      case msg: messages.gString => gtype.string(msg.value)
+      case _: messages.NULL => new gtype.Null()
+      case msg: messages.Bool => new gtype.bool(msg.value)
+      case msg: messages.gInt => new gtype.gInt(msg.value)
+      case msg: messages.gDouble => new gtype.gDouble(msg.value)
+      case msg: messages.gString => new gtype.string(msg.value)
       case msg: messages.gArray =>
-        gtype.array(
+        new gtype.array(
           msg.arr
             .map(f => toGtype(ProtoBufConverter.unpackAnyMsg(f)))
         )
@@ -30,19 +30,19 @@ object GtypeConverter {
     import scala.util.Failure
     import scala.util.Success
     gValue match {
-      case gtype.Null =>
+      case _: gtype.Null =>
         new messages.NULL()
-      case gtype.bool(value) =>
-        new messages.Bool(value)
-      case gtype.int(value) =>
-        new messages.gInt(value)
-      case gtype.double(value) =>
-        new messages.gDouble(value)
-      case gtype.string(value, quote) =>
-        new messages.gString(value, quote)
-      case gtype.array(arr) =>
+      case m: gtype.bool =>
+        new messages.Bool(m.getValue)
+      case m: gtype.gInt =>
+        new messages.gInt(m.getValue)
+      case m: gtype.gDouble =>
+        new messages.gDouble(m.getValue)
+      case m: gtype.string =>
+        new messages.gString(m.getValue, m.getQuote)
+      case m: gtype.array =>
         new messages.gArray(
-          arr.map(gType => ProtoBufConverter.toJson(toGeneratedMsg(gType)) match {
+          m.getArr.map(gType => ProtoBufConverter.toJson(toGeneratedMsg(gType)) match {
             case Failure(exception) => throw new Exception(exception)
             case Success(json) => json
           })

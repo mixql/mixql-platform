@@ -34,21 +34,21 @@ object ProtoBufConverter {
         import org.json.simple.JSONObject
         import org.json.simple.JSONValue
         val anyMsgJsonObject = JSONValue.parseWithException(json).asInstanceOf[JSONObject]
-        messages.AnyMsg(anyMsgJsonObject.get("type").asInstanceOf[String],
+        new messages.AnyMsg(anyMsgJsonObject.get("type").asInstanceOf[String],
           anyMsgJsonObject.get("json").asInstanceOf[String])
       }
       anyMsg.`type` match {
         case "org.mixql.protobuf.messages.EngineName" =>
-          messages.EngineName(
+          new messages.EngineName(
             {
               val jsonObject = JSONValue.parseWithException(anyMsg.json).asInstanceOf[JSONObject]
               jsonObject.get("name").asInstanceOf[String]
             }
           )
         case "org.mixql.protobuf.messages.ShutDown" =>
-          messages.ShutDown()
+          new messages.ShutDown()
         case "org.mixql.protobuf.messages.Execute" =>
-          messages.Execute(
+          new messages.Execute(
             {
               val jsonObject = JSONValue.parseWithException(anyMsg.json).asInstanceOf[JSONObject]
               jsonObject.get("statement").asInstanceOf[String]
@@ -56,38 +56,38 @@ object ProtoBufConverter {
           )
         case "org.mixql.protobuf.messages.Param" =>
           val jsonObject = JSONValue.parseWithException(anyMsg.json).asInstanceOf[JSONObject]
-          messages.Param(
+          new messages.Param(
             jsonObject.get("name").asInstanceOf[String],
             jsonObject.get("json").asInstanceOf[String]
           )
         case "org.mixql.protobuf.messages.Error" =>
           val jsonObject = JSONValue.parseWithException(anyMsg.json).asInstanceOf[JSONObject]
-          messages.Error(
+          new messages.Error(
             "error while unpacking from json Error: " + jsonObject.get("msg").asInstanceOf[String]
           )
         case "org.mixql.protobuf.messages.SetParam" =>
           val jsonObject = JSONValue.parseWithException(anyMsg.json).asInstanceOf[JSONObject]
-          messages.SetParam(
+          new messages.SetParam(
             jsonObject.get("name").asInstanceOf[String],
             jsonObject.get("json").asInstanceOf[String]
           )
         case "org.mixql.protobuf.messages.GetParam" =>
           val jsonObject = JSONValue.parseWithException(anyMsg.json).asInstanceOf[JSONObject]
-          messages.GetParam(
+          new messages.GetParam(
             jsonObject.get("name").asInstanceOf[String]
           )
         case "org.mixql.protobuf.messages.IsParam" =>
           val jsonObject = JSONValue.parseWithException(anyMsg.json).asInstanceOf[JSONObject]
-          messages.IsParam(
+          new messages.IsParam(
             jsonObject.get("name").asInstanceOf[String]
           )
         case "org.mixql.protobuf.messages.ParamWasSet" =>
-          messages.ParamWasSet()
+          new messages.ParamWasSet()
         case "org.mixql.protobuf.messages.ExecuteFunction" =>
           val jsonObject = JSONValue.parseWithException(anyMsg.json).asInstanceOf[JSONObject]
-          messages.ExecuteFunction(
+          new messages.ExecuteFunction(
             jsonObject.get("name").asInstanceOf[String],
-            messages.gArray(
+            new messages.gArray(
               parseStringsArray(jsonObject
                 .get("params").asInstanceOf[JSONObject]
                 .get("arr").asInstanceOf[JSONArray]
@@ -95,45 +95,45 @@ object ProtoBufConverter {
             )
           )
         case "org.mixql.protobuf.messages.GetDefinedFunctions" =>
-          messages.GetDefinedFunctions()
+          new messages.GetDefinedFunctions()
         case "org.mixql.protobuf.messages.DefinedFunctions" =>
-          messages.DefinedFunctions(
+          new messages.DefinedFunctions(
             {
               val jsonObject = JSONValue.parseWithException(anyMsg.json).asInstanceOf[JSONObject]
               parseStringsArray(jsonObject.get("arr").asInstanceOf[JSONArray])
             }
           )
-        case "org.mixql.protobuf.messages.NULL" => messages.NULL()
+        case "org.mixql.protobuf.messages.NULL" => new messages.NULL()
         case "org.mixql.protobuf.messages.Bool" =>
           val jsonObject = JSONValue.parseWithException(anyMsg.json).asInstanceOf[JSONObject]
-          messages.Bool(
+          new messages.Bool(
             jsonObject.get("value").asInstanceOf[String].toBoolean
           )
-        case "org.mixql.protobuf.messages.int" =>
+        case "org.mixql.protobuf.messages.gInt" =>
           val jsonObject = JSONValue.parseWithException(anyMsg.json).asInstanceOf[JSONObject]
-          messages.int(
+          new messages.gInt(
             jsonObject.get("value").asInstanceOf[String].toInt
           )
-        case "org.mixql.protobuf.messages.double" =>
+        case "org.mixql.protobuf.messages.gDouble" =>
           val jsonObject = JSONValue.parseWithException(anyMsg.json).asInstanceOf[JSONObject]
-          messages.double(
+          new messages.gDouble(
             jsonObject.get("value").asInstanceOf[String].toDouble
           )
         case "org.mixql.protobuf.messages.gString" =>
           val jsonObject = JSONValue.parseWithException(anyMsg.json).asInstanceOf[JSONObject]
-          messages.gString(
+          new messages.gString(
             jsonObject.get("value").asInstanceOf[String],
             jsonObject.get("quote").asInstanceOf[String]
           )
         case "org.mixql.protobuf.messages.gArray" =>
           val jsonObject = JSONValue.parseWithException(anyMsg.json).asInstanceOf[JSONObject]
-          messages.gArray(
+          new messages.gArray(
             parseStringsArray(jsonObject.get("arr").asInstanceOf[JSONArray])
           )
       }
     } catch {
       case e: Throwable =>
-        messages.Error(s"Protobuf anymsg converter: Error: " + e.getMessage)
+        new messages.Error(s"Protobuf anymsg converter: Error: " + e.getMessage)
     }
   }
 
@@ -166,8 +166,8 @@ object ProtoBufConverter {
           case m: messages.DefinedFunctions => JsonUtils.buildDefinedFunction(m.arr)
           case _: messages.NULL => "{}"
           case m: messages.Bool => JsonUtils.buildBool(m.value)
-          case m: messages.int => JsonUtils.buildInt(m.value)
-          case m: messages.double => JsonUtils.buildDouble(m.value)
+          case m: messages.gInt => JsonUtils.buildInt(m.value)
+          case m: messages.gDouble => JsonUtils.buildDouble(m.value)
           case m: messages.gString => JsonUtils.buildGString(m.value, m.quote)
           case m: messages.gArray => JsonUtils.buildGArray(m.arr)
         }

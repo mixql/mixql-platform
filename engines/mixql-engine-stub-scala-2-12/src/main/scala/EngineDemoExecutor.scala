@@ -27,7 +27,7 @@ object EngineDemoExecutor extends IModuleExecutor {
         Thread.sleep(1000)
         println(s"Module $identity: Successfully executed command ${msg.statement}")
         println(s"Module $identity: Sending reply on Execute msg")
-        sendMsgToServerBroker(clientAddress, messages.NULL())
+        sendMsgToServerBroker(clientAddress, new messages.NULL())
       case msg: messages.SetParam =>
         try {
           println(
@@ -39,12 +39,12 @@ object EngineDemoExecutor extends IModuleExecutor {
             ProtoBufConverter.unpackAnyMsg(msg.json)
           )
           println(s"Module $identity: Sending reply on SetParam  ${msg.name} msg")
-          sendMsgToServerBroker(clientAddress, messages.ParamWasSet())
+          sendMsgToServerBroker(clientAddress, new messages.ParamWasSet())
         } catch {
           case e: Throwable =>
             sendMsgToServerBroker(
               clientAddress,
-              messages.Error(
+              new messages.Error(
                 s"Module $identity to ${clientAddressStr}: error while executing Set Param command: " +
                   e.getMessage
               )
@@ -59,7 +59,7 @@ object EngineDemoExecutor extends IModuleExecutor {
           case e: Throwable =>
             sendMsgToServerBroker(
               clientAddress,
-              messages.Error(
+              new messages.Error(
                 s"Module $identity to ${clientAddressStr}: error while executing get Param command: " +
                   e.getMessage
               )
@@ -70,7 +70,7 @@ object EngineDemoExecutor extends IModuleExecutor {
         println(s"Module $identity:  Sending reply on GetParam ${msg.name} msg")
         sendMsgToServerBroker(
           clientAddress,
-          messages.Bool(engineParams.keys.toSeq.contains(msg.name))
+          new messages.Bool(engineParams.keys.toSeq.contains(msg.name))
         )
       case _: messages.ShutDown =>
         println(s"Module $identity: Started shutdown")
@@ -88,14 +88,14 @@ object EngineDemoExecutor extends IModuleExecutor {
           println(s"Executing function ${msg.name} with params " + gParams.toString)
           sendMsgToServerBroker(
             clientAddress,
-            messages.NULL()
+            new messages.NULL()
           )
         }
         catch {
           case e: Throwable =>
             sendMsgToServerBroker(
               clientAddress,
-              messages.Error(
+              new messages.Error(
                 s"Module $identity to ${clientAddressStr}: error while executing function ${msg.name}: " +
                   e.getMessage
               )
@@ -105,7 +105,7 @@ object EngineDemoExecutor extends IModuleExecutor {
         println(s"Module $identity: Received request to get defined functions from server")
         sendMsgToServerBroker(
           clientAddress,
-          messages.DefinedFunctions(Seq().toArray)
+          new messages.DefinedFunctions(Seq().toArray)
         )
     }
   }

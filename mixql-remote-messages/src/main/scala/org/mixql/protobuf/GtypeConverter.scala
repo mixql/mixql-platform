@@ -9,15 +9,15 @@ object GtypeConverter {
     remoteMsg match {
       case _: messages.NULL => gtype.Null
       case msg: messages.Bool => gtype.bool(msg.value)
-      case msg: messages.int => gtype.int(msg.value)
-      case msg: messages.double => gtype.double(msg.value)
+      case msg: messages.gInt => gtype.int(msg.value)
+      case msg: messages.gDouble => gtype.double(msg.value)
       case msg: messages.gString => gtype.string(msg.value)
       case msg: messages.gArray =>
         gtype.array(
           msg.arr
             .map(f => toGtype(ProtoBufConverter.unpackAnyMsg(f)))
         )
-      case messages.Error(msg) => throw new Exception(msg)
+      case m: messages.Error => throw new Exception(m.msg)
       case a: scala.Any =>
         throw new Exception(
           s"RemoteMsgsConverter: toGtype error: " +
@@ -31,17 +31,17 @@ object GtypeConverter {
     import scala.util.Success
     gValue match {
       case gtype.Null =>
-        messages.NULL()
+        new messages.NULL()
       case gtype.bool(value) =>
-        messages.Bool(value)
+        new messages.Bool(value)
       case gtype.int(value) =>
-        messages.int(value)
+        new messages.gInt(value)
       case gtype.double(value) =>
-        messages.double(value)
+        new messages.gDouble(value)
       case gtype.string(value, quote) =>
-        messages.gString(value, quote)
+        new messages.gString(value, quote)
       case gtype.array(arr) =>
-        messages.gArray(
+        new messages.gArray(
           arr.map(gType => ProtoBufConverter.toJson(toGeneratedMsg(gType)) match {
             case Failure(exception) => throw new Exception(exception)
             case Success(json) => json

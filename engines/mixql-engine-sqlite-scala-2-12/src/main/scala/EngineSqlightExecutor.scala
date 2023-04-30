@@ -53,12 +53,12 @@ object EngineSqlightExecutor extends IModuleExecutor
             ProtoBufConverter.unpackAnyMsg(msg.json)
           )
           println(s"[Module-$identity]: Sending reply on SetParam  ${msg.name} msg")
-          sendMsgToServerBroker(clientAddress, messages.ParamWasSet())
+          sendMsgToServerBroker(clientAddress, new messages.ParamWasSet())
         } catch {
           case e: Throwable =>
             sendMsgToServerBroker(
               clientAddress,
-              messages.Error(
+              new messages.Error(
                 s"[Module-$identity] to ${clientAddressStr}: error while executing Set Param command: " +
                   e.getMessage
               )
@@ -73,7 +73,7 @@ object EngineSqlightExecutor extends IModuleExecutor
           case e: Throwable =>
             sendMsgToServerBroker(
               clientAddress,
-              messages.Error(
+              new messages.Error(
                 s"[Module-$identity] to ${clientAddressStr}: error while executing get Param command: " +
                   e.getMessage
               )
@@ -84,7 +84,7 @@ object EngineSqlightExecutor extends IModuleExecutor
         println(s"[Module-$identity]:  Sending reply on GetParam ${msg.name} msg")
         sendMsgToServerBroker(
           clientAddress,
-          messages.Bool(engineParams.keys.toSeq.contains(msg.name))
+          new messages.Bool(engineParams.keys.toSeq.contains(msg.name))
         )
       case _: messages.ShutDown =>
         println(s"[Module-$identity]: Started shutdown")
@@ -118,7 +118,7 @@ object EngineSqlightExecutor extends IModuleExecutor
           case e: Throwable =>
             sendMsgToServerBroker(
               clientAddress,
-              messages.Error(
+              new messages.Error(
                 s"[Module-$identity] to ${clientAddressStr}: error while executing function ${msg.name}: " +
                   e.getMessage
               )
@@ -129,7 +129,7 @@ object EngineSqlightExecutor extends IModuleExecutor
         println(s"[Module-$identity]: Received request to get defined functions from server")
         sendMsgToServerBroker(
           clientAddress,
-          messages.DefinedFunctions(functions.keys.toArray)
+          new messages.DefinedFunctions(functions.keys.toArray)
         )
     }
 

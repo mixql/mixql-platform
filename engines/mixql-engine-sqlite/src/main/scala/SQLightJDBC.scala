@@ -102,15 +102,15 @@ class SQLightJDBC(identity: String,
 
     for (i <- 1 to columnCount) yield {
       columnTypes(i - 1) match {
-        case messages.gString(_, _) =>
+        case _: messages.gString =>
           messages.gString(res.getString(i), "")
-        case messages.Bool(_) =>
+        case _: messages.Bool =>
           messages.Bool(res.getBoolean(i))
-        case messages.int( _) =>
-          messages.int(res.getInt(i))
-        case messages.double(_) =>
-          messages.double(res.getDouble(i))
-        case messages.gArray(_) =>
+        case _: messages.gInt =>
+          messages.gInt(res.getInt(i))
+        case _: messages.gDouble =>
+          messages.gDouble(res.getDouble(i))
+        case _: messages.gArray =>
           readArrayFromResultSet(res.getArray(i))
       }
     }
@@ -142,24 +142,24 @@ class SQLightJDBC(identity: String,
               ProtoBufConverter.toJson(anyMsg).get
             }.toArray
         )
-      case _: messages.int =>
+      case _: messages.gInt =>
         messages.gArray(
           JavaSqlArrayConverter
             .toIntArray(javaSqlArray)
             .map {
-              value => messages.int(value)
+              value => new messages.gInt(value)
             }
             .toSeq
             .map { anyMsg =>
               ProtoBufConverter.toJson(anyMsg).get
             }.toArray
         )
-      case _: messages.double =>
+      case _: messages.gDouble =>
         messages.gArray(
           JavaSqlArrayConverter
             .toDoubleArray(javaSqlArray)
             .map {
-              value => messages.double(value)
+              value => new messages.gDouble(value)
             }
             .toSeq
             .map { anyMsg =>
@@ -187,14 +187,14 @@ class SQLightJDBC(identity: String,
         )
         messages.gString("","")
       case Types.TINYINT | Types.SMALLINT | Types.INTEGER =>
-        messages.int(-1)
+        messages.gInt(-1)
       case Types.BIGINT =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type BIGINT"
         )
         messages.gString("","")
-      case Types.REAL | Types.FLOAT | Types.DOUBLE => messages.double(0.0)
+      case Types.REAL | Types.FLOAT | Types.DOUBLE => messages.gDouble(0.0)
       case Types.VARBINARY | Types.BINARY =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +

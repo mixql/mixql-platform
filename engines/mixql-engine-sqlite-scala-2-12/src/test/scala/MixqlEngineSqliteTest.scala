@@ -11,7 +11,7 @@ object MixqlEngineSqliteTest {
   val identity = "MixqlEngineSqliteTest"
   val engineParams: mutable.Map[String, messages.Message] =
     mutable.Map(
-      "mixql.org.engine.sqlight.db.path" -> messages.gString(
+      "mixql.org.engine.sqlight.db.path" -> new messages.gString(
         "jdbc:sqlite::memory:", ""
       )
     )

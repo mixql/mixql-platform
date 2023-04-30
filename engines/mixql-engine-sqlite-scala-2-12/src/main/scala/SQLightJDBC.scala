@@ -68,15 +68,15 @@ class SQLightJDBC(identity: String,
             arr = arr :+ ProtoBufConverter.toJson(seqGeneratedMsgToArray(rowValues)).get
             remainedRows = res.next()
           }
-          messages.gArray(arr.toArray)
+          new messages.gArray(arr.toArray)
         } finally {
           if (res != null) res.close()
         }
       }
-      else messages.NULL()
+      else new messages.NULL()
     } catch {
       case e: Throwable =>
-        messages.Error(
+        new messages.Error(
           s"Module $identity: SQLightJDBC error while execute: " + e.getMessage
         )
     } finally {
@@ -86,7 +86,7 @@ class SQLightJDBC(identity: String,
 
   def seqGeneratedMsgToArray(msgs: Seq[messages.Message]): messages.gArray = {
 
-    messages.gArray({
+    new messages.gArray({
       msgs
         .map { anyMsg =>
           ProtoBufConverter.toJson(anyMsg).get
@@ -102,15 +102,15 @@ class SQLightJDBC(identity: String,
 
     for (i <- 1 to columnCount) yield {
       columnTypes(i - 1) match {
-        case messages.gString(_, _) =>
-          messages.gString(res.getString(i), "")
-        case messages.Bool(_) =>
-          messages.Bool(res.getBoolean(i))
-        case messages.int( _) =>
-          messages.int(res.getInt(i))
-        case messages.double(_) =>
-          messages.double(res.getDouble(i))
-        case messages.gArray(_) =>
+        case _: messages.gString =>
+          new messages.gString(res.getString(i), "")
+        case _: messages.Bool =>
+          new messages.Bool(res.getBoolean(i))
+        case _: messages.gInt =>
+          new messages.gInt(res.getInt(i))
+        case _: messages.gDouble =>
+          new messages.gDouble(res.getDouble(i))
+        case _: messages.gArray =>
           readArrayFromResultSet(res.getArray(i))
       }
     }
@@ -119,11 +119,11 @@ class SQLightJDBC(identity: String,
 
     javaSqlTypeToClientMsg(javaSqlArray.getBaseType) match {
       case _: messages.gString =>
-        messages.gArray(
+        new messages.gArray(
           JavaSqlArrayConverter
             .toStringArray(javaSqlArray)
             .map { str =>
-              messages.gString(str, "")
+              new messages.gString(str, "")
             }
             .toSeq
             .map { anyMsg =>
@@ -131,35 +131,35 @@ class SQLightJDBC(identity: String,
             }.toArray
         )
       case _: messages.Bool =>
-        messages.gArray(
+        new messages.gArray(
           JavaSqlArrayConverter
             .toBooleanArray(javaSqlArray)
             .map {
-              value => messages.Bool(value)
+              value => new messages.Bool(value)
             }
             .toSeq
             .map { anyMsg =>
               ProtoBufConverter.toJson(anyMsg).get
             }.toArray
         )
-      case _: messages.int =>
-        messages.gArray(
+      case _: messages.gInt =>
+        new messages.gArray(
           JavaSqlArrayConverter
             .toIntArray(javaSqlArray)
             .map {
-              value => messages.int(value)
+              value => new messages.gInt(value)
             }
             .toSeq
             .map { anyMsg =>
               ProtoBufConverter.toJson(anyMsg).get
             }.toArray
         )
-      case _: messages.double =>
-        messages.gArray(
+      case _: messages.gDouble =>
+        new messages.gArray(
           JavaSqlArrayConverter
             .toDoubleArray(javaSqlArray)
             .map {
-              value => messages.double(value)
+              value => new messages.gDouble(value)
             }
             .toSeq
             .map { anyMsg =>
@@ -178,66 +178,66 @@ class SQLightJDBC(identity: String,
     intType match {
 
       case Types.VARCHAR | Types.CHAR | Types.LONGVARCHAR =>
-        messages.gString("","")
-      case Types.BIT | Types.BOOLEAN => messages.Bool(false)
+        new messages.gString("","")
+      case Types.BIT | Types.BOOLEAN => new messages.Bool(false)
       case Types.NUMERIC =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type NUMERIC"
         )
-        messages.gString("","")
+        new messages.gString("","")
       case Types.TINYINT | Types.SMALLINT | Types.INTEGER =>
-        messages.int(-1)
+        new messages.gInt(-1)
       case Types.BIGINT =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type BIGINT"
         )
-        messages.gString("","")
-      case Types.REAL | Types.FLOAT | Types.DOUBLE => messages.double(0.0)
+        new messages.gString("","")
+      case Types.REAL | Types.FLOAT | Types.DOUBLE => new messages.gDouble(0.0)
       case Types.VARBINARY | Types.BINARY =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type VARBINARY or BINARY"
         )
-        messages.gString("","")
+        new messages.gString("","")
       case Types.DATE =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type Date"
         )
-        messages.gString("","")
+        new messages.gString("","")
       case Types.TIMESTAMP =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type TIMESTAMP"
         )
-        messages.gString("","")
+        new messages.gString("","")
       case Types.CLOB =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type CLOB"
         )
-        messages.gString("","")
+        new messages.gString("","")
       case Types.BLOB =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type BLOB"
         )
-        messages.gString("","")
-      case Types.ARRAY => messages.gArray(Seq().toArray)
+        new messages.gString("","")
+      case Types.ARRAY => new messages.gArray(Seq().toArray)
       case Types.STRUCT =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type STRUCT"
         )
-        messages.gString("","")
+        new messages.gString("","")
       case Types.REF =>
         println(
           s"Module $identity: SQLightJDBC error while execute: " +
             "unsupported column type REF"
         )
-        messages.gString("","")
+        new messages.gString("","")
     }
   }
 

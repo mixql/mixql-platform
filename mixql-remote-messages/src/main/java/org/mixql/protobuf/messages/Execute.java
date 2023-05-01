@@ -6,4 +6,9 @@ public class Execute extends Message{
     public Execute(String statement){
         this.statement = statement;
     }
+
+    @Override
+    public String type() {
+        return this.getClass().getName();
+    }
 }

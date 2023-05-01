@@ -6,4 +6,9 @@ public class GetParam extends Message {
     public GetParam(String name){
         this.name = name;
     }
+    @Override
+    public String type() {
+        return this.getClass().getName();
+    }
+
 }

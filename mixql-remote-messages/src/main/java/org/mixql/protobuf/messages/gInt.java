@@ -5,4 +5,8 @@ public class gInt extends Message{
     public gInt(int value){
         this.value = value;
     }
+    @Override
+    public String type() {
+        return this.getClass().getName();
+    }
 }

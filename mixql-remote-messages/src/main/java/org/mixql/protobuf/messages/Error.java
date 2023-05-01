@@ -6,4 +6,9 @@ public class Error extends Message{
     public Error(String msg){
         this.msg = msg;
     }
+
+    @Override
+    public String type() {
+        return this.getClass().getName();
+    }
 }

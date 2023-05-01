@@ -61,11 +61,11 @@ class SQLightJDBC(identity: String,
 
           import org.mixql.engine.sqlite.JavaSqlArrayConverter
 
-          var arr: Seq[String] = Seq()
+          var arr: Seq[messages.Message] = Seq()
           while (remainedRows) {
             // simulate do while, as it is no longer supported in scala 3
             val rowValues = getRowFromResultSet(res, columnCount, columnTypes)
-            arr = arr :+ ProtoBufConverter.toJson(seqGeneratedMsgToArray(rowValues)).get
+            arr = arr ++ rowValues
             remainedRows = res.next()
           }
           new messages.gArray(arr.toArray)
@@ -82,16 +82,6 @@ class SQLightJDBC(identity: String,
     } finally {
       if (jdbcStmt != null) jdbcStmt.close()
     }
-  }
-
-  def seqGeneratedMsgToArray(msgs: Seq[messages.Message]): messages.gArray = {
-
-    new messages.gArray({
-      msgs
-        .map { anyMsg =>
-          ProtoBufConverter.toJson(anyMsg).get
-        }.toArray
-    })
   }
 
   def getRowFromResultSet(
@@ -125,10 +115,7 @@ class SQLightJDBC(identity: String,
             .map { str =>
               new messages.gString(str, "")
             }
-            .toSeq
-            .map { anyMsg =>
-              ProtoBufConverter.toJson(anyMsg).get
-            }.toArray
+            .toArray
         )
       case _: messages.Bool =>
         new messages.gArray(
@@ -136,10 +123,6 @@ class SQLightJDBC(identity: String,
             .toBooleanArray(javaSqlArray)
             .map {
               value => new messages.Bool(value)
-            }
-            .toSeq
-            .map { anyMsg =>
-              ProtoBufConverter.toJson(anyMsg).get
             }.toArray
         )
       case _: messages.gInt =>
@@ -148,10 +131,6 @@ class SQLightJDBC(identity: String,
             .toIntArray(javaSqlArray)
             .map {
               value => new messages.gInt(value)
-            }
-            .toSeq
-            .map { anyMsg =>
-              ProtoBufConverter.toJson(anyMsg).get
             }.toArray
         )
       case _: messages.gDouble =>
@@ -160,10 +139,6 @@ class SQLightJDBC(identity: String,
             .toDoubleArray(javaSqlArray)
             .map {
               value => new messages.gDouble(value)
-            }
-            .toSeq
-            .map { anyMsg =>
-              ProtoBufConverter.toJson(anyMsg).get
             }.toArray
         )
       case _: Any =>

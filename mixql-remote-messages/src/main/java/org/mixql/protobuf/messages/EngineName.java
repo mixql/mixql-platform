@@ -5,4 +5,9 @@ public class EngineName extends Message{
     public EngineName(String name){
         this.name = name;
     }
+
+    @Override
+    public String type() {
+        return this.getClass().getName();
+    }
 }

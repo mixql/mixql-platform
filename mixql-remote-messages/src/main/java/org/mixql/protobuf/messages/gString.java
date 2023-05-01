@@ -8,4 +8,9 @@ public class gString extends Message{
         this.quote = quote;
         this.value = value;
     }
+
+    @Override
+    public String type() {
+        return this.getClass().getName();
+    }
 }

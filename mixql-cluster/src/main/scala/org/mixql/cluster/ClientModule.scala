@@ -133,9 +133,9 @@ class ClientModule(
     if !engineStarted() then
       logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by executeFunc request")
     sendStashedParamsIfTheyAre()
-    sendMsg(messages.ExecuteFunction(name, messages.gArray(params.map(
-      gParam => ProtoBufConverter.toJson(GtypeConverter.toGeneratedMsg(gParam)).get
-    ).toArray)))
+    sendMsg(messages.ExecuteFunction(name, params.map(
+      gParam => GtypeConverter.toGeneratedMsg(gParam)
+    ).toArray))
     GtypeConverter.toGtype(recvMsg())
   }
 
@@ -161,7 +161,7 @@ class ClientModule(
     sendMsg(
       messages.SetParam(
         name,
-        ProtoBufConverter.toJson(GtypeConverter.toGeneratedMsg(value)).get
+        GtypeConverter.toGeneratedMsg(value)
       )
     )
 

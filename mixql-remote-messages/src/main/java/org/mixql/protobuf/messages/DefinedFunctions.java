@@ -6,4 +6,9 @@ public class DefinedFunctions extends Message {
     public DefinedFunctions(String[] arr) {
         this.arr = arr;
     }
+
+    @Override
+    public String type() {
+        return this.getClass().getName();
+    }
 }

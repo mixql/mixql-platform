@@ -5,4 +5,9 @@ public class Bool extends Message {
     public Bool(Boolean value){
         this.value = value;
     }
+
+    @Override
+    public String type() {
+        return this.getClass().getName();
+    }
 }

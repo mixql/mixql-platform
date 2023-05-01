@@ -4,6 +4,12 @@ object GtypeConverter {
 
   import org.mixql.core.context.gtype
 
+  def toGtype(remoteMsgs: Seq[messages.Message]): Seq[gtype.Type] = {
+    remoteMsgs.map(
+      m => toGtype(m)
+    )
+  }
+
   def toGtype(remoteMsg: messages.Message): gtype.Type = {
 
     remoteMsg match {
@@ -15,7 +21,7 @@ object GtypeConverter {
       case msg: messages.gArray =>
         new gtype.array(
           msg.arr
-            .map(f => toGtype(ProtoBufConverter.unpackAnyMsg(f)))
+            .map(f => toGtype(f))
         )
       case m: messages.Error => throw new Exception(m.msg)
       case a: scala.Any =>
@@ -42,10 +48,7 @@ object GtypeConverter {
         new messages.gString(m.getValue, m.getQuote)
       case m: gtype.array =>
         new messages.gArray(
-          m.getArr.map(gType => ProtoBufConverter.toJson(toGeneratedMsg(gType)) match {
-            case Failure(exception) => throw new Exception(exception)
-            case Success(json) => json
-          })
+          m.getArr.map(gType => toGeneratedMsg(gType))
         )
     }
   }

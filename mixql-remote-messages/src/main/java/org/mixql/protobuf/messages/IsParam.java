@@ -6,4 +6,9 @@ public class IsParam extends Message {
     public IsParam(String name){
         this.name = name;
     }
+
+    @Override
+    public String type() {
+        return this.getClass().getName();
+    }
 }

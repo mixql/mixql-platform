@@ -2,10 +2,15 @@ package org.mixql.protobuf.messages;
 
 public class SetParam extends Message {
     public String name;
-    public String json;
+    public Message msg;
 
-    public SetParam(String name, String json){
+    public SetParam(String name, Message msg){
         this.name = name;
-        this.json = json;
+        this.msg = msg;
     }
+    @Override
+    public String type() {
+        return this.getClass().getName();
+    }
+
 }

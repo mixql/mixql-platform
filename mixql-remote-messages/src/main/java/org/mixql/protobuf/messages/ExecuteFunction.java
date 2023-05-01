@@ -3,9 +3,15 @@ package org.mixql.protobuf.messages;
 public class ExecuteFunction extends Message{
 
     public String name;
-    public gArray params;
-    public ExecuteFunction(String name, gArray params){
+    public Message[] params;
+    public ExecuteFunction(String name, Message[] params){
         this.name = name;
         this.params = params;
     }
+
+    @Override
+    public String type() {
+        return this.getClass().getName();
+    }
+
 }

@@ -1,9 +1,14 @@
 package org.mixql.protobuf.messages;
 
 public class gArray extends Message{
-    public String[] arr;
+    public Message[] arr;
 
-    public gArray(String[] arr){
+    public gArray(Message[] arr){
         this.arr = arr;
+    }
+
+    @Override
+    public String type() {
+        return this.getClass().getName();
     }
 }

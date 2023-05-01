@@ -51,7 +51,7 @@ object EngineSqlightExecutor
           )
           engineParams.put(
             msg.name,
-            ProtoBufConverter.unpackAnyMsg(msg.json)
+            msg.msg
           )
           println(s"[Module-$identity]: Sending reply on SetParam  ${msg.name} msg")
           sendMsgToServerBroker(clientAddress, messages.ParamWasSet())
@@ -95,8 +95,8 @@ object EngineSqlightExecutor
           println(s"[Module-$identity] Started executing function ${msg.name}")
           import org.mixql.core.context.gtype
           import org.mixql.protobuf.GtypeConverter
-          val gParams: Seq[gtype.Type] = if (msg.params.arr.nonEmpty) {
-            val p = GtypeConverter.toGtype(msg.params).asInstanceOf[gtype.array].getArr
+          val gParams: Seq[gtype.Type] = if (msg.params.nonEmpty) {
+            val p = GtypeConverter.toGtype(msg.params)
             println(s"[Module-$identity] Params provided for function ${msg.name}: " + p)
             p
           } else Seq()

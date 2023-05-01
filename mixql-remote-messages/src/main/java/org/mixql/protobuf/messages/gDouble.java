@@ -6,4 +6,9 @@ public class gDouble extends Message {
     public gDouble(double value){
         this.value = value;
     }
+
+    @Override
+    public String type() {
+        return this.getClass().getName();
+    }
 }

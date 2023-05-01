@@ -14,9 +14,9 @@ import scala.language.postfixOps
 
 object Module {
   def sendMsgToServerBroker(msg: Array[Byte])(implicit
-    server: ZMQ.Socket,
-    identity: String,
-    clientAddress: Array[Byte]
+                                              server: ZMQ.Socket,
+                                              identity: String,
+                                              clientAddress: Array[Byte]
   ): Boolean = {
     // Sending multipart message
     println(s"Module $identity: sendMsgToServerBroker: sending empty frame")
@@ -30,8 +30,8 @@ object Module {
   }
 
   def sendMsgToServerBroker(
-    msg: String
-  )(implicit server: ZMQ.Socket, identity: String): Boolean = {
+                             msg: String
+                           )(implicit server: ZMQ.Socket, identity: String): Boolean = {
     println(
       s"Module $identity: sendMsgToServerBroker: convert msg of type String to Array of bytes"
     )
@@ -42,13 +42,13 @@ object Module {
   }
 
   def sendMsgToServerBroker(
-    clientAdrress: Array[Byte],
-    msg: messages.Message
-  )(implicit
-    server: ZMQ.Socket,
-    identity: String,
-    clientAddress: Array[Byte]
-  ): Boolean = {
+                             clientAdrress: Array[Byte],
+                             msg: messages.Message
+                           )(implicit
+                             server: ZMQ.Socket,
+                             identity: String,
+                             clientAddress: Array[Byte]
+                           ): Boolean = {
     println(
       s"Module $identity: sendMsgToServerBroker: convert msg of type Protobuf to Array of bytes"
     )
@@ -56,8 +56,8 @@ object Module {
   }
 
   def readMsgFromServerBroker()(implicit
-    server: ZMQ.Socket,
-    identity: String
+                                server: ZMQ.Socket,
+                                identity: String
   ): (Array[Byte], Option[Array[Byte]], Option[String]) = {
     // FOR PROTOCOL SEE BOOK OReilly ZeroMQ Messaging for any applications 2013 ~page 100
     // From server broker messanger we get msg with such body:
@@ -100,11 +100,11 @@ object Module {
 }
 
 class Module(
-  executor: IModuleExecutor,
-  indentity: String,
-  host: String,
-  port: Int
-) {
+              executor: IModuleExecutor,
+              indentity: String,
+              host: String,
+              port: Int
+            ) {
 
   import Module._
 
@@ -164,7 +164,111 @@ class Module(
             case None => // got protobuf message
               implicit val clientAddress = clientAdrressTmp
               implicit val clientAddressStr = new String(clientAddress)
-              executor.reactOnMessage(msg.get)(server, identity, clientAddress)
+              //              executor.reactOnMessage(msg.get)(server, identity, clientAddress)
+              ProtoBufConverter.unpackAnyMsg(msg.get) match {
+                case msg: messages.Execute =>
+                  try {
+                    sendMsgToServerBroker(clientAddress,
+                      executor.reactOnExecute(msg)(identity, clientAddressStr)
+                    )(server, identity, clientAddress)
+                  } catch {
+                    case e: Throwable =>
+                      sendMsgToServerBroker(
+                        clientAddress,
+                        new messages.Error(
+                          s"Module $identity to ${clientAddressStr}: error while reacting on execute: " +
+                            e.getMessage
+                        )
+                      )(server, identity, clientAddress)
+                  }
+                case msg: messages.SetParam =>
+                  try {
+                    sendMsgToServerBroker(clientAddress,
+                      executor.reactOnSetParam(msg)(identity, clientAddressStr)
+                    )(server, identity, clientAddress)
+                  } catch {
+                    case e: Throwable =>
+                      sendMsgToServerBroker(
+                        clientAddress,
+                        new messages.Error(
+                          s"Module $identity to ${clientAddressStr}: error while reacting on setting param: " +
+                            e.getMessage
+                        )
+                      )(server, identity, clientAddress)
+                  }
+                case msg: messages.GetParam =>
+                  try {
+                    sendMsgToServerBroker(clientAddress,
+                      executor.reactOnGetParam(msg)(identity, clientAddressStr)
+                    )(server, identity, clientAddress)
+                  } catch {
+                    case e: Throwable =>
+                      sendMsgToServerBroker(
+                        clientAddress,
+                        new messages.Error(
+                          s"Module $identity to ${clientAddressStr}: error while reacting on getting param: " +
+                            e.getMessage
+                        )
+                      )(server, identity, clientAddress)
+                  }
+                case msg: messages.IsParam =>
+                  try {
+                    sendMsgToServerBroker(clientAddress,
+                      executor.reactOnIsParam(msg)(identity, clientAddressStr)
+                    )(server, identity, clientAddress)
+                  } catch {
+                    case e: Throwable =>
+                      sendMsgToServerBroker(
+                        clientAddress,
+                        new messages.Error(
+                          s"Module $identity to ${clientAddressStr}: error while reacting on is param: " +
+                            e.getMessage
+                        )
+                      )(server, identity, clientAddress)
+                  }
+                case _: messages.ShutDown =>
+                  println(s"Module $identity: Started shutdown")
+                  try {
+                    executor.reactOnShutDown()(identity, clientAddressStr)
+                  } catch {
+                    case e: Throwable => println("Warning: error while reacting on shutdown: " +
+                      e.getMessage
+                    )
+                  }
+                  throw new BrakeException()
+                case msg: messages.ExecuteFunction =>
+                  try {
+                    sendMsgToServerBroker(clientAddress,
+                      executor.reactOnExecuteFunction(msg)(identity, clientAddressStr)
+                    )(server, identity, clientAddress)
+                  }
+                  catch {
+                    case e: Throwable =>
+                      sendMsgToServerBroker(
+                        clientAddress,
+                        new messages.Error(
+                          s"Module $identity to ${clientAddressStr}: error while reacting on execute function" +
+                            s"${msg.name}: " + e.getMessage
+                        )
+                      )(server, identity, clientAddress)
+                  }
+                case _: messages.GetDefinedFunctions =>
+                  try {
+                    sendMsgToServerBroker(clientAddress,
+                      executor.reactOnGetDefinedFunctions()(identity, clientAddressStr)
+                    )(server, identity, clientAddress)
+                  }
+                  catch {
+                    case e: Throwable =>
+                      sendMsgToServerBroker(
+                        clientAddress,
+                        new messages.Error(
+                          s"Module $identity to ${clientAddressStr}: error while reacting on getting" +
+                            " functions list" + e.getMessage
+                        )
+                      )(server, identity, clientAddress)
+                  }
+              }
           }
           processStart = DateTime.now()
           liveness = 3

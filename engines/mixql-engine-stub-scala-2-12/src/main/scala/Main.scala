@@ -15,7 +15,7 @@ object MixQlEngineDemo {
     val port = appArgs.port.toOption.get
     println(s"Module $indentity: Starting main client")
 
-    new core.Module(EngineDemoExecutor, indentity, host, port).startServer()
+    new core.Module(new EngineDemoExecutor(), indentity, host, port).startServer()
   }
 }
 

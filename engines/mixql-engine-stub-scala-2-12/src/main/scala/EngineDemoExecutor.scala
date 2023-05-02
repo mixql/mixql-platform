@@ -7,14 +7,11 @@ import org.mixql.engine.core.IModuleExecutor
 
 import _root_.scala.collection.immutable.Seq
 
-object EngineDemoExecutor extends IModuleExecutor {
+class EngineDemoExecutor extends IModuleExecutor {
   val engineParams: mutable.Map[String, messages.Message] =
     mutable.Map()
 
-  def reactOnExecute(msg: messages.Execute)(implicit
-                                            identity: String,
-                                            clientAddress: String
-  ): messages.Message = {
+  def reactOnExecute(msg: messages.Execute, identity: String, clientAddress: String): messages.Message = {
     println(
       s"Module $identity: Received Execute msg from server statement: ${msg.statement}"
     )
@@ -25,10 +22,8 @@ object EngineDemoExecutor extends IModuleExecutor {
     new messages.NULL()
   }
 
-  def reactOnSetParam(msg: messages.SetParam)(implicit
-                                              identity: String,
-                                              clientAddress: String
-  ): messages.ParamWasSet = {
+  def reactOnSetParam(msg: messages.SetParam, identity: String,
+                      clientAddress: String): messages.ParamWasSet = {
     println(
       s"Module $identity :Received SetParam msg from server $clientAddress: " +
         s"must set parameter ${msg.name} "
@@ -41,40 +36,33 @@ object EngineDemoExecutor extends IModuleExecutor {
     new messages.ParamWasSet()
   }
 
-  def reactOnGetParam(msg: messages.GetParam)(implicit
-                                              identity: String,
-                                              clientAddress: String
-  ): messages.Message = {
+  def reactOnGetParam(msg: messages.GetParam, identity: String,
+                      clientAddress: String): messages.Message = {
     println(s"Module $identity: Received GetParam ${msg.name} msg from server")
     println(s"Module $identity:  Sending reply on GetParam ${msg.name} msg")
     engineParams.get(msg.name).get
   }
 
-  def reactOnIsParam(msg: messages.IsParam)(implicit
-                                            identity: String,
-                                            clientAddress: String
-  ): messages.Bool = {
+  def reactOnIsParam(msg: messages.IsParam, identity: String, clientAddress: String): messages.Bool = {
     println(s"Module $identity: Received GetParam ${msg.name} msg from server")
     println(s"Module $identity:  Sending reply on GetParam ${msg.name} msg")
     new messages.Bool(engineParams.keys.toSeq.contains(msg.name))
   }
 
-  def reactOnExecuteFunction(msg: messages.ExecuteFunction)(implicit
-                                                            identity: String,
-                                                            clientAddress: String
-  ): messages.Message = {
+  def reactOnExecuteFunction(msg: messages.ExecuteFunction, identity: String,
+                             clientAddress: String): messages.Message = {
     println(s"Started executing function ${msg.name}")
     println(s"Started executing function ${msg.name}")
     println(s"Executing function ${msg.name}")
     new messages.NULL()
   }
 
-  def reactOnGetDefinedFunctions()(implicit
-                                   identity: String,
-                                   clientAddress: String
-  ): messages.DefinedFunctions = {
+  def reactOnGetDefinedFunctions(identity: String,
+                                 clientAddress: String): messages.DefinedFunctions = {
     println(s"Module $identity: Received request to get defined functions from server")
     new messages.DefinedFunctions(Seq().toArray)
   }
+
+  def reactOnShutDown(identity: String, clientAddress: String): Unit = {}
 
 }

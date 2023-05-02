@@ -15,7 +15,7 @@ object MixQlEngineSqlight {
     val port = appArgs.port.toOption.get
     println(s"Module $indentity: Starting main client")
 
-    new core.Module(EngineSqlightExecutor, indentity, host, port).startServer()
+    new core.Module(new EngineSqlightExecutor(), indentity, host, port).startServer()
   }
 }
 

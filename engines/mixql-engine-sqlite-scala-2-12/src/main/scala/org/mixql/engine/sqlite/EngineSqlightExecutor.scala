@@ -5,7 +5,7 @@ import org.mixql.protobuf.messages
 import scala.collection.mutable
 import org.mixql.engine.core.{BrakeException, IModuleExecutor}
 
-object EngineSqlightExecutor
+class EngineSqlightExecutor
   extends IModuleExecutor
     with java.lang.AutoCloseable {
   val engineParams: mutable.Map[String, messages.Message] =
@@ -19,10 +19,7 @@ object EngineSqlightExecutor
     "sqlite_simple_proc_context_params" -> SqliteSimpleProc.simple_func_context_params,
   )
 
-  def reactOnExecute(msg: messages.Execute)(implicit
-                                            identity: String,
-                                            clientAddress: String
-  ): messages.Message = {
+  def reactOnExecute(msg: messages.Execute, identity: String, clientAddress: String): messages.Message = {
     if (context == null) context = new SQLightJDBC(identity, engineParams)
     println(
       s"[Module-$identity]: Received Execute msg from server statement: ${
@@ -43,10 +40,8 @@ object EngineSqlightExecutor
     res
   }
 
-  def reactOnSetParam(msg: messages.SetParam)(implicit
-                                              identity: String,
-                                              clientAddress: String
-  ): messages.ParamWasSet = {
+  def reactOnSetParam(msg: messages.SetParam, identity: String,
+                      clientAddress: String): messages.ParamWasSet = {
     println(
       s"[Module-$identity] :Received SetParam msg from server $clientAddress: " +
         s"must set parameter ${
@@ -63,10 +58,7 @@ object EngineSqlightExecutor
     new messages.ParamWasSet()
   }
 
-  def reactOnGetParam(msg: messages.GetParam)(implicit
-                                              identity: String,
-                                              clientAddress: String
-  ): messages.Message = {
+  def reactOnGetParam(msg: messages.GetParam, identity: String, clientAddress: String): messages.Message = {
     println(s"[Module-$identity]: Received GetParam ${
       msg.name
     } msg from server")
@@ -76,10 +68,7 @@ object EngineSqlightExecutor
     engineParams(msg.name)
   }
 
-  def reactOnIsParam(msg: messages.IsParam)(implicit
-                                            identity: String,
-                                            clientAddress: String
-  ): messages.Bool = {
+  def reactOnIsParam(msg: messages.IsParam, identity: String, clientAddress: String): messages.Bool = {
     println(s"[Module-$identity]: Received GetParam ${
       msg.name
     } msg from server")
@@ -89,10 +78,8 @@ object EngineSqlightExecutor
     new messages.Bool(engineParams.keys.toSeq.contains(msg.name))
   }
 
-  def reactOnExecuteFunction(msg: messages.ExecuteFunction)(implicit
-                                                            identity: String,
-                                                            clientAddress: String
-  ): messages.Message = {
+  def reactOnExecuteFunction(msg: messages.ExecuteFunction, identity: String,
+                             clientAddress: String): messages.Message = {
     if (context == null) context = new SQLightJDBC(identity, engineParams)
     println(s"[Module-$identity] Started executing function ${
       msg.name
@@ -108,16 +95,15 @@ object EngineSqlightExecutor
     res
   }
 
-  def reactOnGetDefinedFunctions()(implicit
-                                   identity: String,
-                                   clientAddress: String
-  ): messages.DefinedFunctions = {
+  def reactOnGetDefinedFunctions(identity: String, clientAddress: String): messages.DefinedFunctions = {
 
     import collection.JavaConverters._
 
     println(s"[Module-$identity]: Received request to get defined functions from server")
     new messages.DefinedFunctions(functions.keys.toArray)
   }
+
+  def reactOnShutDown(identity: String, clientAddress: String): Unit = {}
 
   override def close(): Unit = {
     if (context != null) context.close()

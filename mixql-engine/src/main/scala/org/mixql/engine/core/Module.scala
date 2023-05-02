@@ -115,6 +115,7 @@ class Module(
   val heartBeatInterval: Long = 3000
   var processStart: DateTime = null
   var liveness: Int = 3
+  var brokerClientAdress: Array[Byte] = Array()
 
   def startServer(): Unit = {
     println(s"Module $indentity: Starting main client")
@@ -163,13 +164,14 @@ class Module(
               )
             case None => // got protobuf message
               implicit val clientAddress = clientAdrressTmp
+              brokerClientAdress = clientAddress
               implicit val clientAddressStr = new String(clientAddress)
               //              executor.reactOnMessage(msg.get)(server, identity, clientAddress)
               ProtoBufConverter.unpackAnyMsg(msg.get) match {
                 case msg: messages.Execute =>
                   try {
                     sendMsgToServerBroker(clientAddress,
-                      executor.reactOnExecute(msg)(identity, clientAddressStr)
+                      executor.reactOnExecute(msg, identity, clientAddressStr)
                     )(server, identity, clientAddress)
                   } catch {
                     case e: Throwable =>
@@ -184,7 +186,7 @@ class Module(
                 case msg: messages.SetParam =>
                   try {
                     sendMsgToServerBroker(clientAddress,
-                      executor.reactOnSetParam(msg)(identity, clientAddressStr)
+                      executor.reactOnSetParam(msg, identity, clientAddressStr)
                     )(server, identity, clientAddress)
                   } catch {
                     case e: Throwable =>
@@ -199,7 +201,7 @@ class Module(
                 case msg: messages.GetParam =>
                   try {
                     sendMsgToServerBroker(clientAddress,
-                      executor.reactOnGetParam(msg)(identity, clientAddressStr)
+                      executor.reactOnGetParam(msg, identity, clientAddressStr)
                     )(server, identity, clientAddress)
                   } catch {
                     case e: Throwable =>
@@ -214,7 +216,7 @@ class Module(
                 case msg: messages.IsParam =>
                   try {
                     sendMsgToServerBroker(clientAddress,
-                      executor.reactOnIsParam(msg)(identity, clientAddressStr)
+                      executor.reactOnIsParam(msg, identity, clientAddressStr)
                     )(server, identity, clientAddress)
                   } catch {
                     case e: Throwable =>
@@ -229,7 +231,7 @@ class Module(
                 case _: messages.ShutDown =>
                   println(s"Module $identity: Started shutdown")
                   try {
-                    executor.reactOnShutDown()(identity, clientAddressStr)
+                    executor.reactOnShutDown(identity, clientAddressStr)
                   } catch {
                     case e: Throwable => println("Warning: error while reacting on shutdown: " +
                       e.getMessage
@@ -239,7 +241,7 @@ class Module(
                 case msg: messages.ExecuteFunction =>
                   try {
                     sendMsgToServerBroker(clientAddress,
-                      executor.reactOnExecuteFunction(msg)(identity, clientAddressStr)
+                      executor.reactOnExecuteFunction(msg, identity, clientAddressStr)
                     )(server, identity, clientAddress)
                   }
                   catch {
@@ -255,7 +257,7 @@ class Module(
                 case _: messages.GetDefinedFunctions =>
                   try {
                     sendMsgToServerBroker(clientAddress,
-                      executor.reactOnGetDefinedFunctions()(identity, clientAddressStr)
+                      executor.reactOnGetDefinedFunctions(identity, clientAddressStr)
                     )(server, identity, clientAddress)
                   }
                   catch {
@@ -268,6 +270,8 @@ class Module(
                         )
                       )(server, identity, clientAddress)
                   }
+                case m: messages.Error =>
+                  sendMsgToServerBroker(clientAddress, m)(server, identity, clientAddress)
               }
           }
           processStart = DateTime.now()
@@ -295,6 +299,13 @@ class Module(
       case _: BrakeException => println(s"Module $indentity: BrakeException")
       case ex: Exception =>
         println(s"Module $indentity: Error: " + ex.getMessage)
+        sendMsgToServerBroker(
+          brokerClientAdress,
+          new messages.Error(
+            s"Module $indentity to broker ${brokerClientAdress}: fatal error: " +
+              ex.getMessage
+          )
+        )(server, indentity, brokerClientAdress)
     } finally {
       close()
     }

@@ -126,7 +126,7 @@ class ClientModule(
     import org.mixql.protobuf.messages
     import org.mixql.protobuf.GtypeConverter
     sendMsg(messages.Execute(stmt))
-    GtypeConverter.toGtype(recvMsg())
+    GtypeConverter.messageToGtype(recvMsg())
   }
 
   override def executeFunc(name: String, params: Type*): Type = {
@@ -136,7 +136,7 @@ class ClientModule(
     sendMsg(messages.ExecuteFunction(name, params.map(
       gParam => GtypeConverter.toGeneratedMsg(gParam)
     ).toArray))
-    GtypeConverter.toGtype(recvMsg())
+    GtypeConverter.messageToGtype(recvMsg())
   }
 
 
@@ -191,7 +191,7 @@ class ClientModule(
     import org.mixql.protobuf.GtypeConverter
 
     sendMsg(messages.GetParam(name))
-    GtypeConverter.toGtype(recvMsg())
+    GtypeConverter.messageToGtype(recvMsg())
   }
 
   override def isParam(name: String): Boolean = {
@@ -203,7 +203,7 @@ class ClientModule(
     import org.mixql.protobuf.GtypeConverter
 
     sendMsg(messages.IsParam(name))
-    GtypeConverter.toGtype(recvMsg()).asInstanceOf[gtype.bool].getValue
+    GtypeConverter.messageToGtype(recvMsg()).asInstanceOf[gtype.bool].getValue
   }
 
   def engineStarted(): Boolean =
@@ -241,12 +241,12 @@ class ClientModule(
     )
     logDebug(
       "server: Clientmodule " + clientName + " sending protobuf message to remote module " + moduleName + " " +
-        client.send(ProtoBufConverter.toArray(msg).get, 0)
+        client.send(ProtoBufConverter.toArray(msg), 0)
     )
   }
 
   private def recvMsg(): messages.Message = {
-    ProtoBufConverter.unpackAnyMsg(client.recv(0))
+    ProtoBufConverter.unpackAnyMsgFromArray(client.recv(0))
   }
 
   private def startBroker() = {

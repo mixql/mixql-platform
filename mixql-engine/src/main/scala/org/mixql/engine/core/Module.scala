@@ -52,7 +52,7 @@ object Module {
     println(
       s"Module $identity: sendMsgToServerBroker: convert msg of type Protobuf to Array of bytes"
     )
-    sendMsgToServerBroker(ProtoBufConverter.toArray(msg).get)
+    sendMsgToServerBroker(ProtoBufConverter.toArray(msg))
   }
 
   def readMsgFromServerBroker()(implicit
@@ -167,7 +167,7 @@ class Module(
               brokerClientAdress = clientAddress
               implicit val clientAddressStr = new String(clientAddress)
               //              executor.reactOnMessage(msg.get)(server, identity, clientAddress)
-              ProtoBufConverter.unpackAnyMsg(msg.get) match {
+              ProtoBufConverter.unpackAnyMsgFromArray(msg.get) match {
                 case msg: messages.Execute =>
                   try {
                     sendMsgToServerBroker(clientAddress,

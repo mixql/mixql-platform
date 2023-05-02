@@ -30,7 +30,7 @@ class MixqlEngineSqliteTest extends AnyFlatSpec with BeforeAndAfterAll {
     import org.mixql.protobuf.GtypeConverter
 
     val res = context.execute(code)
-    GtypeConverter.toGtype(res)
+    GtypeConverter.messageToGtype(res)
   }
 
   override def afterAll(): Unit = {

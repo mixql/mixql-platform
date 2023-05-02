@@ -190,14 +190,6 @@ lazy val mixQLEngineSqliteLocal = project
   .in(file("engines/mixql-engine-sqlite-local"))
   .dependsOn(mixQLEngineInternalSCALA3)
 
-///////////////////////////////////MIXQL PLATFORM DEMO FUNCTIONS/////////////////////////
-
-lazy val mixQLPlatformDemoSimpleFuncs = project
-  .in(file("mixql-platfrom-demo-procedures/simple_functions_test"))
-  .dependsOn(mixQLCoreSCALA3)
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
 lazy val mixQLPlatformDemo = project
   .in(file("mixql-platform-demo"))
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
@@ -206,8 +198,7 @@ lazy val mixQLPlatformDemo = project
     mixQLEngineStub % "compile->test",
     mixQLEngineSqlite % "compile->test",
     mixQLEngineStubLocal, //% "compile->compile;compile->test",
-    mixQLEngineSqliteLocal, //% "compile->compile;compile->test",
-    mixQLPlatformDemoSimpleFuncs, // % "compile->compile;compile->test"
+    mixQLEngineSqliteLocal //% "compile->compile;compile->test",
   )
   .settings(stageEnginesDemo := {
     //      implicit val log = streams.value.log

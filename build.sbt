@@ -99,38 +99,16 @@ lazy val mixQLCoreSCALA3 = mixQLCore.jvm(Scala3)
 lazy val mixQLCoreSCALA212 = mixQLCore.jvm(Scala212)
 lazy val mixQLCoreSCALA213 = mixQLCore.jvm(Scala213)
 
-lazy val mixQLRemoteMessages = projectMatrix
-  .in(file("mixql-remote-messages"))
-  .dependsOn(mixQLCore)
-  .settings({
-//    val circeVersion = "0.14.1"
-    libraryDependencies ++= Seq(
-      "org.scalameta" %% "munit" % "0.7.29" % Test,
-      "com.googlecode.json-simple" % "json-simple" % "1.1.1"
-//      "io.circe" %% "circe-core" % circeVersion,
-//      "io.circe" %% "circe-generic" % circeVersion,
-//      "io.circe" %% "circe-parser" % circeVersion
-    )
-  })
-  .jvmPlatform(Seq(Scala3, Scala213, Scala212))
-
-lazy val mixQLRemoteMessagesSCALA3 = mixQLRemoteMessages.jvm(Scala3)
-lazy val mixQLRemoteMessagesSCALA212 = mixQLRemoteMessages.jvm(Scala212)
-lazy val mixQLRemoteMessagesSCALA213 = mixQLRemoteMessages.jvm(Scala213)
-
-lazy val mixQLCluster = project
-  .in(file("mixql-cluster"))
-  .dependsOn(mixQLRemoteMessagesSCALA3)
-
 lazy val mixQLEngine = projectMatrix
   .in(file("mixql-engine"))
-  .dependsOn(mixQLRemoteMessages)
+  .dependsOn(mixQLCore)
   .settings(libraryDependencies ++= {
     Seq(
       "com.typesafe" % "config" % "1.4.2",
       "org.scalameta" %% "munit" % "0.7.29" % Test,
       "org.zeromq" % "jeromq" % "0.5.2",
-      "com.github.nscala-time" %% "nscala-time" % "2.32.0"
+      "com.github.nscala-time" %% "nscala-time" % "2.32.0",
+      "com.googlecode.json-simple" % "json-simple" % "1.1.1"
     )
   })
   .jvmPlatform(Seq(Scala3, Scala213, Scala212))
@@ -139,13 +117,10 @@ lazy val mixQLEngineSCALA3 = mixQLEngine.jvm(Scala3)
 lazy val mixQLEngineSCALA213 = mixQLEngine.jvm(Scala213)
 lazy val mixQLEngineSCALA212 = mixQLEngine.jvm(Scala212)
 
+lazy val mixQLCluster = project
+  .in(file("mixql-cluster"))
+  .dependsOn(mixQLEngineSCALA3)
 
-lazy val mixQLEngineInternal = projectMatrix
-  .in(file("mixql-engine-internal"))
-  .dependsOn(mixQLCore)
-  .jvmPlatform(Seq(Scala3, Scala213, Scala212))
-
-lazy val mixQLEngineInternalSCALA3 = mixQLEngineInternal.jvm(Scala3)
 
 lazy val mixQLEngineStub = project
   .in(file("engines/mixql-engine-stub"))
@@ -184,11 +159,11 @@ lazy val stageEnginesOozie =
 
 lazy val mixQLEngineStubLocal = project
   .in(file("engines/mixql-engine-stub-local"))
-  .dependsOn(mixQLEngineInternalSCALA3)
+  .dependsOn(mixQLEngineSCALA3)
 
 lazy val mixQLEngineSqliteLocal = project
   .in(file("engines/mixql-engine-sqlite-local"))
-  .dependsOn(mixQLEngineInternalSCALA3)
+  .dependsOn(mixQLEngineSCALA3)
 
 lazy val mixQLPlatformDemo = project
   .in(file("mixql-platform-demo"))
@@ -297,7 +272,7 @@ lazy val mixQLPlatformOozie = project
 //}
 //
 
-lazy val buildAllMixQLCore = taskKey[Unit]("Build all mixql core projects ")
+lazy val buildAllMixQLCore = taskKey[Unit]("Build all mixql core projects")
 buildAllMixQLCore := {
   //  (mixQLCluster / Compile / packageBin).value
   //  (mixQLProtobuf / Compile / packageBin).value
@@ -305,14 +280,6 @@ buildAllMixQLCore := {
   (mixQLCoreSCALA212 / Compile / packageBin).value
   (mixQLCoreSCALA213 / Compile / packageBin).value
 }
-
-lazy val buildAllMixQLRemoteMessages = taskKey[Unit]("Build all mixql remote messages library projects ")
-buildAllMixQLRemoteMessages := {
-  (mixQLRemoteMessagesSCALA3 / Compile / packageBin).value
-  (mixQLRemoteMessagesSCALA213 / Compile / packageBin).value
-  (mixQLRemoteMessagesSCALA212 / Compile / packageBin).value
-}
-
 
 lazy val archiveMixQLPlatformDemo =
   taskKey[Unit]("Create dist archive of platform-demo")

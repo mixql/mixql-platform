@@ -42,7 +42,7 @@ class SQLightJDBC(identity: String, engineParams: mutable.Map[String, gtype.Type
     logInfo(s"opened database successfully")
   }
 
-  // returns clientMsgs.Type
+  // returns messages.Type
   // TO-DO Should return iterator?
   def execute(stmt: String): gtype.Type = {
     if SQLightJDBC.c == null then init()

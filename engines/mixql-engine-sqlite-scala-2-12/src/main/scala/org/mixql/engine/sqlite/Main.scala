@@ -1,11 +1,11 @@
-package org.mixql.engine.demo.scala.two.twelf
+package org.mixql.engine.sqlite
 
 import com.typesafe.config._
 import org.rogach.scallop.ScallopConf
 
 import org.mixql.engine.core
 
-object MixQlEngineDemo {
+object MixQlEngineSqlight {
 
   def main(args: Array[String]): Unit = {
     val appArgs: AppArgs = AppArgs(args)
@@ -15,7 +15,7 @@ object MixQlEngineDemo {
     val port = appArgs.port.toOption.get
     println(s"Module $indentity: Starting main client")
 
-    new core.Module(new EngineDemoExecutor(), indentity, host, port).startServer()
+    new core.Module(new EngineSqlightExecutor(), indentity, host, port).startServer()
   }
 }
 

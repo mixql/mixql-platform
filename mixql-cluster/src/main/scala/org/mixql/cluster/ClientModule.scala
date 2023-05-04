@@ -6,7 +6,7 @@ import org.mixql.core.engine.Engine
 import org.mixql.core.context.gtype.Type
 import org.mixql.net.PortOperations
 import org.mixql.protobuf.{GtypeConverter, ProtoBufConverter}
-import org.mixql.protobuf.generated.messages
+import org.mixql.protobuf.messages
 import org.zeromq.{SocketType, ZMQ}
 
 import java.io.File
@@ -19,7 +19,7 @@ import scala.util.Try
 import org.mixql.core.context.gtype
 import logger.*
 import org.mixql.core.logger.logDebug
-import org.mixql.protobuf.generated.messages.ShutDown
+import org.mixql.protobuf.messages.ShutDown
 
 case class StashedParam(name: String, value: gtype.Type)
 
@@ -123,51 +123,31 @@ class ClientModule(
 
     sendStashedParamsIfTheyAre()
 
-    import org.mixql.protobuf.generated.messages
+    import org.mixql.protobuf.messages
     import org.mixql.protobuf.GtypeConverter
-    sendMsg(messages.Execute.newBuilder().setStatement(stmt).build())
-    GtypeConverter.toGtype(recvMsg())
+    sendMsg(messages.Execute(stmt))
+    GtypeConverter.messageToGtype(recvMsg())
   }
 
   override def executeFunc(name: String, params: Type*): Type = {
-    import collection.JavaConverters._
     if !engineStarted() then
       logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by executeFunc request")
     sendStashedParamsIfTheyAre()
-    sendMsg(messages.ExecuteFunction
-      .newBuilder()
-      .setName(name)
-      .setParams(
-        messages.Array
-          .newBuilder()
-          .addAllArr(
-            params.map(
-              gParam => GtypeConverter.toProtobufAny(gParam)
-            ).asJava
-          )
-          .build()
-      )
-      .build()
-    )
-    GtypeConverter.toGtype(recvMsg())
+    sendMsg(messages.ExecuteFunction(name, params.map(
+      gParam => GtypeConverter.toGeneratedMsg(gParam)
+    ).toArray))
+    GtypeConverter.messageToGtype(recvMsg())
   }
 
 
   override def getDefinedFunctions: List[String] = {
-    import collection.JavaConverters._
     if !engineStarted() then
       logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by getDefinedFunctions request")
     import org.mixql.core.context.gtype
     sendStashedParamsIfTheyAre()
     logInfo(s"Server: ClientModule: $clientName: ask defined functions from remote engine")
-    sendMsg(messages.GetDefinedFunctions.getDefaultInstance)
-    val functionsList = recvMsg()
-      .asInstanceOf[messages.DefinedFunctions]
-      .getArrList
-      .listIterator()
-      .asScala
-      .toList
-
+    sendMsg(messages.GetDefinedFunctions())
+    val functionsList = recvMsg().asInstanceOf[messages.DefinedFunctions].arr.toList
     if functionsList.isEmpty then
       Nil
     else
@@ -175,20 +155,19 @@ class ClientModule(
   }
 
   private def sendParam(name: String, value: Type): Unit = {
-    import org.mixql.protobuf.generated.messages
+    import org.mixql.protobuf.messages
     import org.mixql.protobuf.GtypeConverter
 
     sendMsg(
-      messages.SetParam
-        .newBuilder()
-        .setName(name)
-        .setValue(GtypeConverter.toProtobufAny(value))
-        .build()
+      messages.SetParam(
+        name,
+        GtypeConverter.toGeneratedMsg(value)
+      )
     )
 
     recvMsg() match
       case _: messages.ParamWasSet =>
-      case msg: messages.Error => throw Exception(msg.getMsg)
+      case msg: messages.Error => throw Exception(msg.msg)
       case a: scala.Any =>
         throw Exception(
           s"engine-client-module: setParam error:  " +
@@ -208,11 +187,11 @@ class ClientModule(
     if !engineStarted() then
       logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by getParam request")
     sendStashedParamsIfTheyAre()
-    import org.mixql.protobuf.generated.messages
+    import org.mixql.protobuf.messages
     import org.mixql.protobuf.GtypeConverter
 
-    sendMsg(messages.GetParam.newBuilder().setName(name).build())
-    GtypeConverter.toGtype(recvMsg())
+    sendMsg(messages.GetParam(name))
+    GtypeConverter.messageToGtype(recvMsg())
   }
 
   override def isParam(name: String): Boolean = {
@@ -220,11 +199,11 @@ class ClientModule(
       logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by isParam request")
     sendStashedParamsIfTheyAre()
     import org.mixql.core.context.gtype
-    import org.mixql.protobuf.generated.messages
+    import org.mixql.protobuf.messages
     import org.mixql.protobuf.GtypeConverter
 
-    sendMsg(messages.IsParam.newBuilder().setName(name).build())
-    GtypeConverter.toGtype(recvMsg()).asInstanceOf[gtype.bool].getValue
+    sendMsg(messages.IsParam(name))
+    GtypeConverter.messageToGtype(recvMsg()).asInstanceOf[gtype.bool].getValue
   }
 
   def engineStarted(): Boolean =
@@ -233,7 +212,7 @@ class ClientModule(
       case Some(value) => value
       case None => false
 
-  private def sendMsg(msg: com.google.protobuf.GeneratedMessageV3): Unit = {
+  private def sendMsg(msg: messages.Message): Unit = {
     import ClientModule.engineStartedMap
     import ClientModule.broker
     if !engineStarted() then
@@ -266,8 +245,8 @@ class ClientModule(
     )
   }
 
-  private def recvMsg(): com.google.protobuf.GeneratedMessageV3 = {
-    ProtoBufConverter.unpackAnyMsg(client.recv(0))
+  private def recvMsg(): messages.Message = {
+    ProtoBufConverter.unpackAnyMsgFromArray(client.recv(0))
   }
 
   private def startBroker() = {
@@ -375,7 +354,7 @@ class ClientModule(
 
     import ClientModule.broker
     if started then
-      sendMsg(messages.ShutDown.getDefaultInstance)
+      sendMsg(messages.ShutDown())
       engineStartedMap.put(moduleName.trim, false) //not to send occasionally more then once
   }
 

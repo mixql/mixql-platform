@@ -4,17 +4,16 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.mixql.core.context.gtype
 
 import scala.collection.mutable
-import org.mixql.protobuf.generated.messages
+import org.mixql.protobuf.messages
 
 object MixqlEngineSqliteTest {
   var context: SQLightJDBC = null
   val identity = "MixqlEngineSqliteTest"
-  val engineParams: mutable.Map[String, com.google.protobuf.GeneratedMessageV3] =
+  val engineParams: mutable.Map[String, messages.Message] =
     mutable.Map(
-      "mixql.org.engine.sqlight.db.path" -> messages.String
-        .newBuilder()
-        .setValue("jdbc:sqlite::memory:")
-        .build()
+      "mixql.org.engine.sqlight.db.path" -> new messages.gString(
+        "jdbc:sqlite::memory:", ""
+      )
     )
 }
 
@@ -31,7 +30,7 @@ class MixqlEngineSqliteTest extends AnyFlatSpec with BeforeAndAfterAll {
     import org.mixql.protobuf.GtypeConverter
 
     val res = context.execute(code)
-    GtypeConverter.toGtype(res)
+    GtypeConverter.messageToGtype(res)
   }
 
   override def afterAll(): Unit = {

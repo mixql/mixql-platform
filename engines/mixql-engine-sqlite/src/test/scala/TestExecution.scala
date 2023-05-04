@@ -1,4 +1,4 @@
-import com.google.protobuf.GeneratedMessageV3
+import org.mixql.protobuf.messages.Message
 class TestExecution extends MixqlEngineSqliteTest {
   behavior of "start engine, execute sql statements and close engine"
 
@@ -18,7 +18,7 @@ class TestExecution extends MixqlEngineSqliteTest {
       println(
         MixqlEngineSqliteTest.identity + " create table res : " + gType.toString
       )
-      assert(gType.isInstanceOf[gtype.Null])
+      assert(gtype.isNull(gType))
     }
 
     {
@@ -32,7 +32,7 @@ class TestExecution extends MixqlEngineSqliteTest {
       println(
         MixqlEngineSqliteTest.identity + " insert into res : " + gType.toString
       )
-      assert(gType.isInstanceOf[gtype.Null])
+      assert(gtype.isNull(gType))
     }
 
     {

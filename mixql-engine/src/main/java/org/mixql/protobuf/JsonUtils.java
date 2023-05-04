@@ -76,13 +76,13 @@ class JsonUtils {
 
     private static JSONArray buildStringArray(String[] arr) {
         JSONArray jsonArrObject = new JSONArray();
-        jsonArrObject.addAll(Arrays.stream(arr).toList());
+        jsonArrObject.addAll(Arrays.asList(arr));
         return jsonArrObject;
     }
 
     private static JSONArray buildJsobObjectsArray(JSONObject[] arr) {
         JSONArray jsonArrObject = new JSONArray();
-        jsonArrObject.addAll(Arrays.stream(arr).toList());
+        jsonArrObject.addAll(Arrays.asList(arr));
         return jsonArrObject;
     }
 

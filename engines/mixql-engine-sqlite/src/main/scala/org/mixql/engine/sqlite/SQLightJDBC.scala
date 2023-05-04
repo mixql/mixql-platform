@@ -61,11 +61,11 @@ class SQLightJDBC(identity: String,
 
           import org.mixql.engine.sqlite.JavaSqlArrayConverter
 
-          var arr: Seq[messages.Message] = Seq()
+          var arr: Seq[messages.gArray] = Seq()
           while (remainedRows) {
             // simulate do while, as it is no longer supported in scala 3
             val rowValues = getRowFromResultSet(res, columnCount, columnTypes)
-            arr = arr :++ rowValues
+            arr = arr :+ messages.gArray(rowValues.toArray)
             remainedRows = res.next()
           }
           messages.gArray(arr.toArray)

@@ -1,6 +1,6 @@
 package org.mixql.protobuf.messages;
 
-public class gDouble extends Message {
+public class gDouble implements Message {
     public double value;
 
     public gDouble(double value){
@@ -8,7 +8,7 @@ public class gDouble extends Message {
     }
 
     @Override
-    public String type() {
-        return this.getClass().getName();
+    public String toString() {
+        return "{ type: " + type() + " value: " + value + "}";
     }
 }

@@ -2,7 +2,11 @@ package org.mixql.protobuf;
 
 import org.apache.logging.log4j.core.util.ArrayUtils;
 import org.mixql.core.context.gtype.*;
+import org.mixql.core.context.gtype.map;
 import org.mixql.protobuf.messages.*;
+
+import java.util.HashMap;
+import java.util.Set;
 
 public class GtypeConverter {
 
@@ -35,6 +39,17 @@ public class GtypeConverter {
 
         if (msg instanceof org.mixql.protobuf.messages.Error)
             throw new Exception(((org.mixql.protobuf.messages.Error) msg).msg);
+
+        if (msg instanceof org.mixql.protobuf.messages.map) {
+            HashMap<Type, Type> m = new HashMap<>();
+            org.mixql.protobuf.messages.map msgMap = (org.mixql.protobuf.messages.map)msg;
+
+            for (Message key : msgMap.getMap().keySet()){
+                m.put(messageToGtype(key), messageToGtype(msgMap.getMap().get(key)));
+            }
+
+            return new map(m);
+        }
 
         throw new Exception(
                 String.format(
@@ -81,6 +96,16 @@ public class GtypeConverter {
             return new gArray(
                     toGeneratedMsgs(((array) gValue).getArr())
             );
+
+        if (gValue instanceof map) {
+            HashMap<Message, Message> m = new HashMap<>();
+            map gMap = (map)gValue;
+
+            for (Type key : gMap.getMap().keySet()){
+                m.put(toGeneratedMsg(key), toGeneratedMsg(gMap.getMap().get(key)));
+            }
+            return new org.mixql.protobuf.messages.map(m);
+        }
 
         throw new Exception("toGeneratedMsg Error!! Unknown gValue was provided: " + gValue.toString());
     }

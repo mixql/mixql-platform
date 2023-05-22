@@ -1,6 +1,6 @@
 package org.mixql.protobuf.messages;
 
-public class SetParam extends Message {
+public class SetParam implements Message {
     public String name;
     public Message msg;
 
@@ -8,9 +8,10 @@ public class SetParam extends Message {
         this.name = name;
         this.msg = msg;
     }
+
     @Override
-    public String type() {
-        return this.getClass().getName();
+    public String toString() {
+        return "{ type: " + type() + " mame: " + name + " msg: " + msg + "}";
     }
 
 }

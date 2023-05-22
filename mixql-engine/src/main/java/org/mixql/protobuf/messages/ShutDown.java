@@ -1,9 +1,8 @@
 package org.mixql.protobuf.messages;
 
-public class ShutDown extends Message{
-
+public class ShutDown implements Message{
     @Override
-    public String type() {
-        return this.getClass().getName();
+    public String toString() {
+        return "{ type: " + type() + "}";
     }
 }

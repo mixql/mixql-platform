@@ -1,8 +1,8 @@
 package org.mixql.protobuf.messages;
 
-public class ParamWasSet extends Message{
+public class ParamWasSet implements Message{
     @Override
-    public String type() {
-        return this.getClass().getName();
+    public String toString() {
+        return "{ type: " + type() + "}";
     }
 }

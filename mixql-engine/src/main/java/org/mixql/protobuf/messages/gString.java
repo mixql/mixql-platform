@@ -1,6 +1,6 @@
 package org.mixql.protobuf.messages;
 
-public class gString extends Message{
+public class gString implements Message{
     public String value;
     public String quote;
 
@@ -9,8 +9,14 @@ public class gString extends Message{
         this.value = value;
     }
 
+    public String asLiteral() {
+        String q = "\"";
+        if (quote != "") q = quote;
+        return q + value + q;
+    }
+
     @Override
-    public String type() {
-        return this.getClass().getName();
+    public String toString() {
+        return "{ type: " + type() + " value: " + value + "quote: " + quote + "}";
     }
 }

@@ -1,6 +1,6 @@
 package org.mixql.protobuf.messages;
 
-public class Error extends Message{
+public class Error implements Message{
     public String msg;
 
     public Error(String msg){
@@ -8,7 +8,8 @@ public class Error extends Message{
     }
 
     @Override
-    public String type() {
-        return this.getClass().getName();
+    public String toString() {
+        return "{ type: " + type() + "msg: " + msg + "}";
     }
+    
 }

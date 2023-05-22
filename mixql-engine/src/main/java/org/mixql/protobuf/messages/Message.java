@@ -1,5 +1,7 @@
 package org.mixql.protobuf.messages;
 
-public abstract class Message {
-    public abstract String type();
+public interface Message {
+    default String type() {
+        return this.getClass().getName();
+    }
 }

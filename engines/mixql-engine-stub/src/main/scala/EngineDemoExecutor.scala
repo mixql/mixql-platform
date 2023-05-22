@@ -24,7 +24,7 @@ object EngineDemoExecutor extends IModuleExecutor {
   def reactOnSetParam(msg: messages.SetParam, identity: String, clientAddress: String): messages.ParamWasSet = {
     println(
       s"Module $identity :Received SetParam msg from server $clientAddress: " +
-        s"must set parameter ${msg.name} "
+        s"must set parameter ${msg.name} with value ${msg.msg}"
     )
     engineParams.put(
       msg.name,
@@ -46,18 +46,30 @@ object EngineDemoExecutor extends IModuleExecutor {
     messages.Bool(engineParams.keys.toSeq.contains(msg.name))
   }
 
+  def functions: Map[String, Any] = Map(
+    "stub_simple_proc" -> StubSimpleProc.simple_func,
+    "stub_simple_proc_params" -> StubSimpleProc.simple_func_params,
+    "stub_simple_proc_context_params" -> StubSimpleProc.simple_func_context_params,
+    "stub_simple_func_return_arr" -> StubSimpleProc.simple_func_return_arr,
+    "stub_simple_func_return_map" -> StubSimpleProc.simple_func_return_map
+  )
+
+  val context = StubContext()
+
   def reactOnExecuteFunction(msg: messages.ExecuteFunction, identity: String,
                              clientAddress: String): messages.Message = {
     println(s"Started executing function ${msg.name}")
-    println(s"Started executing function ${msg.name}")
-    println(s"Executing function ${msg.name}")
-    messages.NULL()
+    println(s"[Module-$identity] Executing function ${msg.name} with params " +
+      msg.params.mkString("[", ",", "]"))
+    val res = org.mixql.engine.core.FunctionInvoker.invoke(functions, msg.name, context, msg.params.toList)
+    println(s"[Module-$identity] : Successfully executed function ${msg.name} ")
+    res
   }
 
   def reactOnGetDefinedFunctions(identity: String,
                                  clientAddress: String): messages.DefinedFunctions = {
     println(s"Module $identity: Received request to get defined functions from server")
-    messages.DefinedFunctions(Seq().toArray)
+    messages.DefinedFunctions(functions.keys.toArray)
   }
 
   def reactOnShutDown(identity: String, clientAddress: String): Unit = {}

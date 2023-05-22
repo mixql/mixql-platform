@@ -1,6 +1,6 @@
 package org.mixql.protobuf.messages;
 
-public class DefinedFunctions extends Message {
+public class DefinedFunctions implements Message {
     public String[] arr;
 
     public DefinedFunctions(String[] arr) {
@@ -8,7 +8,7 @@ public class DefinedFunctions extends Message {
     }
 
     @Override
-    public String type() {
-        return this.getClass().getName();
+    public String toString() {
+        return "{ type: " + type() + "}";
     }
 }

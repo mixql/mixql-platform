@@ -1,12 +1,14 @@
 package org.mixql.protobuf.messages;
 
-public class gInt extends Message{
+public class gInt implements Message{
     public int value;
     public gInt(int value){
         this.value = value;
     }
+
     @Override
-    public String type() {
-        return this.getClass().getName();
+    public String toString() {
+        return "{ type: " + type() + " value: " + value + "}";
     }
+
 }

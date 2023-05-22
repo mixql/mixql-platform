@@ -24,7 +24,7 @@ class EngineDemoExecutor extends IModuleExecutor {
                       clientAddress: String): messages.ParamWasSet = {
     println(
       s"Module $identity :Received SetParam msg from server $clientAddress: " +
-        s"must set parameter ${msg.name} "
+        s"must set parameter ${msg.name} with value ${msg.msg} "
     )
     engineParams.put(
       msg.name,
@@ -50,7 +50,8 @@ class EngineDemoExecutor extends IModuleExecutor {
   def reactOnExecuteFunction(msg: messages.ExecuteFunction, identity: String,
                              clientAddress: String): messages.Message = {
     println(s"Started executing function ${msg.name}")
-    println(s"Executing function ${msg.name}")
+    println(s"[Module-$identity] Executing function ${msg.name} with params " +
+      msg.params.mkString("[", ",", "]"))
     new messages.NULL()
   }
 

@@ -128,5 +128,19 @@ class JsonUtils {
         jsonObject.put("arr", buildJsobObjectsArray(arr));
         return jsonObject;
     }
+    public static JSONObject buildMap(String type, JSONObject[] keys, JSONObject[] values) {
+        JSONObject mapJsonObject = new JSONObject();
+        mapJsonObject.put("type", type);
+
+        JSONArray jsonArrObject = new JSONArray();
+        for (int i = 0; i < keys.length; i++) {
+            JSONObject tupleJsonObject = new JSONObject();
+            tupleJsonObject.put("key", keys[i]);
+            tupleJsonObject.put("value", values[i]);
+            jsonArrObject.add(tupleJsonObject);
+        }
+        mapJsonObject.put("map", jsonArrObject);
+        return mapJsonObject;
+    }
 
 }

@@ -1,14 +1,14 @@
 package org.mixql.protobuf.messages;
 
-public class GetParam extends Message {
+public class GetParam implements Message {
     public String name;
 
     public GetParam(String name){
         this.name = name;
     }
-    @Override
-    public String type() {
-        return this.getClass().getName();
-    }
 
+    @Override
+    public String toString() {
+        return "{ type: " + type() + " name: " + name + "}";
+    }
 }

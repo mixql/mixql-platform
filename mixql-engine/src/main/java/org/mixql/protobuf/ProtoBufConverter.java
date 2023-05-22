@@ -6,7 +6,7 @@ import org.json.simple.JSONValue;
 import org.mixql.protobuf.messages.*;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.util.*;
 
 
 public class ProtoBufConverter {
@@ -108,6 +108,19 @@ public class ProtoBufConverter {
                 return new gArray(
                         parseMessagesArray((JSONArray) anyMsgJsonObject.get("arr"))
                 );
+            case "org.mixql.protobuf.messages.map":
+                JSONArray mapJsonObject = (JSONArray) anyMsgJsonObject.get("map");
+                Map<Message, Message> m = new HashMap<>();
+                for (int i = 0; i < mapJsonObject.size(); i++) {
+                    m.put(_unpackAnyMsg(
+                                    (JSONObject) ((JSONObject) mapJsonObject.get(i)).get("key")
+                            ),
+                            _unpackAnyMsg(
+                                    (JSONObject) ((JSONObject) mapJsonObject.get(i)).get("value")
+                            )
+                    );
+                }
+                return new map(m);
         }
         throw new Exception("_unpackAnyMsg: unknown anyMsgJsonObject" + anyMsgJsonObject);
     }
@@ -216,6 +229,13 @@ public class ProtoBufConverter {
 
         if (msg instanceof gArray) {
             return JsonUtils.buildGArray(msg.type(), _toJsonObjects(((gArray) msg).arr));
+        }
+
+        if (msg instanceof map){
+            Set<Message> keys = ((map) msg).getMap().keySet();
+            Collection<Message> values = ((map) msg).getMap().values();
+            return JsonUtils.buildMap(msg.type(), _toJsonObjects(keys.toArray(new Message[keys.size()])),
+                    _toJsonObjects(values.toArray(new Message[values.size()])));
         }
 
         throw new Exception("_toJsonObject Error. Unknown type of message " + msg);

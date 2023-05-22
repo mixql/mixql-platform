@@ -1,8 +1,8 @@
 package org.mixql.protobuf.messages;
 
-public class GetDefinedFunctions extends Message {
+public class GetDefinedFunctions implements Message {
     @Override
-    public String type() {
-        return this.getClass().getName();
+    public String toString() {
+        return "{ type: " + type() + "}";
     }
 }

@@ -1,5 +1,5 @@
--- let engine "sqlite";
-let engine "sqlite-scala-2-12";
+ let engine "sqlite";
+--let engine "sqlite-scala-2-12";
 
 CREATE TABLE if not exists "Customers" (
                            CustomerName varchar(255),

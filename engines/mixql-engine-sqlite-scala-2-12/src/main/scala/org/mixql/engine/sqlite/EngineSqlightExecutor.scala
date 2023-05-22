@@ -44,9 +44,7 @@ class EngineSqlightExecutor
                       clientAddress: String): messages.ParamWasSet = {
     println(
       s"[Module-$identity] :Received SetParam msg from server $clientAddress: " +
-        s"must set parameter ${
-          msg.name
-        } "
+        s"must set parameter ${msg.name}  with value ${msg.msg}"
     )
     engineParams.put(
       msg.name,
@@ -84,10 +82,8 @@ class EngineSqlightExecutor
     println(s"[Module-$identity] Started executing function ${
       msg.name
     }")
-    println(s"[Module-$identity] Executing function ${
-      msg.name
-    } with params " +
-      msg.params.toString)
+    println(s"[Module-$identity] Executing function ${msg.name} with params " +
+      msg.params.mkString("[", ",", "]"))
     val res = org.mixql.engine.core.FunctionInvoker.invoke(functions, msg.name, context, msg.params.toList)
     println(s"[Module-$identity] : Successfully executed function ${
       msg.name

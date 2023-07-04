@@ -3,7 +3,7 @@ ThisBuild / scalaVersion := "3.2.1"
 inThisBuild(
   List(
     organization := "org.mixql",
-    version := "0.5.1-SNAPSHOT", //change version for all projects
+    version := "0.5.1.1", //change version for all projects
     organizationName := "MixQL",
     organizationHomepage := Some(url("https://mixql.org/")),
     developers := List(
@@ -42,7 +42,7 @@ inThisBuild(
       val nexus = "https://s01.oss.sonatype.org/"
       if (version.value.endsWith("-SNAPSHOT") || version.value.endsWith("-snapshot"))
         Some("snapshots" at nexus + "content/repositories/snapshots")
-      else Some("releases" at nexus + "service/local/staging/deploy/maven2")
+      else Some("releases" at nexus + "content/repositories/releases/")
     }
   )
 )

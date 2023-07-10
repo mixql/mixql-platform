@@ -20,6 +20,7 @@ import org.mixql.core.context.gtype
 import logger.*
 import org.mixql.core.logger.logDebug
 import org.mixql.protobuf.messages.ShutDown
+import scalapb.options.ScalaPbOptions.OptionsScope
 
 case class StashedParam(name: String, value: gtype.Type)
 
@@ -76,7 +77,8 @@ class ClientModule(
                     hostArgs: Option[String],
                     portFrontendArgs: Option[Int],
                     portBackendArgs: Option[Int],
-                    basePathArgs: Option[File]
+                    basePathArgs: Option[File],
+                    startScriptExtraOpts: Option[String] = None
                   ) extends Engine
   with java.lang.AutoCloseable {
   var client: ZMQ.Socket = null
@@ -327,10 +329,13 @@ class ClientModule(
         )
         clientRemoteProcess = CmdOperations.runCmdNoWait(
           Some(
-            s"$scriptName.bat --port $portBackend --host $host --identity $moduleName"
+            s"$scriptName.bat --port $portBackend --host $host --identity $moduleName ${
+              startScriptExtraOpts.getOrElse("")}"
           ),
           Some(
-            s"$scriptName --port $portBackend --host $host --identity $moduleName"
+            s"$scriptName --port $portBackend --host $host --identity $moduleName ${
+              startScriptExtraOpts.getOrElse("")
+            }"
           ),
           basePath
         )

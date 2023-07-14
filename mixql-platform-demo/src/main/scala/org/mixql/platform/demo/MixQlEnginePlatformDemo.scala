@@ -1,5 +1,6 @@
 package org.mixql.platform.demo
 
+import org.beryx.textio.{TextIO, TextIoFactory}
 import org.mixql.core.run
 import org.rogach.scallop.ScallopConf
 
@@ -18,7 +19,6 @@ import scala.collection.mutable
 import org.mixql.platform.demo.logger.*
 
 import scala.util.Try
-import scala.util.control.Breaks.{break, breakable}
 
 object MixQlEnginePlatformDemo:
   def main(args: Array[String]): Unit =
@@ -139,27 +139,39 @@ object MixQlEnginePlatformDemo:
       })
 
       if (replMode) {
-        println("No files were provided. Platform is launching in REPL mode. " +
-          "Type your statement and press ENTER. " +
-          "You can not put ';' in REPL mode at the end of statement." +
-          "To exit type 'exit'"
-        )
-        breakable {
+        var textIO: TextIO = null
+        try {
+          textIO = TextIoFactory.getTextIO
+          val terminal = textIO.getTextTerminal
+          terminal.println("No files were provided. Platform is launching in REPL mode. " +
+            "Type your statement and press ENTER. " +
+            "You can not put ';' in REPL mode at the end of statement." +
+            "To exit type 'exit'"
+          )
           while (true) {
             try {
-              import scala.io.StdIn.readLine
-              scala.io.StdIn.readLine()
-              val stmt = readLine("mixql>")
+              val stmt = textIO.newStringInputReader.read("mixql>")
               stmt.trim.toLowerCase match
-                case "exit" => break
-                case "show vars" => println(context.getScope().head.toString())
-                case _ => run({
+                case "exit" => textIO.newStringInputReader
+                  .withMinLength(0).read("\nPress enter to terminate...")
+                  throw new org.mixql.engine.core.BrakeException()
+                case "show vars" => terminal.println(context.getScope().head.toString())
+                case _ => val res = run({
                   if (!stmt.endsWith(";")) stmt + ';' else stmt
                 }, context)
+                  terminal.println("returned: " + res.toString())
             } catch {
-              case e: Throwable => println(e)
+              case e: org.mixql.engine.core.BrakeException => throw e
+              case e: Throwable => terminal.executeWithPropertiesConfigurator(
+                props => props.setPromptColor("red"),
+                t => t.println(e.getClass.getName + ":" + e.getMessage + "\n" + e.getCause));
             }
           }
+        } catch {
+          case e: Throwable => logInfo("Exited REPL mode")
+        } finally {
+          if textIO != null then
+            textIO.dispose()
         }
       }
     } catch {

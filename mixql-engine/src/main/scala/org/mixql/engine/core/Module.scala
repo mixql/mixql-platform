@@ -1,10 +1,7 @@
 package org.mixql.engine.core
 
-import com.github.nscala_time.time.Imports.{
-  DateTime,
-  richReadableInstant,
-  richReadableInterval
-}
+import com.github.nscala_time.time.Imports.{DateTime, richReadableInstant, richReadableInterval}
+import org.mixql.engine.core.logger.ModuleLogger
 import org.zeromq.{SocketType, ZMQ}
 import org.mixql.protobuf.ProtoBufConverter
 import org.mixql.protobuf.messages
@@ -16,28 +13,35 @@ object Module {
   def sendMsgToServerBroker(msg: Array[Byte])(implicit
                                               server: ZMQ.Socket,
                                               identity: String,
-                                              clientAddress: Array[Byte]
+                                              clientAddress: Array[Byte],
+                                              logger: ModuleLogger
   ): Boolean = {
     // Sending multipart message
-    println(s"Module $identity: sendMsgToServerBroker: sending empty frame")
+    import logger._
+    logDebug(s"sendMsgToServerBroker: sending empty frame")
     server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
-    println(s"Module $identity: sendMsgToServerBroker: sending clientaddress")
+    logDebug(s"sendMsgToServerBroker: sending clientaddress")
     server.send(clientAddress, ZMQ.SNDMORE) // First send address frame
-    println(s"Module $identity: sendMsgToServerBroker: sending empty frame")
+    logDebug(s"sendMsgToServerBroker: sending empty frame")
     server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
-    println(s"Module $identity: sendMsgToServerBroker: sending message")
+    logDebug(s"sendMsgToServerBroker: sending message")
     server.send(msg)
   }
 
   def sendMsgToServerBroker(
                              msg: String
-                           )(implicit server: ZMQ.Socket, identity: String): Boolean = {
-    println(
-      s"Module $identity: sendMsgToServerBroker: convert msg of type String to Array of bytes"
+                           )(implicit
+                             server: ZMQ.Socket,
+                             identity: String,
+                             logger: ModuleLogger
+                           ): Boolean = {
+    import logger._
+    logDebug(
+      s"sendMsgToServerBroker: convert msg of type String to Array of bytes"
     )
-    println(s"Module $identity: sending empty frame")
+    logDebug(s"sending empty frame")
     server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
-    println(s"Module $identity: Send msg to server ")
+    logDebug(s"Send msg to server ")
     server.send(msg.getBytes())
   }
 
@@ -47,18 +51,22 @@ object Module {
                            )(implicit
                              server: ZMQ.Socket,
                              identity: String,
-                             clientAddress: Array[Byte]
+                             clientAddress: Array[Byte],
+                             logger: ModuleLogger
                            ): Boolean = {
-    println(
-      s"Module $identity: sendMsgToServerBroker: convert msg of type Protobuf to Array of bytes"
+    import logger._
+    logDebug(
+      s"sendMsgToServerBroker: convert msg of type Protobuf to Array of bytes"
     )
     sendMsgToServerBroker(ProtoBufConverter.toArray(msg))
   }
 
   def readMsgFromServerBroker()(implicit
                                 server: ZMQ.Socket,
-                                identity: String
+                                identity: String,
+                                logger: ModuleLogger
   ): (Array[Byte], Option[Array[Byte]], Option[String]) = {
+    import logger._
     // FOR PROTOCOL SEE BOOK OReilly ZeroMQ Messaging for any applications 2013 ~page 100
     // From server broker messanger we get msg with such body:
     // indentity frame
@@ -66,7 +74,7 @@ object Module {
     // data ->
     if (server.recv(0) == null)
       throw new BrakeException() // empty frame
-    println(s"$identity readMsgFromServerBroker: received empty frame")
+    logDebug(s"readMsgFromServerBroker: received empty frame")
 
     val clientAdrress = server.recv(0) // Indentity of client object on server
     // or pong-heartbeat from broker
@@ -79,18 +87,18 @@ object Module {
     if (pongHeartMessage.get != "PONG-HEARTBEAT") {
       pongHeartMessage = None
 
-      println(
-        s"$identity readMsgFromServerBroker: got client address: " + new String(
+      logDebug(
+        s"readMsgFromServerBroker: got client address: " + new String(
           clientAdrress
         )
       )
 
       if (server.recv(0) == null)
         throw new BrakeException() // empty frame
-      println(s"$identity readMsgFromServerBroker: received empty frame")
+      logDebug(s"readMsgFromServerBroker: received empty frame")
 
-      println(
-        s"Module $identity: have received message from server ${new String(clientAdrress)}"
+      logDebug(
+        s"have received message from server ${new String(clientAdrress)}"
       )
       msg = Some(server.recv(0))
     }
@@ -116,12 +124,15 @@ class Module(
   var processStart: DateTime = null
   var liveness: Int = 3
   var brokerClientAdress: Array[Byte] = Array()
+  implicit val logger: ModuleLogger = new ModuleLogger(indentity)
+
+  import logger._
 
   def startServer(): Unit = {
-    println(s"Module $indentity: Starting main client")
+    logInfo(s"Starting main client")
 
-    println(
-      s"Module $indentity: host of server is " + host + " and port is " + port.toString
+    logInfo(
+      s"host of server is " + host + " and port is " + port.toString
     )
 
     try {
@@ -131,22 +142,22 @@ class Module(
       // then it would be generated by ROUTER socket in broker object on server
 
       server.setIdentity(indentity.getBytes)
-      println(
-        s"Module $indentity: connected: " + server
+      logInfo(
+        s"connected: " + server
           .connect(s"tcp://$host:${port.toString}")
       )
-      println(s"Module $indentity: Connection established.")
+      logInfo(s"Connection established.")
 
-      println(s"Module $indentity:Setting processStart for timer")
+      logDebug(s"Module $indentity:Setting processStart for timer")
       // Set timer
       processStart = DateTime.now()
 
-      println(s"Module $indentity:Setting poller")
+      logInfo(s"Module $indentity:Setting poller")
       poller = ctx.poller(1)
-      println(s"Module $indentity:Register pollin in poller")
+      logInfo(s"Module $indentity:Register pollin in poller")
       val pollInIndex = poller.register(server, ZMQ.Poller.POLLIN)
 
-      println(s"Module $indentity: Sending READY message to server's broker")
+      logInfo(s"Sending READY message to server's broker")
       implicit val identity = this.indentity
       sendMsgToServerBroker("READY")
 
@@ -154,13 +165,13 @@ class Module(
         val rc = poller.poll(heartBeatInterval)
         //        if (rc == 1) throw BrakeException()
         if (poller.pollin(pollInIndex)) {
-          println("Setting processStart for timer, as message was received")
+          logDebug("Setting processStart for timer, as message was received")
           val (clientAdrressTmp, msg, pongHeartBeatMsg) =
             readMsgFromServerBroker()
           pongHeartBeatMsg match {
             case Some(_) => // got pong heart beat message
-              println(
-                s"Module $indentity: got pong heart beat message from broker server"
+              logDebug(
+                s"got pong heart beat message from broker server"
               )
             case None => // got protobuf message
               implicit val clientAddress = clientAdrressTmp
@@ -172,7 +183,7 @@ class Module(
                   try {
                     sendMsgToServerBroker(clientAddress,
                       executor.reactOnExecute(msg, identity, clientAddressStr)
-                    )(server, identity, clientAddress)
+                    )(server, identity, clientAddress, logger)
                   } catch {
                     case e: Throwable =>
                       sendMsgToServerBroker(
@@ -181,13 +192,13 @@ class Module(
                           s"Module $identity to ${clientAddressStr}: error while reacting on execute: " +
                             e.getMessage
                         )
-                      )(server, identity, clientAddress)
+                      )(server, identity, clientAddress, logger)
                   }
                 case msg: messages.SetParam =>
                   try {
                     sendMsgToServerBroker(clientAddress,
                       executor.reactOnSetParam(msg, identity, clientAddressStr)
-                    )(server, identity, clientAddress)
+                    )(server, identity, clientAddress, logger)
                   } catch {
                     case e: Throwable =>
                       sendMsgToServerBroker(
@@ -196,13 +207,13 @@ class Module(
                           s"Module $identity to ${clientAddressStr}: error while reacting on setting param: " +
                             e.getMessage
                         )
-                      )(server, identity, clientAddress)
+                      )(server, identity, clientAddress, logger)
                   }
                 case msg: messages.GetParam =>
                   try {
                     sendMsgToServerBroker(clientAddress,
                       executor.reactOnGetParam(msg, identity, clientAddressStr)
-                    )(server, identity, clientAddress)
+                    )(server, identity, clientAddress, logger)
                   } catch {
                     case e: Throwable =>
                       sendMsgToServerBroker(
@@ -211,13 +222,13 @@ class Module(
                           s"Module $identity to ${clientAddressStr}: error while reacting on getting param: " +
                             e.getMessage
                         )
-                      )(server, identity, clientAddress)
+                      )(server, identity, clientAddress, logger)
                   }
                 case msg: messages.IsParam =>
                   try {
                     sendMsgToServerBroker(clientAddress,
                       executor.reactOnIsParam(msg, identity, clientAddressStr)
-                    )(server, identity, clientAddress)
+                    )(server, identity, clientAddress, logger)
                   } catch {
                     case e: Throwable =>
                       sendMsgToServerBroker(
@@ -226,14 +237,14 @@ class Module(
                           s"Module $identity to ${clientAddressStr}: error while reacting on is param: " +
                             e.getMessage
                         )
-                      )(server, identity, clientAddress)
+                      )(server, identity, clientAddress, logger)
                   }
                 case _: messages.ShutDown =>
-                  println(s"Module $identity: Started shutdown")
+                  logInfo(s"Started shutdown")
                   try {
                     executor.reactOnShutDown(identity, clientAddressStr)
                   } catch {
-                    case e: Throwable => println("Warning: error while reacting on shutdown: " +
+                    case e: Throwable => logWarn("Warning: error while reacting on shutdown: " +
                       e.getMessage
                     )
                   }
@@ -242,7 +253,7 @@ class Module(
                   try {
                     sendMsgToServerBroker(clientAddress,
                       executor.reactOnExecuteFunction(msg, identity, clientAddressStr)
-                    )(server, identity, clientAddress)
+                    )(server, identity, clientAddress, logger)
                   }
                   catch {
                     case e: Throwable =>
@@ -252,13 +263,13 @@ class Module(
                           s"Module $identity to ${clientAddressStr}: error while reacting on execute function" +
                             s"${msg.name}: " + e.getMessage
                         )
-                      )(server, identity, clientAddress)
+                      )(server, identity, clientAddress, logger)
                   }
                 case _: messages.GetDefinedFunctions =>
                   try {
                     sendMsgToServerBroker(clientAddress,
                       executor.reactOnGetDefinedFunctions(identity, clientAddressStr)
-                    )(server, identity, clientAddress)
+                    )(server, identity, clientAddress, logger)
                   }
                   catch {
                     case e: Throwable =>
@@ -268,64 +279,64 @@ class Module(
                           s"Module $identity to ${clientAddressStr}: error while reacting on getting" +
                             " functions list" + e.getMessage
                         )
-                      )(server, identity, clientAddress)
+                      )(server, identity, clientAddress, logger)
                   }
                 case m: messages.Error =>
-                  sendMsgToServerBroker(clientAddress, m)(server, identity, clientAddress)
+                  sendMsgToServerBroker(clientAddress, m)(server, identity, clientAddress, logger)
               }
           }
           processStart = DateTime.now()
           liveness = 3
         } else {
           val elapsed = (processStart to DateTime.now()).millis
-          println(s"Module $indentity: elapsed: " + elapsed)
+          logDebug(s"elapsed: " + elapsed)
           liveness = liveness - 1
           if (liveness == 0) {
-            println(
-              s"Module $indentity: heartbeat failure, can't reach server's broker. Shutting down"
+            logError(
+              s"heartbeat failure, can't reach server's broker. Shutting down"
             )
             throw new BrakeException()
           }
           if (elapsed >= heartBeatInterval) {
             processStart = DateTime.now()
-            println(
-              s"Module $indentity: heartbeat work. Sending heart beat. Liveness: " + liveness
+            logDebug(
+              s"heartbeat work. Sending heart beat. Liveness: " + liveness
             )
             sendMsgToServerBroker("PING-HEARTBEAT")
           }
         }
       }
     } catch {
-      case _: BrakeException => println(s"Module $indentity: BrakeException")
+      case _: BrakeException => logDebug(s"BrakeException")
       case ex: Exception =>
-        println(s"Module $indentity: Error: " + ex.getMessage)
+        logError(s"Error: " + ex.getMessage)
         sendMsgToServerBroker(
           brokerClientAdress,
           new messages.Error(
             s"Module $indentity to broker ${brokerClientAdress}: fatal error: " +
               ex.getMessage
           )
-        )(server, indentity, brokerClientAdress)
+        )(server, indentity, brokerClientAdress, logger)
     } finally {
       close()
     }
-    println(s"Module $indentity: Stopped.")
+    logInfo(s"Stopped.")
   }
 
   def close(): Unit = {
     if (server != null) {
-      println(s"Module $indentity: finally close server")
+      logInfo(s"finally close server")
       server.close()
     }
 
     if (poller != null) {
-      println(s"Module $indentity: finally close poller")
+      logInfo(s"finally close poller")
       poller.close()
     }
 
     try {
       if (ctx != null) {
-        println(s"Module $indentity: finally close context")
+        logInfo(s"finally close context")
         implicit val ec: scala.concurrent.ExecutionContext =
           scala.concurrent.ExecutionContext.global
         Await.result(
@@ -337,7 +348,7 @@ class Module(
       }
     } catch {
       case _: Throwable =>
-        println(s"Module $indentity: tiemout of closing context exceeded:(")
+        logError(s"tiemout of closing context exceeded:(")
     }
   }
 }

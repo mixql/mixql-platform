@@ -18,6 +18,7 @@ import scala.collection.mutable
 import org.mixql.platform.demo.logger.*
 
 import scala.util.Try
+import scala.util.control.Breaks.{break, breakable}
 
 object MixQlEnginePlatformDemo:
   def main(args: Array[String]): Unit =
@@ -123,21 +124,44 @@ object MixQlEnginePlatformDemo:
       }).getOrElse("stub"), functionsInit = functions, variables = variables)
 
     try {
-      logDebug(s"Mixql engine demo platform: reading and executing sql files if they exist")
+      var replMode = false
+      logDebug("Mixql engine demo platform: reading and executing sql files if they exist")
       (sqlScriptFiles match {
-        case None => List((None, code))
+        case None =>
+          replMode = true
+          List()
         case Some(value) => value.map {
           (f: File) => (Some(f.getAbsolutePath), utils.FilesOperations.readFileContent(f))
         }
       }).foreach(sql => {
-        if sql._1.nonEmpty then
-          logDebug("Mixql engine demo platform: running script: " + sql._1.get)
-        else
-          logDebug("Mixql engine demo platform: running standard code for testing: " + code)
+        logDebug("Mixql engine demo platform: running script: " + sql._1.get)
         run(sql._2, context)
       })
 
-      logDebug(context.getScope().head.toString())
+      if (replMode) {
+        println("No files were provided. Platform is launching in REPL mode. " +
+          "Type your statement and press ENTER. " +
+          "You can not put ';' in REPL mode at the end of statement." +
+          "To exit type 'exit'"
+        )
+        breakable {
+          while (true) {
+            try {
+              import scala.io.StdIn.readLine
+              scala.io.StdIn.readLine()
+              val stmt = readLine("mixql>")
+              stmt.trim.toLowerCase match
+                case "exit" => break
+                case "show vars" => println(context.getScope().head.toString())
+                case _ => run({
+                  if (!stmt.endsWith(";")) stmt + ';' else stmt
+                }, context)
+            } catch {
+              case e: Throwable => println(e)
+            }
+          }
+        }
+      }
     } catch {
       case e: Throwable => logError(e.getMessage)
     } finally {
@@ -186,7 +210,7 @@ object MixQlEnginePlatformDemo:
     val sqlScripts = appArgs.sqlFile.toOption
     (host, portFrontend, portBackend, homePath, sqlScripts)
 
-case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments) :
+case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments):
 
   import org.rogach.scallop.stringConverter
   import org.rogach.scallop.intConverter

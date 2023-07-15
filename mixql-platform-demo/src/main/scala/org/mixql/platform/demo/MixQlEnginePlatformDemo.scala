@@ -1,6 +1,6 @@
 package org.mixql.platform.demo
 
-import org.beryx.textio.{TextIO, TextIoFactory}
+import org.beryx.textio.{ReadAbortedException, ReadHandlerData, ReadInterruptionStrategy, TextIO, TextIoFactory}
 import org.mixql.core.run
 import org.rogach.scallop.ScallopConf
 
@@ -17,6 +17,7 @@ import org.mixql.platform.demo.procedures.SimpleFuncs
 
 import scala.collection.mutable
 import org.mixql.platform.demo.logger.*
+import org.mixql.platform.demo.utils.TerminalOps
 
 import scala.util.Try
 
@@ -146,29 +147,59 @@ object MixQlEnginePlatformDemo:
           terminal.println("No files were provided. Platform is launching in REPL mode. " +
             "Type your statement and press ENTER. " +
             "You can not put ';' in REPL mode at the end of statement." +
-            "To exit type 'exit'"
+            "To exit type ':exit'"
           )
+
+          val keyStrokeAbort = "alt Z"
+          val keyStrokeReboot = "ctrl R"
+          val keyStrokeAutoValue = "ctrl S"
+
+          val registeredAbort = TerminalOps.registerAbort(terminal, keyStrokeAbort)
+
+          val registeredReboot = TerminalOps.registerReboot(terminal, keyStrokeReboot)
+
+          val registeredAutoValue = TerminalOps.registerAutoValue(terminal, keyStrokeAutoValue)
+
+          terminal.println("--------------------------------------------------------------------------------")
+          if (registeredAbort) terminal.println("Press " + keyStrokeAbort + " to abort the program")
+          if (registeredReboot) terminal.println("Press " + keyStrokeReboot + " to enter multiline mode")
+          if (registeredAutoValue) terminal.println("Press " + keyStrokeAutoValue +
+            " to exit multiline mode")
+          terminal.println("You can use these key combinations at any moment during your data entry session.")
+          terminal.println("--------------------------------------------------------------------------------")
+
           while (true) {
             try {
-              val stmt = textIO.newStringInputReader.read("mixql>")
+              var stmt = textIO.newStringInputReader.read("mixql>")
+              if (TerminalOps.MultiLineMode) {
+                while (TerminalOps.MultiLineMode) {
+                  TerminalOps.MultiLineString = TerminalOps.MultiLineString + textIO.newStringInputReader.read() + "\n"
+                }
+                stmt = stmt + "\n" + TerminalOps.MultiLineString
+                TerminalOps.MultiLineString = ""
+              }
               stmt.trim.toLowerCase match
-                case "exit" => textIO.newStringInputReader
+                case ":exit" => textIO.newStringInputReader
                   .withMinLength(0).read("\nPress enter to terminate...")
                   throw new org.mixql.engine.core.BrakeException()
-                case "show vars" => terminal.println(context.getScope().head.toString())
+                case ":show vars" => terminal.println(context.getScope().head.toString())
+                case ":show functions" => terminal.println(context.functions.keys.mkString(", "))
+                case ":show engines" => terminal.println(context.engines.keys.mkString(", "))
+                case ":show current engine" => terminal.println(context.currentEngine.name)
                 case _ => val res = run({
                   if (!stmt.endsWith(";")) stmt + ';' else stmt
                 }, context)
                   terminal.println("returned: " + res.toString())
             } catch {
+              case e: ReadAbortedException => throw new org.mixql.engine.core.BrakeException()
               case e: org.mixql.engine.core.BrakeException => throw e
               case e: Throwable => terminal.executeWithPropertiesConfigurator(
                 props => props.setPromptColor("red"),
-                t => t.println(e.getClass.getName + ":" + e.getMessage + "\n" + e.getCause));
+                t => t.println(e.getClass.getName + ":" + e.getMessage + "\n" + e.printStackTrace()));
             }
           }
         } catch {
-          case e: Throwable => logInfo("Exited REPL mode")
+          case e: Throwable => println("Exited REPL mode")
         } finally {
           if textIO != null then
             textIO.dispose()

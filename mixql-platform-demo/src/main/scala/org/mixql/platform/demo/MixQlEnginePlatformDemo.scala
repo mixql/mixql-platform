@@ -17,6 +17,7 @@ import org.mixql.platform.demo.procedures.SimpleFuncs
 
 import scala.collection.mutable
 import org.mixql.platform.demo.logger.*
+import org.mixql.platform.demo.repl.Terminal
 import org.mixql.platform.demo.utils.TerminalOps
 
 import scala.util.Try
@@ -140,47 +141,14 @@ object MixQlEnginePlatformDemo:
       })
 
       if (replMode) {
-        var textIO: TextIO = null
+        val terminal = Terminal()
         try {
-          textIO = TextIoFactory.getTextIO
-          val terminal = textIO.getTextTerminal
-          terminal.println("No files were provided. Platform is launching in REPL mode. " +
-            "Type your statement and press ENTER. " +
-            "You can not put ';' in REPL mode at the end of statement." +
-            "To exit type ':exit'"
-          )
-
-          val keyStrokeAbort = "alt Z"
-          val keyStrokeReboot = "ctrl R"
-          val keyStrokeAutoValue = "ctrl S"
-
-          val registeredAbort = TerminalOps.registerAbort(terminal, keyStrokeAbort)
-
-          val registeredReboot = TerminalOps.registerReboot(terminal, keyStrokeReboot)
-
-          val registeredAutoValue = TerminalOps.registerAutoValue(terminal, keyStrokeAutoValue)
-
-          terminal.println("--------------------------------------------------------------------------------")
-          if (registeredAbort) terminal.println("Press " + keyStrokeAbort + " to abort the program")
-          if (registeredReboot) terminal.println("Press " + keyStrokeReboot + " to enter multiline mode")
-          if (registeredAutoValue) terminal.println("Press " + keyStrokeAutoValue +
-            " to exit multiline mode")
-          terminal.println("You can use these key combinations at any moment during your data entry session.")
-          terminal.println("--------------------------------------------------------------------------------")
-
+          terminal.init()
           while (true) {
             try {
-              var stmt = textIO.newStringInputReader.read("mixql>")
-              if (TerminalOps.MultiLineMode) {
-                while (TerminalOps.MultiLineMode) {
-                  TerminalOps.MultiLineString = TerminalOps.MultiLineString + textIO.newStringInputReader.read() + "\n"
-                }
-                stmt = stmt + "\n" + TerminalOps.MultiLineString
-                TerminalOps.MultiLineString = ""
-              }
+              val stmt = terminal.readMixqlStmt()
               stmt.trim.toLowerCase match
-                case ":exit" => textIO.newStringInputReader
-                  .withMinLength(0).read("\nPress enter to terminate...")
+                case ":exit" => terminal.printExitMessage()
                   throw new org.mixql.engine.core.BrakeException()
                 case ":show vars" => terminal.println(context.getScope().head.toString())
                 case ":show functions" => terminal.println(context.functions.keys.mkString(", "))
@@ -193,16 +161,14 @@ object MixQlEnginePlatformDemo:
             } catch {
               case e: ReadAbortedException => throw new org.mixql.engine.core.BrakeException()
               case e: org.mixql.engine.core.BrakeException => throw e
-              case e: Throwable => terminal.executeWithPropertiesConfigurator(
-                props => props.setPromptColor("red"),
-                t => t.println(e.getClass.getName + ":" + e.getMessage + "\n" + e.printStackTrace()));
+              case e: Throwable => terminal.printlnRedColor(
+                e.getClass.getName + ":" + e.getMessage + "\n" + e.printStackTrace());
             }
           }
         } catch {
           case e: Throwable => println("Exited REPL mode")
         } finally {
-          if textIO != null then
-            textIO.dispose()
+          terminal.close()
         }
       }
     } catch {

@@ -18,7 +18,6 @@ import scala.collection.mutable
 import org.mixql.platform.demo.logger.*
 
 import scala.util.Try
-import scala.util.control.Breaks.{break, breakable}
 
 object MixQlEnginePlatformDemo:
   def main(args: Array[String]): Unit =
@@ -141,24 +140,36 @@ object MixQlEnginePlatformDemo:
       if (replMode) {
         println("No files were provided. Platform is launching in REPL mode. " +
           "Type your statement and press ENTER. " +
-          "You can not put ';' in REPL mode at the end of statement." +
+          "Statement ends with ;" +
           "To exit type 'exit'"
         )
-        breakable {
-          while (true) {
-            try {
-              import scala.io.StdIn.readLine
-              scala.io.StdIn.readLine()
-              val stmt = readLine("mixql>")
-              stmt.trim.toLowerCase match
-                case "exit" => break
-                case "show vars" => println(context.getScope().head.toString())
-                case _ => run({
-                  if (!stmt.endsWith(";")) stmt + ';' else stmt
-                }, context)
-            } catch {
-              case e: Throwable => println(e)
+        import org.mixql.engine.core.BrakeException
+        while (true) {
+          try {
+            import scala.io.StdIn.readLine
+            var stmt: String = ""
+            var firstTime = true
+            while (!stmt.endsWith(";\n")) {
+              if (firstTime)
+                stmt = stmt + readLine("mixql>") + "\n"
+                firstTime = false
+              else
+                print("     |")
+                stmt = stmt + readLine() + "\n"
             }
+            stmt.replace("\n", "").trim.toLowerCase match
+              case "exit;" => throw new BrakeException()
+              case "show vars;" => println(context.getScope().head.toString())
+              case "show engines;" => println(context.engines.keys.mkString(", "))
+              case "show functions;" => println(context.functions.keys.mkString(", "))
+              case _ => val res = run({
+                if (!stmt.endsWith(";")) stmt + ';' else stmt
+              }, context)
+                println("returned " + res.getClass.getName + ": " + res.toString())
+          } catch {
+            case e: BrakeException => println("Exiting REPL mode")
+              throw e
+            case e: Throwable => println(e)
           }
         }
       }

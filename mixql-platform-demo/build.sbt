@@ -44,7 +44,9 @@ libraryDependencies ++= {
     "com.typesafe" % "config" % "1.4.2",
     "org.scalatest" %% "scalatest" % "3.2.14" % Test,
     "org.scalameta" %% "munit" % "0.7.29" % Test,
-    "org.beryx" % "text-io" % "3.4.1"
+    "org.beryx" % "text-io" % "3.4.1",
+    "org.beryx" % "text-io-web" % "3.4.1",
+    "com.sparkjava" % "spark-core" % "2.9.1"
   )
 }
 

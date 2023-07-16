@@ -1,5 +1,6 @@
 package org.mixql.platform.demo
 
+import org.beryx.textio.web.{SparkTextIoApp, WebTextTerminal}
 import org.beryx.textio.{ReadAbortedException, ReadHandlerData, ReadInterruptionStrategy, TextIO, TextIoFactory}
 import org.mixql.core.run
 import org.rogach.scallop.ScallopConf
@@ -17,7 +18,7 @@ import org.mixql.platform.demo.procedures.SimpleFuncs
 
 import scala.collection.mutable
 import org.mixql.platform.demo.logger.*
-import org.mixql.platform.demo.repl.Terminal
+import org.mixql.platform.demo.repl.TerminalApp
 import org.mixql.platform.demo.utils.TerminalOps
 
 import scala.util.Try
@@ -141,34 +142,18 @@ object MixQlEnginePlatformDemo:
       })
 
       if (replMode) {
-        val terminal = Terminal()
-        try {
-          terminal.init()
-          while (true) {
-            try {
-              val stmt = terminal.readMixqlStmt()
-              stmt.trim.toLowerCase match
-                case ":exit" => terminal.printExitMessage()
-                  throw new org.mixql.engine.core.BrakeException()
-                case ":show vars" => terminal.println(context.getScope().head.toString())
-                case ":show functions" => terminal.println(context.functions.keys.mkString(", "))
-                case ":show engines" => terminal.println(context.engines.keys.mkString(", "))
-                case ":show current engine" => terminal.println(context.currentEngine.name)
-                case _ => val res = run({
-                  if (!stmt.endsWith(";")) stmt + ';' else stmt
-                }, context)
-                  terminal.println("returned: " + res.toString())
-            } catch {
-              case e: ReadAbortedException => throw new org.mixql.engine.core.BrakeException()
-              case e: org.mixql.engine.core.BrakeException => throw e
-              case e: Throwable => terminal.printlnRedColor(
-                e.getClass.getName + ":" + e.getMessage + "\n" + e.printStackTrace());
-            }
-          }
-        } catch {
-          case e: Throwable => println("Exited REPL mode")
-        } finally {
-          terminal.close()
+        if (isWebRepl()) {
+          val webTextTerm = new WebTextTerminal()
+          webTextTerm.init();
+          val textIO = new TextIO(webTextTerm);
+          val app = TerminalApp(context)
+          val textIoApp = new SparkTextIoApp(app, textIO.getTextTerminal.asInstanceOf[WebTextTerminal])
+          val webTextIoExecutor = new repl.WebTextIoExecutor()
+          webTextIoExecutor.withPort(8080)
+          webTextIoExecutor.execute(textIoApp)
+        } else {
+          val terminal = TerminalApp(context)
+          terminal.accept(TextIoFactory.getTextIO, null)
         }
       }
     } catch {
@@ -177,13 +162,19 @@ object MixQlEnginePlatformDemo:
       context.engines.values.foreach(
         e => if (e.isInstanceOf[ClientModule]) {
           val cl: ClientModule = e.asInstanceOf[ClientModule]
-          logDebug(s"sending shutdwon to remote engine " + cl.name)
+          logDebug(s"sending shutdown to remote engine " + cl.name)
           cl.ShutDown()
         }
       )
       context.close()
       if ClientModule.broker != null then ClientModule.broker.close()
     }
+
+  private def isWebRepl(): Boolean = {
+    Try(
+      config.getBoolean("org.mixql.platform.demo.repl.launch-web")
+    ).getOrElse(false)
+  }
 
   def parseArgs(args: List[String]): (Option[String], Option[Int],
     Option[Int], Option[File], Option[List[File]]) =

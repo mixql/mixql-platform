@@ -1,5 +1,7 @@
 package org.mixql.platform.demo
 
+import org.beryx.textio.web.{SparkTextIoApp, WebTextTerminal}
+import org.beryx.textio.{ReadAbortedException, ReadHandlerData, ReadInterruptionStrategy, TextIO, TextIoFactory}
 import org.mixql.core.run
 import org.rogach.scallop.ScallopConf
 
@@ -16,6 +18,7 @@ import org.mixql.platform.demo.procedures.SimpleFuncs
 
 import scala.collection.mutable
 import org.mixql.platform.demo.logger.*
+import org.mixql.repl.{TerminalApp, TerminalOps, WebTextIoExecutor}
 
 import scala.util.Try
 
@@ -123,34 +126,60 @@ object MixQlEnginePlatformDemo:
       }).getOrElse("stub"), functionsInit = functions, variables = variables)
 
     try {
-      logDebug(s"Mixql engine demo platform: reading and executing sql files if they exist")
+      var replMode = false
+      logDebug("Mixql engine demo platform: reading and executing sql files if they exist")
       (sqlScriptFiles match {
-        case None => List((None, code))
+        case None =>
+          replMode = true
+          List()
         case Some(value) => value.map {
           (f: File) => (Some(f.getAbsolutePath), utils.FilesOperations.readFileContent(f))
         }
       }).foreach(sql => {
-        if sql._1.nonEmpty then
-          logDebug("Mixql engine demo platform: running script: " + sql._1.get)
-        else
-          logDebug("Mixql engine demo platform: running standard code for testing: " + code)
+        logDebug("Mixql engine demo platform: running script: " + sql._1.get)
         run(sql._2, context)
       })
 
-      logDebug(context.getScope().head.toString())
+      if (replMode) {
+        if (isWebRepl()) {
+          val webTextTerm = new WebTextTerminal()
+          webTextTerm.init();
+          val textIO = new TextIO(webTextTerm);
+          val app = TerminalApp(context)
+          val textIoApp = new SparkTextIoApp(app, textIO.getTextTerminal.asInstanceOf[WebTextTerminal])
+          val webTextIoExecutor = new WebTextIoExecutor(launchDesktopBrowser())
+          webTextIoExecutor.withPort(8080)
+          webTextIoExecutor.execute(textIoApp)
+        } else {
+          val terminal = TerminalApp(context)
+          terminal.accept(TextIoFactory.getTextIO, null)
+        }
+      }
     } catch {
       case e: Throwable => logError(e.getMessage)
     } finally {
       context.engines.values.foreach(
         e => if (e.isInstanceOf[ClientModule]) {
           val cl: ClientModule = e.asInstanceOf[ClientModule]
-          logDebug(s"sending shutdwon to remote engine " + cl.name)
+          logDebug(s"sending shutdown to remote engine " + cl.name)
           cl.ShutDown()
         }
       )
       context.close()
       if ClientModule.broker != null then ClientModule.broker.close()
     }
+
+  private def isWebRepl(): Boolean = {
+    Try(
+      config.getBoolean("org.mixql.platform.demo.repl.launch-web")
+    ).getOrElse(false)
+  }
+
+  private def launchDesktopBrowser(): Boolean = {
+    Try(
+      config.getBoolean("org.mixql.platform.demo.repl.launch-desktop-web-browser")
+    ).getOrElse(true)
+  }
 
   def parseArgs(args: List[String]): (Option[String], Option[Int],
     Option[Int], Option[File], Option[List[File]]) =
@@ -186,7 +215,7 @@ object MixQlEnginePlatformDemo:
     val sqlScripts = appArgs.sqlFile.toOption
     (host, portFrontend, portBackend, homePath, sqlScripts)
 
-case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments) :
+case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments):
 
   import org.rogach.scallop.stringConverter
   import org.rogach.scallop.intConverter

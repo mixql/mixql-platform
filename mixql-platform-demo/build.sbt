@@ -43,7 +43,7 @@ libraryDependencies ++= {
     "org.rogach" %% "scallop" % vScallop,
     "com.typesafe" % "config" % "1.4.2",
     "org.scalatest" %% "scalatest" % "3.2.14" % Test,
-    "org.scalameta" %% "munit" % "0.7.29" % Test
+    "org.scalameta" %% "munit" % "0.7.29" % Test,
   )
 }
 

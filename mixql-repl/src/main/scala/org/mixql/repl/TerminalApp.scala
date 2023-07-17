@@ -20,6 +20,16 @@ class TerminalApp(context: Context) extends BiConsumer[TextIO, RunnerData] {
         try {
           val stmt = readMixqlStmt()
           stmt.trim.toLowerCase match
+            case ":help" => terminal.println(
+              """
+                |:exit -> termnate terminal session, platform will exit
+                |:help -> print this message again
+                |:show vars -> prints declared variables
+                |:show functions -> prints available functions
+                |:show engines -> prints available engines
+                |:show current engine -> prints name of current engine on which command will be executed
+                |:print var name_of_variable_here -> prints value of variable
+                |""".stripMargin)
             case ":exit" => printExitMessage()
               throw new org.mixql.engine.core.BrakeException()
             case ":show vars" => terminal.println(context.getScope().head.toString())
@@ -55,8 +65,9 @@ class TerminalApp(context: Context) extends BiConsumer[TextIO, RunnerData] {
 
     terminal.println("No files were provided. Platform is launching in REPL mode. " +
       "Type your statement and press ENTER. " +
-      "You can not put ';' in REPL mode at the end of statement." +
-      "To exit type ':exit'"
+      "You can not put ';' in REPL mode at the end of statement. " +
+      "To get help type :help " +
+      "To exit type ':exit' "
     )
 
     val keyStrokeAbort = "alt Z"

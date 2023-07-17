@@ -26,10 +26,16 @@ class TerminalApp(context: Context) extends BiConsumer[TextIO, RunnerData] {
             case ":show functions" => terminal.println(context.functions.keys.mkString(", "))
             case ":show engines" => terminal.println(context.engines.keys.mkString(", "))
             case ":show current engine" => terminal.println(context.currentEngine.name)
-            case _ => val res = run({
-              if (!stmt.endsWith(";")) stmt + ';' else stmt
-            }, context)
-              terminal.println("returned: " + res.toString())
+            case input: String =>
+              if input.startsWith(":print var") then
+                terminal.println(
+                  context.getVar(input.split("\\s").apply(2)).toString
+                )
+              else
+                val res = run({
+                  if (!stmt.endsWith(";")) stmt + ';' else stmt
+                }, context)
+                terminal.println("returned: " + res.toString())
         } catch {
           case e: ReadAbortedException => throw new org.mixql.engine.core.BrakeException()
           case e: org.mixql.engine.core.BrakeException => throw e
@@ -45,7 +51,7 @@ class TerminalApp(context: Context) extends BiConsumer[TextIO, RunnerData] {
   }
 
 
-  def init(terminal:  TextTerminal[_]): Unit = {
+  def init(terminal: TextTerminal[_]): Unit = {
 
     terminal.println("No files were provided. Platform is launching in REPL mode. " +
       "Type your statement and press ENTER. " +
@@ -78,7 +84,7 @@ class TerminalApp(context: Context) extends BiConsumer[TextIO, RunnerData] {
       t => t.println(value))
   }
 
-  private def readMixqlStmt()(implicit textIO: TextIO ) = {
+  private def readMixqlStmt()(implicit textIO: TextIO) = {
     var stmt = textIO.newStringInputReader.read("mixql>")
     if (TerminalOps.MultiLineMode) {
       while (TerminalOps.MultiLineMode) TerminalOps.MultiLineString = TerminalOps.MultiLineString + textIO.newStringInputReader.read() + "\n"
@@ -88,7 +94,7 @@ class TerminalApp(context: Context) extends BiConsumer[TextIO, RunnerData] {
     stmt
   }
 
-  def printExitMessage()(implicit textIO: TextIO ): Unit = {
+  def printExitMessage()(implicit textIO: TextIO): Unit = {
     textIO.newStringInputReader
       .withMinLength(0).read("\nPress enter to terminate...")
   }

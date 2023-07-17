@@ -1,5 +1,7 @@
 package org.mixql.platform.oozie
 
+import org.beryx.textio.TextIO
+import org.beryx.textio.web.{SparkTextIoApp, WebTextTerminal}
 import org.mixql.core.run
 import org.rogach.scallop.ScallopConf
 
@@ -13,8 +15,10 @@ import org.mixql.engine.sqlite.local.EngineSqlightLocal
 import scala.collection.mutable
 import org.mixql.platform.oozie.logger.*
 import org.mixql.oozie.OozieParamsReader
+import org.mixql.repl.{TerminalApp, WebTextIoExecutor}
 
 import scala.util.Try
+
 
 object MixQlEnginePlatformOozie:
   def main(args: Array[String]): Unit =
@@ -77,12 +81,24 @@ object MixQlEnginePlatformOozie:
 
     try {
       logDebug(s"Mixql engine oozie platform: reading and executing sql files if they exist")
-      sqlScriptFiles.map {
-        (f: File) => (f.getAbsolutePath, utils.FilesOperations.readFileContent(f))
-      }.foreach(sql => {
-        logDebug("Mixql engine oozie platform: running script: " + sql._1)
-        run(sql._2, context)
-      })
+      if sqlScriptFiles.nonEmpty then
+        sqlScriptFiles.map {
+          (f: File) => (f.getAbsolutePath, utils.FilesOperations.readFileContent(f))
+        }.foreach(sql => {
+          logDebug("Mixql engine oozie platform: running script: " + sql._1)
+          run(sql._2, context)
+        })
+      else
+        logInfo("Launching in WEB REPL mode")
+        val webTextTerm = new WebTextTerminal()
+        webTextTerm.init();
+        val textIO = new TextIO(webTextTerm);
+        val app = TerminalApp(context)
+        val textIoApp = new SparkTextIoApp(app, textIO.getTextTerminal.asInstanceOf[WebTextTerminal])
+        val webTextIoExecutor = new WebTextIoExecutor()
+        webTextIoExecutor.withPort(8080)
+        webTextIoExecutor.execute(textIoApp)
+      end if
 
       logDebug(context.getScope().head.toString())
     } catch {
@@ -99,7 +115,7 @@ object MixQlEnginePlatformOozie:
       if ClientModule.broker != null then ClientModule.broker.close()
     }
 
-case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments) :
+case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments):
 
   import org.rogach.scallop.stringConverter
 

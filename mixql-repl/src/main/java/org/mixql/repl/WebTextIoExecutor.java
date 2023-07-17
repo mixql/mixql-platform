@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.mixql.platform.demo.repl;
+package org.mixql.repl;
 
 import org.beryx.textio.web.TextIoApp;
 
@@ -29,6 +29,15 @@ import java.util.function.Consumer;
  */
 public class WebTextIoExecutor {
     private Integer port;
+    boolean launchDesktopBrowser;
+
+    public WebTextIoExecutor(boolean launchDesktopBrowser){
+        this.launchDesktopBrowser = launchDesktopBrowser;
+    }
+
+    public WebTextIoExecutor(){
+        this.launchDesktopBrowser = false;
+    }
 
     public WebTextIoExecutor withPort(int port) {
         this.port = port;
@@ -48,16 +57,20 @@ public class WebTextIoExecutor {
             .init();
 
         String url = "http://localhost:" + app.getPort() + "/web-demo.html";
-        boolean browserStarted = false;
-        if(Desktop.isDesktopSupported()) {
-            try {
-                Desktop.getDesktop().browse(new URI(url));
-                browserStarted = true;
-            } catch (Exception e) {
-                e.printStackTrace();
+        if (launchDesktopBrowser) {
+            boolean browserStarted = false;
+            if (Desktop.isDesktopSupported()) {
+                try {
+                    Desktop.getDesktop().browse(new URI(url));
+                    browserStarted = true;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
-        }
-        if(!browserStarted) {
+            if (!browserStarted) {
+                System.out.println("Please open the following link in your browser: " + url);
+            }
+        }else{
             System.out.println("Please open the following link in your browser: " + url);
         }
     }

@@ -1,4 +1,4 @@
-package org.mixql.platform.demo.utils;
+package org.mixql.repl;
 
 import org.beryx.textio.TextTerminal;
 import org.beryx.textio.ReadHandlerData;

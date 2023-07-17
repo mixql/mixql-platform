@@ -169,6 +169,7 @@ lazy val mixQLPlatformDemo = project
   .in(file("mixql-platform-demo"))
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
   .dependsOn(
+    mixQLRepl,
     mixQLCluster,
     mixQLEngineStub % "compile->test",
     mixQLEngineSqlite % "compile->test",
@@ -212,10 +213,13 @@ lazy val mixQLOozie = project.in(file("mixql-oozie"))
 
 lazy val engineClassName = settingKey[String]("Name of engine's main class")
 
+lazy val mixQLRepl = project.in(file("mixql-repl")).dependsOn(mixQLEngineSCALA3)
+
 lazy val mixQLPlatformOozie = project
   .in(file("mixql-platform-oozie"))
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
   .dependsOn(
+    mixQLRepl,
     mixQLCluster,
     mixQLEngineSqliteLocal, //% "compile->compile;compile->test",
     mixQLOozie

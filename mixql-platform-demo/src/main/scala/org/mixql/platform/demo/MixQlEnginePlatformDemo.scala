@@ -18,8 +18,7 @@ import org.mixql.platform.demo.procedures.SimpleFuncs
 
 import scala.collection.mutable
 import org.mixql.platform.demo.logger.*
-import org.mixql.platform.demo.repl.TerminalApp
-import org.mixql.platform.demo.utils.TerminalOps
+import org.mixql.repl.{TerminalApp, TerminalOps, WebTextIoExecutor}
 
 import scala.util.Try
 
@@ -148,7 +147,7 @@ object MixQlEnginePlatformDemo:
           val textIO = new TextIO(webTextTerm);
           val app = TerminalApp(context)
           val textIoApp = new SparkTextIoApp(app, textIO.getTextTerminal.asInstanceOf[WebTextTerminal])
-          val webTextIoExecutor = new repl.WebTextIoExecutor()
+          val webTextIoExecutor = new WebTextIoExecutor(launchDesktopBrowser())
           webTextIoExecutor.withPort(8080)
           webTextIoExecutor.execute(textIoApp)
         } else {
@@ -174,6 +173,12 @@ object MixQlEnginePlatformDemo:
     Try(
       config.getBoolean("org.mixql.platform.demo.repl.launch-web")
     ).getOrElse(false)
+  }
+
+  private def launchDesktopBrowser(): Boolean = {
+    Try(
+      config.getBoolean("org.mixql.platform.demo.repl.launch-desktop-web-browser")
+    ).getOrElse(true)
   }
 
   def parseArgs(args: List[String]): (Option[String], Option[Int],

@@ -1,7 +1,7 @@
-package org.mixql.platform.demo.repl
+package org.mixql.repl
 
 import org.beryx.textio.{ReadAbortedException, TextIO, TextIoFactory, TextTerminal}
-import org.mixql.platform.demo.utils.TerminalOps
+import org.mixql.repl.TerminalOps
 
 import java.util.function.BiConsumer
 import org.mixql.core.context.Context

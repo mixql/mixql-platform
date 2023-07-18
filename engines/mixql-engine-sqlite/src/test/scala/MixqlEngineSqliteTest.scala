@@ -2,6 +2,7 @@ import org.mixql.engine.sqlite.SQLightJDBC
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.mixql.core.context.gtype
+import org.mixql.engine.core.logger.ModuleLogger
 
 import scala.collection.mutable
 import org.mixql.protobuf.messages
@@ -14,6 +15,7 @@ object MixqlEngineSqliteTest:
       "mixql.org.engine.sqlight.db.path" -> messages.gString(
         "jdbc:sqlite::memory:","")
     )
+  val logger = new ModuleLogger(identity)  
 
 class MixqlEngineSqliteTest extends AnyFlatSpec with BeforeAndAfterAll :
 

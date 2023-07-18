@@ -112,7 +112,7 @@ class Module(
               indentity: String,
               host: String,
               port: Int
-            ) {
+            )(implicit logger: ModuleLogger) {
 
   import Module._
 
@@ -124,7 +124,6 @@ class Module(
   var processStart: DateTime = null
   var liveness: Int = 3
   var brokerClientAdress: Array[Byte] = Array()
-  implicit val logger: ModuleLogger = new ModuleLogger(indentity)
 
   import logger._
 
@@ -182,7 +181,7 @@ class Module(
                 case msg: messages.Execute =>
                   try {
                     sendMsgToServerBroker(clientAddress,
-                      executor.reactOnExecute(msg, identity, clientAddressStr)
+                      executor.reactOnExecute(msg, identity, clientAddressStr, logger)
                     )(server, identity, clientAddress, logger)
                   } catch {
                     case e: Throwable =>
@@ -197,7 +196,7 @@ class Module(
                 case msg: messages.SetParam =>
                   try {
                     sendMsgToServerBroker(clientAddress,
-                      executor.reactOnSetParam(msg, identity, clientAddressStr)
+                      executor.reactOnSetParam(msg, identity, clientAddressStr, logger)
                     )(server, identity, clientAddress, logger)
                   } catch {
                     case e: Throwable =>
@@ -212,7 +211,7 @@ class Module(
                 case msg: messages.GetParam =>
                   try {
                     sendMsgToServerBroker(clientAddress,
-                      executor.reactOnGetParam(msg, identity, clientAddressStr)
+                      executor.reactOnGetParam(msg, identity, clientAddressStr, logger)
                     )(server, identity, clientAddress, logger)
                   } catch {
                     case e: Throwable =>
@@ -227,7 +226,7 @@ class Module(
                 case msg: messages.IsParam =>
                   try {
                     sendMsgToServerBroker(clientAddress,
-                      executor.reactOnIsParam(msg, identity, clientAddressStr)
+                      executor.reactOnIsParam(msg, identity, clientAddressStr, logger)
                     )(server, identity, clientAddress, logger)
                   } catch {
                     case e: Throwable =>
@@ -242,7 +241,7 @@ class Module(
                 case _: messages.ShutDown =>
                   logInfo(s"Started shutdown")
                   try {
-                    executor.reactOnShutDown(identity, clientAddressStr)
+                    executor.reactOnShutDown(identity, clientAddressStr, logger)
                   } catch {
                     case e: Throwable => logWarn("Warning: error while reacting on shutdown: " +
                       e.getMessage
@@ -252,7 +251,7 @@ class Module(
                 case msg: messages.ExecuteFunction =>
                   try {
                     sendMsgToServerBroker(clientAddress,
-                      executor.reactOnExecuteFunction(msg, identity, clientAddressStr)
+                      executor.reactOnExecuteFunction(msg, identity, clientAddressStr, logger)
                     )(server, identity, clientAddress, logger)
                   }
                   catch {
@@ -268,7 +267,7 @@ class Module(
                 case _: messages.GetDefinedFunctions =>
                   try {
                     sendMsgToServerBroker(clientAddress,
-                      executor.reactOnGetDefinedFunctions(identity, clientAddressStr)
+                      executor.reactOnGetDefinedFunctions(identity, clientAddressStr, logger)
                     )(server, identity, clientAddress, logger)
                   }
                   catch {

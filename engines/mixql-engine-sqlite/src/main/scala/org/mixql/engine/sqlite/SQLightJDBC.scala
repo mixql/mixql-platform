@@ -4,6 +4,7 @@ import org.mixql.protobuf.{GtypeConverter, ProtoBufConverter, messages}
 
 import java.sql._
 import scala.collection.mutable
+import org.mixql.engine.core.logger.ModuleLogger
 
 object SQLightJDBC {
   var c: Connection = null
@@ -13,6 +14,10 @@ class SQLightJDBC(identity: String,
                   engineParams: mutable.Map[String, messages.Message] = mutable.Map())
   extends java.lang.AutoCloseable {
 
+  val logger = new ModuleLogger(identity)
+
+  import logger._
+
   def init() = {
     val url =
       try {
@@ -20,14 +25,14 @@ class SQLightJDBC(identity: String,
           .asInstanceOf[messages.gString].value
       } catch {
         case e: Exception =>
-          println(
-            s"Module $identity: Warning: could not read db path from provided params: " + e.getMessage
+          logWarn(
+            s"Warning: could not read db path from provided params: " + e.getMessage
           )
-          println(s"Module $identity: use in memory db")
+          logInfo(s"use in memory db")
           "jdbc:sqlite::memory:"
       }
     SQLightJDBC.c = DriverManager.getConnection(url)
-    println(s"Module $identity: opened database successfully")
+    logInfo(s"opened database successfully")
   }
 
   def getSQLightJDBCConnection: Connection = {
@@ -152,66 +157,66 @@ class SQLightJDBC(identity: String,
     intType match {
 
       case Types.VARCHAR | Types.CHAR | Types.LONGVARCHAR =>
-        messages.gString("","")
+        messages.gString("", "")
       case Types.BIT | Types.BOOLEAN => messages.Bool(false)
       case Types.NUMERIC =>
-        println(
-          s"Module $identity: SQLightJDBC error while execute: " +
+        logError(
+          s"SQLightJDBC error while execute: " +
             "unsupported column type NUMERIC"
         )
-        messages.gString("","")
+        messages.gString("", "")
       case Types.TINYINT | Types.SMALLINT | Types.INTEGER =>
         messages.gInt(-1)
       case Types.BIGINT =>
-        println(
-          s"Module $identity: SQLightJDBC error while execute: " +
+        logError(
+          s"SQLightJDBC error while execute: " +
             "unsupported column type BIGINT"
         )
-        messages.gString("","")
+        messages.gString("", "")
       case Types.REAL | Types.FLOAT | Types.DOUBLE => messages.gDouble(0.0)
       case Types.VARBINARY | Types.BINARY =>
-        println(
-          s"Module $identity: SQLightJDBC error while execute: " +
+        logError(
+          s"SQLightJDBC error while execute: " +
             "unsupported column type VARBINARY or BINARY"
         )
-        messages.gString("","")
+        messages.gString("", "")
       case Types.DATE =>
-        println(
-          s"Module $identity: SQLightJDBC error while execute: " +
+        logError(
+          s"SQLightJDBC error while execute: " +
             "unsupported column type Date"
         )
-        messages.gString("","")
+        messages.gString("", "")
       case Types.TIMESTAMP =>
-        println(
-          s"Module $identity: SQLightJDBC error while execute: " +
+        logError(
+          s"SQLightJDBC error while execute: " +
             "unsupported column type TIMESTAMP"
         )
-        messages.gString("","")
+        messages.gString("", "")
       case Types.CLOB =>
-        println(
-          s"Module $identity: SQLightJDBC error while execute: " +
+        logError(
+          s"SQLightJDBC error while execute: " +
             "unsupported column type CLOB"
         )
-        messages.gString("","")
+        messages.gString("", "")
       case Types.BLOB =>
-        println(
-          s"Module $identity: SQLightJDBC error while execute: " +
+        logError(
+          s"SQLightJDBC error while execute: " +
             "unsupported column type BLOB"
         )
-        messages.gString("","")
+        messages.gString("", "")
       case Types.ARRAY => messages.gArray(Seq().toArray)
       case Types.STRUCT =>
-        println(
-          s"Module $identity: SQLightJDBC error while execute: " +
+        logError(
+          s"SQLightJDBC error while execute: " +
             "unsupported column type STRUCT"
         )
-        messages.gString("","")
+        messages.gString("", "")
       case Types.REF =>
-        println(
-          s"Module $identity: SQLightJDBC error while execute: " +
+        logError(
+          s"SQLightJDBC error while execute: " +
             "unsupported column type REF"
         )
-        messages.gString("","")
+        messages.gString("", "")
     }
   }
 
@@ -225,17 +230,16 @@ class SQLightJDBC(identity: String,
   }
 
   override def close(): Unit = {
-    println(s"Module $identity: executing close")
+    logInfo(s"executing close")
 
     if (SQLightJDBC.c != null) {
       try SQLightJDBC.c.close()
       catch {
         case e: Throwable =>
-          println
-          (
-            s"Warning: Module $identity: error while closing sql light connection: " +
+          logWarn(
+            s"Warning: error while closing sql light connection: " +
               e.getMessage
-            )
+          )
       }
     }
   }

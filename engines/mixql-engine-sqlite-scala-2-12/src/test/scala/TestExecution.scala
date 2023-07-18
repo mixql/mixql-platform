@@ -1,5 +1,6 @@
 import org.mixql.protobuf.messages.Message
 class TestExecution extends MixqlEngineSqliteTest {
+  import MixqlEngineSqliteTest.logger._
   behavior of "start engine, execute sql statements and close engine"
 
   it should ("execute statements that create table, insert value into it and" +
@@ -8,28 +9,28 @@ class TestExecution extends MixqlEngineSqliteTest {
     import org.mixql.core.context.gtype
 
     {
-      println(
+      logInfo(
         MixqlEngineSqliteTest.identity + ": execute create table customers"
       )
       val gType = execute(
         TestOps
           .readContentFromResource("TestExecution/create_table_customers.sql")
       )
-      println(
+      logInfo(
         MixqlEngineSqliteTest.identity + " create table res : " + gType.toString
       )
       assert(gtype.isNull(gType))
     }
 
     {
-      println(
+      logInfo(
         MixqlEngineSqliteTest.identity + ": execute insert into customers"
       )
       val gType = execute(
         TestOps
           .readContentFromResource("TestExecution/insert_into_customers.sql")
       )
-      println(
+      logInfo(
         MixqlEngineSqliteTest.identity + " insert into res : " + gType.toString
       )
       assert(gtype.isNull(gType))
@@ -40,11 +41,11 @@ class TestExecution extends MixqlEngineSqliteTest {
         """
           |select * from Customers;
           """.stripMargin
-      println(
+      logInfo(
         MixqlEngineSqliteTest.identity + ": execute select from customers"
       )
       val gType = execute(code)
-      println(
+      logInfo(
         MixqlEngineSqliteTest.identity + " select from customers res : " + gType.toString
       )
       assert(

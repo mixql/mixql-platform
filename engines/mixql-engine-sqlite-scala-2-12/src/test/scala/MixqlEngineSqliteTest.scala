@@ -5,16 +5,19 @@ import org.mixql.core.context.gtype
 
 import scala.collection.mutable
 import org.mixql.protobuf.messages
+import org.mixql.engine.core.logger.ModuleLogger
 
 object MixqlEngineSqliteTest {
   var context: SQLightJDBC = null
   val identity = "MixqlEngineSqliteTest"
-  val engineParams: mutable.Map[String, messages.Message] =
+  val engineParams: mutable.Map[String, messages.Message] = {
     mutable.Map(
       "mixql.org.engine.sqlight.db.path" -> new messages.gString(
         "jdbc:sqlite::memory:", ""
       )
     )
+  }
+  val logger = new ModuleLogger(identity)
 }
 
 class MixqlEngineSqliteTest extends AnyFlatSpec with BeforeAndAfterAll {

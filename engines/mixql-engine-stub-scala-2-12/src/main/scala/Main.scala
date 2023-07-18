@@ -2,8 +2,8 @@ package org.mixql.engine.demo.scala.two.twelf
 
 import com.typesafe.config._
 import org.rogach.scallop.ScallopConf
-
 import org.mixql.engine.core
+import org.mixql.engine.core.logger.ModuleLogger
 
 object MixQlEngineDemo {
 
@@ -13,7 +13,9 @@ object MixQlEngineDemo {
     import org.rogach.scallop.ScallopConfBase
     val host: String = appArgs.host.toOption.get
     val port = appArgs.port.toOption.get
-    println(s"Module $indentity: Starting main client")
+    implicit val logger = new ModuleLogger(indentity)
+
+    logger.logInfo(s"Starting main client")
 
     new core.Module(new EngineDemoExecutor(), indentity, host, port).startServer()
   }

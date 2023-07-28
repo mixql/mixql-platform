@@ -5,19 +5,14 @@ class TestSqliteTitanicDB extends MixqlEngineSqliteTest(Some("mixql.org.engine.s
   import org.mixql.core.context.gtype
 
   it should ("select count(who) from Observation") in {
-      val gType = execute(
-        """
+    val gType = execute("""
           |select  count(who) from Observation t1 join who t2 on t1.who_id = t2.who_id;
-      """.stripMargin
-      )
-      assert(
-        gType.toString == "[[891]]"
-      )
+      """.stripMargin)
+    assert(gType.toString == "[[891]]")
   }
 
   it should ("count Survival_rate from Observation") in {
-      val gType = execute(
-        """
+    val gType = execute("""
           |select
           |    case when f.survived = 1 then 'Survived' else 'Not Survived' end as Survival_status,
           |    count(*) as Survival_rate,
@@ -30,10 +25,7 @@ class TestSqliteTitanicDB extends MixqlEngineSqliteTest(Some("mixql.org.engine.s
           |        from Observation t
           |    ) f
           |group by f.alive_id;
-      """.stripMargin
-      )
-      assert(
-        gType.toString == "[[\"Not Survived\", 549, \"61.62 %\", 891], [\"Survived\", 342, \"38.38 %\", 891]]"
-      )
+      """.stripMargin)
+    assert(gType.toString == "[[\"Not Survived\", 549, \"61.62 %\", 891], [\"Survived\", 342, \"38.38 %\", 891]]")
   }
 }

@@ -2,9 +2,8 @@ class TestStubEngineSimpleFuncs extends MixQLClusterTest {
 
   behavior of "correctly execute stub engine's functions, pass parameters to them and work with result"
 
-  it should("execute stub_simple_proc function") in {
-    run(
-      """
+  it should ("execute stub_simple_proc function") in {
+    run("""
         |let engine "stub";
         |print("stub_simple_proc res: " || stub_simple_proc());
         |let engine "stub-local";
@@ -12,8 +11,7 @@ class TestStubEngineSimpleFuncs extends MixQLClusterTest {
   }
 
   it should ("execute stub_simple_proc_params function") in {
-    run(
-      """
+    run("""
         |let engine "stub";
         |let a = "test";
         |let b = 5;
@@ -23,8 +21,7 @@ class TestStubEngineSimpleFuncs extends MixQLClusterTest {
   }
 
   it should ("execute stub_simple_proc_context_params function") in {
-    run(
-      """
+    run("""
         |let engine "stub";
         |let a = "test";
         |let b = 5;
@@ -34,8 +31,7 @@ class TestStubEngineSimpleFuncs extends MixQLClusterTest {
   }
 
   it should ("execute stub_simple_func_return_arr function") in {
-    run(
-      """
+    run("""
         |let engine "stub";
         |print("SUCCESS:" || stub_simple_func_return_arr());
         |let engine "stub-local";
@@ -43,8 +39,7 @@ class TestStubEngineSimpleFuncs extends MixQLClusterTest {
   }
 
   it should ("execute stub_simple_func_return_map function") in {
-    run(
-      """
+    run("""
         |let engine "stub";
         |
         |let res = stub_simple_func_return_map();

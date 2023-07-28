@@ -10,14 +10,11 @@ import org.mixql.protobuf.messages
 object MixqlEngineSqliteTest:
   var context: SQLightJDBC = null
   val identity = "MixqlEngineSqliteTest"
-  val engineParams: mutable.Map[String, messages.Message] =
-    mutable.Map(
-      "mixql.org.engine.sqlight.db.path" -> messages.gString(
-        "jdbc:sqlite::memory:","")
-    )
-  val logger = new ModuleLogger(identity)  
+  val engineParams: mutable.Map[String, messages.Message] = mutable
+    .Map("mixql.org.engine.sqlight.db.path" -> messages.gString("jdbc:sqlite::memory:", ""))
+  val logger = new ModuleLogger(identity)
 
-class MixqlEngineSqliteTest extends AnyFlatSpec with BeforeAndAfterAll :
+class MixqlEngineSqliteTest extends AnyFlatSpec with BeforeAndAfterAll:
 
   import MixqlEngineSqliteTest._
 

@@ -14,8 +14,7 @@ import logger.ILogger
 
 case class StashedParam(name: String, value: gtype.Type)
 
-object InternalEngine {
-}
+object InternalEngine {}
 
 //if start script name is not none then client must start remote engine by executing script
 //which is {basePath}/{startScriptName}. P.S executor will be ignored
@@ -28,34 +27,21 @@ abstract class InternalEngine extends Engine with ILogger {
 
   private var haveSetStashedParams: Boolean = false
 
-  private def stashMessage(
-                    name: String,
-                    value: gtype.Type,
-                  ) = {
-    logDebug(
-      s"started to stash parameter $name with value $value"
-    )
+  private def stashMessage(name: String, value: gtype.Type) = {
+    logDebug(s"started to stash parameter $name with value $value")
     engineStashedParams += StashedParam(name, value)
-    logDebug(
-      s"successfully stashed parameter $name with value $value"
-    )
+    logDebug(s"successfully stashed parameter $name with value $value")
   }
 
   private def setStashedParamsIfTheyAre() = {
     haveSetStashedParams = true
     logDebug(s"Check if there are stashed params")
     if (engineStashedParams.isEmpty)
-      logDebug(
-        s"Checked: No stashed messages for $name"
-      )
+      logDebug(s"Checked: No stashed messages for $name")
     else {
-      logDebug(
-        s"Have founded stashed messages (amount: ${engineStashedParams.length}). Set them"
-      )
+      logDebug(s"Have founded stashed messages (amount: ${engineStashedParams.length}). Set them")
       engineStarted = true
-      engineStashedParams.foreach(msg =>
-        execSetParam(msg.name, msg.value)
-      )
+      engineStashedParams.foreach(msg => execSetParam(msg.name, msg.value))
       engineStashedParams.clear()
     }
   }
@@ -82,7 +68,6 @@ abstract class InternalEngine extends Engine with ILogger {
 
   def execFunc(name: String, params: Type*): Type
 
-
   final override def getDefinedFunctions: List[String] = {
     if (!engineStarted)
       logInfo(s" was triggered by getDefinedFunctions request")
@@ -97,8 +82,7 @@ abstract class InternalEngine extends Engine with ILogger {
     if (haveSetStashedParams) {
       engineStarted = true
       execSetParam(name, value)
-    }
-    else
+    } else
       stashMessage(name, value)
   }
 

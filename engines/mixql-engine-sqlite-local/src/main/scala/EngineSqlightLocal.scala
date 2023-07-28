@@ -6,21 +6,16 @@ import org.mixql.core.context.gtype.Type
 
 import scala.collection.mutable
 
-class EngineSqlightLocal( dbPathParameter: Option[String] = None)
-    extends InternalEngine
-    with java.lang.AutoCloseable:
+class EngineSqlightLocal(dbPathParameter: Option[String] = None) extends InternalEngine with java.lang.AutoCloseable:
 
-  val engineParams: mutable.Map[String, gtype.Type] =
-    mutable.Map()
+  val engineParams: mutable.Map[String, gtype.Type] = mutable.Map()
 
   var context: SQLightJDBC = null
 
   override def name: String = "mixql-engine-sqlite-local"
 
   override def executeStmt(statement: String): gtype.Type = {
-    logInfo(
-      s"Received statement to execute: ${statement}"
-    )
+    logInfo(s"Received statement to execute: ${statement}")
     logDebug(s"Executing command ${statement}")
 
     initContextIfEmpty()
@@ -31,11 +26,10 @@ class EngineSqlightLocal( dbPathParameter: Option[String] = None)
     res
   }
 
-  def initContextIfEmpty() = if context == null then
-    logDebug(
-      s"Init SQlightJDBC context"
-    )
-    context = SQLightJDBC(name, engineParams, dbPathParameter)
+  def initContextIfEmpty() =
+    if context == null then
+      logDebug(s"Init SQlightJDBC context")
+      context = SQLightJDBC(name, engineParams, dbPathParameter)
 
   override def execFunc(name: String, params: Type*): Type = {
     try
@@ -56,14 +50,11 @@ class EngineSqlightLocal( dbPathParameter: Option[String] = None)
 
   override def execSetParam(name: String, value: Type): Unit = {
     try {
-      logDebug(
-        s"Received request to set parameter $name with value $value"
-      )
+      logDebug(s"Received request to set parameter $name with value $value")
       engineParams.put(name, value)
       logDebug(s"Successfully have set parameter $name with value $value")
     } catch {
-      case e: Throwable =>
-        throw new Exception(s"[ENGINE ${this.name}] error while setting parameter: " + e.getMessage)
+      case e: Throwable => throw new Exception(s"[ENGINE ${this.name}] error while setting parameter: " + e.getMessage)
     }
   }
 
@@ -86,5 +77,4 @@ class EngineSqlightLocal( dbPathParameter: Option[String] = None)
     engineParams.keys.toSeq.contains(name)
   }
 
-  override def close(): Unit =
-    if context != null then context.close()
+  override def close(): Unit = if context != null then context.close()

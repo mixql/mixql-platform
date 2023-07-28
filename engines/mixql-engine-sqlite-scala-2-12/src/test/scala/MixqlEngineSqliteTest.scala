@@ -11,11 +11,7 @@ object MixqlEngineSqliteTest {
   var context: SQLightJDBC = null
   val identity = "MixqlEngineSqliteTest"
   val engineParams: mutable.Map[String, messages.Message] = {
-    mutable.Map(
-      "mixql.org.engine.sqlight.db.path" -> new messages.gString(
-        "jdbc:sqlite::memory:", ""
-      )
-    )
+    mutable.Map("mixql.org.engine.sqlight.db.path" -> new messages.gString("jdbc:sqlite::memory:", ""))
   }
   val logger = new ModuleLogger(identity)
 }

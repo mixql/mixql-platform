@@ -10,9 +10,8 @@ object SQLightJDBC {
   var c: Connection = null
 }
 
-class SQLightJDBC(identity: String,
-                  engineParams: mutable.Map[String, messages.Message] = mutable.Map())
-  extends java.lang.AutoCloseable {
+class SQLightJDBC(identity: String, engineParams: mutable.Map[String, messages.Message] = mutable.Map())
+    extends java.lang.AutoCloseable {
 
   val logger = new ModuleLogger(identity)
 
@@ -21,13 +20,10 @@ class SQLightJDBC(identity: String,
   def init() = {
     val url =
       try {
-        engineParams("mixql.org.engine.sqlight.db.path")
-          .asInstanceOf[messages.gString].value
+        engineParams("mixql.org.engine.sqlight.db.path").asInstanceOf[messages.gString].value
       } catch {
         case e: Exception =>
-          logWarn(
-            s"Warning: could not read db path from provided params: " + e.getMessage
-          )
+          logWarn(s"Warning: could not read db path from provided params: " + e.getMessage)
           logInfo(s"use in memory db")
           "jdbc:sqlite::memory:"
       }
@@ -36,10 +32,10 @@ class SQLightJDBC(identity: String,
   }
 
   def getSQLightJDBCConnection: Connection = {
-    if (SQLightJDBC.c == null) init()
+    if (SQLightJDBC.c == null)
+      init()
     SQLightJDBC.c
   }
-
 
   // returns messages.Type
   // TO-DO Should return iterator?
@@ -59,10 +55,10 @@ class SQLightJDBC(identity: String,
 
           val resultSetMetaData = res.getMetaData
           val columnCount = resultSetMetaData.getColumnCount
-          val columnTypes: Seq[messages.Message] =
-            getColumnTypes(resultSetMetaData, columnCount)
+          val columnTypes: Seq[messages.Message] = getColumnTypes(resultSetMetaData, columnCount)
           val columnNames: Seq[String] =
-            for (i <- 1 to columnCount) yield resultSetMetaData.getColumnName(i)
+            for (i <- 1 to columnCount)
+              yield resultSetMetaData.getColumnName(i)
 
           import org.mixql.engine.sqlite.JavaSqlArrayConverter
 
@@ -75,80 +71,51 @@ class SQLightJDBC(identity: String,
           }
           messages.gArray(arr.toArray)
         } finally {
-          if (res != null) res.close()
+          if (res != null)
+            res.close()
         }
-      }
-      else messages.NULL()
+      } else
+        messages.NULL()
     } catch {
-      case e: Throwable =>
-        messages.Error(
-          s"Module $identity: SQLightJDBC error while execute: " + e.getMessage
-        )
+      case e: Throwable => messages.Error(s"Module $identity: SQLightJDBC error while execute: " + e.getMessage)
     } finally {
-      if (jdbcStmt != null) jdbcStmt.close()
+      if (jdbcStmt != null)
+        jdbcStmt.close()
     }
   }
 
-  def getRowFromResultSet(
-                           res: ResultSet,
-                           columnCount: Int,
-                           columnTypes: Seq[messages.Message]
-                         ): Seq[messages.Message] =
-
-    for (i <- 1 to columnCount) yield {
-      columnTypes(i - 1) match {
-        case _: messages.gString =>
-          messages.gString(res.getString(i), "")
-        case _: messages.Bool =>
-          messages.Bool(res.getBoolean(i))
-        case _: messages.gInt =>
-          messages.gInt(res.getInt(i))
-        case _: messages.gDouble =>
-          messages.gDouble(res.getDouble(i))
-        case _: messages.gArray =>
-          readArrayFromResultSet(res.getArray(i))
+  def getRowFromResultSet(res: ResultSet, columnCount: Int, columnTypes: Seq[messages.Message]): Seq[messages.Message] =
+    for (i <- 1 to columnCount)
+      yield {
+        columnTypes(i - 1) match {
+          case _: messages.gString => messages.gString(res.getString(i), "")
+          case _: messages.Bool    => messages.Bool(res.getBoolean(i))
+          case _: messages.gInt    => messages.gInt(res.getInt(i))
+          case _: messages.gDouble => messages.gDouble(res.getDouble(i))
+          case _: messages.gArray  => readArrayFromResultSet(res.getArray(i))
+        }
       }
-    }
 
   def readArrayFromResultSet(javaSqlArray: java.sql.Array): messages.gArray = {
 
     javaSqlTypeToClientMsg(javaSqlArray.getBaseType) match {
       case _: messages.gString =>
-        messages.gArray(
-          JavaSqlArrayConverter
-            .toStringArray(javaSqlArray)
-            .map { str =>
-              messages.gString(str, "")
-            }.toArray
-        )
+        messages.gArray(JavaSqlArrayConverter.toStringArray(javaSqlArray).map { str =>
+          messages.gString(str, "")
+        }.toArray)
       case _: messages.Bool =>
-        messages.gArray(
-          JavaSqlArrayConverter
-            .toBooleanArray(javaSqlArray)
-            .map {
-              value => messages.Bool(value)
-            }.toArray
-        )
+        messages.gArray(JavaSqlArrayConverter.toBooleanArray(javaSqlArray).map { value =>
+          messages.Bool(value)
+        }.toArray)
       case _: messages.gInt =>
-        messages.gArray(
-          JavaSqlArrayConverter
-            .toIntArray(javaSqlArray)
-            .map {
-              value => new messages.gInt(value)
-            }.toArray
-        )
+        messages.gArray(JavaSqlArrayConverter.toIntArray(javaSqlArray).map { value =>
+          new messages.gInt(value)
+        }.toArray)
       case _: messages.gDouble =>
-        messages.gArray(
-          JavaSqlArrayConverter
-            .toDoubleArray(javaSqlArray)
-            .map {
-              value => new messages.gDouble(value)
-            }.toArray
-        )
-      case _: Any =>
-        throw new Exception(
-          s"Module $identity: SQLightJDBC error while execute: unknown type of array"
-        )
+        messages.gArray(JavaSqlArrayConverter.toDoubleArray(javaSqlArray).map { value =>
+          new messages.gDouble(value)
+        }.toArray)
+      case _: Any => throw new Exception(s"Module $identity: SQLightJDBC error while execute: unknown type of array")
     }
   }
 
@@ -156,17 +123,15 @@ class SQLightJDBC(identity: String,
 
     intType match {
 
-      case Types.VARCHAR | Types.CHAR | Types.LONGVARCHAR =>
-        messages.gString("", "")
-      case Types.BIT | Types.BOOLEAN => messages.Bool(false)
+      case Types.VARCHAR | Types.CHAR | Types.LONGVARCHAR => messages.gString("", "")
+      case Types.BIT | Types.BOOLEAN                      => messages.Bool(false)
       case Types.NUMERIC =>
         logError(
           s"SQLightJDBC error while execute: " +
             "unsupported column type NUMERIC"
         )
         messages.gString("", "")
-      case Types.TINYINT | Types.SMALLINT | Types.INTEGER =>
-        messages.gInt(-1)
+      case Types.TINYINT | Types.SMALLINT | Types.INTEGER => messages.gInt(-1)
       case Types.BIGINT =>
         logError(
           s"SQLightJDBC error while execute: " +
@@ -220,12 +185,10 @@ class SQLightJDBC(identity: String,
     }
   }
 
-  def getColumnTypes(
-                      resultSetMetaData: ResultSetMetaData,
-                      columnCount: Int
-                    ): Seq[messages.Message] = {
-    (for (i <- 1 to columnCount) yield resultSetMetaData.getColumnType(i)).map {
-      intType => javaSqlTypeToClientMsg(intType)
+  def getColumnTypes(resultSetMetaData: ResultSetMetaData, columnCount: Int): Seq[messages.Message] = {
+    (for (i <- 1 to columnCount)
+      yield resultSetMetaData.getColumnType(i)).map { intType =>
+      javaSqlTypeToClientMsg(intType)
     }
   }
 

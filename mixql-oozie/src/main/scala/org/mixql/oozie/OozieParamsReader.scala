@@ -9,8 +9,7 @@ object OozieParamsReader {
   def getOozieParam(jobId: String, propertyName: String, oozieUrl: String): String =
     getOoziePropertyReader(jobId, propertyName, oozieUrl).propertyValue
 
-  private def getOoziePropertyReader(jobId: String,
-                                     propertyName: String, oozieUrl: String): OozieParamsReader = {
+  private def getOoziePropertyReader(jobId: String, propertyName: String, oozieUrl: String): OozieParamsReader = {
     if (_reader.isEmpty)
       _reader = Some(new OozieParamsReader(jobId, propertyName, oozieUrl))
 
@@ -30,18 +29,15 @@ class OozieParamsReader(jobId: String, get: String, OOZIE_URL: String) {
 
   private val xmlJobConfig = scala.xml.XML.loadString(job.getConf)
 
-  private val xmlProperties: scala.xml.NodeSeq =
-    xmlJobConfig \ "property"
+  private val xmlProperties: scala.xml.NodeSeq = xmlJobConfig \ "property"
 
-  private val xmlProperty: scala.xml.NodeSeq =
-    xmlProperties.filter(node => (node \ "name").text == get)
+  private val xmlProperty: scala.xml.NodeSeq = xmlProperties.filter(node => (node \ "name").text == get)
 
-  val propertyValue: String =
-    URLDecoder.decode((xmlProperty \ "value").text, "UTF-8")
+  val propertyValue: String = URLDecoder.decode((xmlProperty \ "value").text, "UTF-8")
 
   val _allProperties: Map[String, String] =
-    xmlProperties.map {
-      node => ((node \ "name").text, (node \ "value").text)
+    xmlProperties.map { node =>
+      ((node \ "name").text, (node \ "value").text)
     }.toMap
 
   def allProperties = {

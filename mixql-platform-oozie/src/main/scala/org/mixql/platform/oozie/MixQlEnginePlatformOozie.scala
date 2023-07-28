@@ -19,7 +19,6 @@ import org.mixql.repl.{TerminalApp, WebTextIoExecutor}
 
 import scala.util.Try
 
-
 object MixQlEnginePlatformOozie:
   def main(args: Array[String]): Unit =
     logDebug("Mixql engine oozie platform: parsing args")
@@ -42,17 +41,20 @@ object MixQlEnginePlatformOozie:
     logDebug(s"Mixql engine demo platform: initialising engines")
     val engines = mutable.Map[String, Engine](
       "sqlite" -> new ClientModule(
-        //Name of client, is used for identification in broker,
-        //must be unique
+        // Name of client, is used for identification in broker,
+        // must be unique
         "mixql-engine-sqlite-demo-platform",
-        //Name of remote engine, is used for identification in broker,
-        //must be unique
+        // Name of remote engine, is used for identification in broker,
+        // must be unique
         "mixql-engine-sqlite",
-        //will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
-        //in base path
+        // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
+        // in base path
         Some("mixql-engine-sqlite"),
         None,
-        host, portFrontend, portBackend, Some(new File("."))
+        host,
+        portFrontend,
+        portBackend,
+        Some(new File("."))
       ),
       "sqlite-local" -> EngineSqlightLocal()
     )
@@ -61,29 +63,30 @@ object MixQlEnginePlatformOozie:
     val variables: mutable.Map[String, gtype.Type] = mutable.Map[String, gtype.Type]()
 
     if oozieParams.contains("mixql.org.engine.sqlight.db.path") then
-      variables.put("mixql.org.engine.sqlight.db.path", gtype.string(
-        oozieParams("mixql.org.engine.sqlight.db.path")
-      ))
-
+      variables.put("mixql.org.engine.sqlight.db.path", gtype.string(oozieParams("mixql.org.engine.sqlight.db.path")))
 
     logDebug(s"Mixql engine oozie platform: init Cluster context")
     val context =
-      new Context(engines, Try({
-        oozieParams("org.mixql.platform.oozie.engines.default")
-      }).getOrElse("sqlite-local"), variables = variables)
+      new Context(
+        engines,
+        Try({
+          oozieParams("org.mixql.platform.oozie.engines.default")
+        }).getOrElse("sqlite-local"),
+        variables = variables
+      )
 
     logDebug(s"Mixql engine oozie platform: prepare sql files")
     val sqlScriptFiles: List[File] = Try {
-      oozieParams("org.mixql.platform.oozie.sql.files").split(";").map {
-        fileName => new File(fileName)
+      oozieParams("org.mixql.platform.oozie.sql.files").split(";").map { fileName =>
+        new File(fileName)
       }.toList
     }.getOrElse(List())
 
     try {
       logDebug(s"Mixql engine oozie platform: reading and executing sql files if they exist")
       if sqlScriptFiles.nonEmpty then
-        sqlScriptFiles.map {
-          (f: File) => (f.getAbsolutePath, utils.FilesOperations.readFileContent(f))
+        sqlScriptFiles.map { (f: File) =>
+          (f.getAbsolutePath, utils.FilesOperations.readFileContent(f))
         }.foreach(sql => {
           logDebug("Mixql engine oozie platform: running script: " + sql._1)
           run(sql._2, context)
@@ -104,8 +107,8 @@ object MixQlEnginePlatformOozie:
     } catch {
       case e: Throwable => logError(e.getMessage)
     } finally {
-      context.engines.values.foreach(
-        e => if (e.isInstanceOf[ClientModule]) {
+      context.engines.values.foreach(e =>
+        if (e.isInstanceOf[ClientModule]) {
           val cl: ClientModule = e.asInstanceOf[ClientModule]
           logDebug(s"sending shutdwon to remote engine " + cl.name)
           cl.ShutDown()
@@ -122,5 +125,3 @@ case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments):
   val oozieId = opt[String](descr = "oozie id", required = false)
 
   verify()
-
-

@@ -2,11 +2,9 @@ import sbt.Keys.{scalaVersion, scalacOptions}
 import sbt.librarymanagement.CrossVersion
 
 object ScalaCompilerSettings {
-  val stdOptions =
-    Seq("-feature", "-deprecation")
+  val stdOptions = Seq("-feature", "-deprecation")
 
-  def stdSettings =
-    Seq(scalacOptions := extraOptions(scalaVersion.value))
+  def stdSettings = Seq(scalacOptions := extraOptions(scalaVersion.value))
 
   def extraOptions(scalaVersion: String): Seq[String] = {
     CrossVersion.partialVersion(scalaVersion) match {

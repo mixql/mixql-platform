@@ -10,64 +10,43 @@ class TestSqliteInMemoryDB extends MixqlEngineSqliteTest {
     assert(gtype.isNull(g))
   }
 
-
   it should ("insert values in table") in {
-      createTableCustomers()
-      val gType = insertValuesIntoCustomers()
-      assert(gtype.isNull(gType))
+    createTableCustomers()
+    val gType = insertValuesIntoCustomers()
+    assert(gtype.isNull(gType))
   }
 
   it should ("select all values from table") in {
-      prepareCustomersTable()
-      val gType = execute(
-        """
+    prepareCustomersTable()
+    val gType = execute("""
           |select * from Customers;
-      """.stripMargin
-      )
-      assert(
-        gType.toString == "[[\"Cardinal\", \"Tom B. Erichsen\", \"Skagen 21\", \"Stavanger\", 4006, \"Norway\"]]"
-      )
+      """.stripMargin)
+    assert(gType.toString == "[[\"Cardinal\", \"Tom B. Erichsen\", \"Skagen 21\", \"Stavanger\", 4006, \"Norway\"]]")
   }
 
-
   it should ("select column from table") in {
-      prepareCustomersTable()
-      val gType = execute(
-        """
+    prepareCustomersTable()
+    val gType = execute("""
           |select ContactName from Customers;
-  """.stripMargin
-      )
-      assert(
-        gType.toString == "[[\"Tom B. Erichsen\"]]"
-      )
+  """.stripMargin)
+    assert(gType.toString == "[[\"Tom B. Erichsen\"]]")
 
   }
 
   it should ("count correctly number of lines in table") in {
-      prepareCustomersTable()
-      val gType = execute(
-        """
+    prepareCustomersTable()
+    val gType = execute("""
           |select count(*) from Customers;
-  """.stripMargin
-      )
-      assert(
-        gType.toString == "[[1]]"
-      )
+  """.stripMargin)
+    assert(gType.toString == "[[1]]")
   }
 
   def createTableCustomers(): gtype.Type = {
-    execute(
-      TestOps
-        .readContentFromResource("TestExecution/create_table_customers.sql")
-    )
+    execute(TestOps.readContentFromResource("TestExecution/create_table_customers.sql"))
   }
 
-
-  def insertValuesIntoCustomers()= {
-    execute(
-      TestOps
-        .readContentFromResource("TestExecution/insert_into_customers.sql")
-    )
+  def insertValuesIntoCustomers() = {
+    execute(TestOps.readContentFromResource("TestExecution/insert_into_customers.sql"))
   }
 
   def prepareCustomersTable() = {

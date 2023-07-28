@@ -13,7 +13,8 @@ object PortOperations {
     } catch {
       case _: Exception => throw new Exception(s"port $portNr is not available")
     } finally {
-      if (ignored != null) ignored.close()
+      if (ignored != null)
+        ignored.close()
     }
     port
   }

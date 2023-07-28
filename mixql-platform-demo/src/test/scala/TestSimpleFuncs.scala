@@ -4,22 +4,20 @@ class TestSimpleFuncs extends MixQLClusterTest {
 
   behavior of "correctly launch platform demo functions, pass parameters to it and work with result"
 
-  it should("execute simple_func with passed parameter a") in {
+  it should ("execute simple_func with passed parameter a") in {
     import org.mixql.platform.demo.utils.FilesOperations
     run(FilesOperations.readFileContent(TestOps.getFileFromResource("test_simple_func.sql").get))
   }
 
-  it should("execute print_current_vars") in {
-    run(
-      """
+  it should ("execute print_current_vars") in {
+    run("""
         |print_current_vars();
         |print(concat("a", "b"));
         |""".stripMargin)
   }
 
-  it should("execute startsWith") in {
-    run(
-      """
+  it should ("execute startsWith") in {
+    run("""
         |
         |print(startsWith("adddd", "b"));
         |""".stripMargin)

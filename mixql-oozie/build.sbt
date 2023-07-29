@@ -6,11 +6,11 @@ description := "MixQL oozie lib"
 
 run / fork := true
 
-scalaVersion := "2.13.8"
+scalaVersion := "3.3.0"
 
 libraryDependencies ++= {
   val vOozieClient = "5.2.0"
-  val vXml = "1.2.0"
+  val vXml = "2.2.0"
   Seq("org.apache.oozie" % "oozie-client" % vOozieClient % Provided, "org.scala-lang.modules" %% "scala-xml" % vXml)
 }
 

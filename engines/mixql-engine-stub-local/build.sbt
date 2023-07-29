@@ -2,7 +2,7 @@ name := "mixql-engine-stub-local"
 
 description := "MixQL stub engine internal."
 
-scalaVersion := "3.2.1"
+scalaVersion := "3.3.0"
 
 libraryDependencies ++= {
   Seq("org.scalameta" %% "munit" % "0.7.29" % Test, "org.scalatest" %% "scalatest" % "3.2.14" % Test)

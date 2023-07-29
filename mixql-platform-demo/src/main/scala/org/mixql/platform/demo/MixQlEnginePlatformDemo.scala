@@ -138,7 +138,7 @@ object MixQlEnginePlatformDemo:
           config.getString("org.mixql.platform.demo.engines.default")
         }).getOrElse("stub"),
         functionsInit = functions,
-        variables = variables
+        variablesInit = variables
       )
 
     try {

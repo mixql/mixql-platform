@@ -131,36 +131,31 @@ public class RemoteMessageConverter {
                 return new PlatformVar(
                         (String) anyMsgJsonObject.get("sender"),
                         (String) anyMsgJsonObject.get("name"),
-                        _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("msg")),
-                        ((String) anyMsgJsonObject.get("clientAddress")).getBytes()
+                        _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("msg"))
                 );
             case "org.mixql.remote.messages.module.worker.PlatformVars":
                 return new PlatformVars(
                         (String) anyMsgJsonObject.get("sender"),
                         (Param[]) parseMessagesArray((JSONArray) anyMsgJsonObject
                                 .get("vars")
-                        ),
-                        ((String) anyMsgJsonObject.get("clientAddress")).getBytes()
+                        )
                 );
             case "org.mixql.remote.messages.module.worker.PlatformVarsNames":
                 return new PlatformVarsNames(
                         (String) anyMsgJsonObject.get("sender"),
-                        parseStringsArray((JSONArray) anyMsgJsonObject.get("names")),
-                        ((String) anyMsgJsonObject.get("clientAddress")).getBytes()
+                        parseStringsArray((JSONArray) anyMsgJsonObject.get("names"))
                 );
             case "org.mixql.remote.messages.module.worker.PlatformVarsWereSet":
                 return new PlatformVarsWereSet(
                         (String) anyMsgJsonObject.get("sender"),
                         new ArrayList<String>(
                                 Arrays.asList(parseStringsArray((JSONArray) anyMsgJsonObject.get("names")))
-                        ),
-                        ((String) anyMsgJsonObject.get("clientAddress")).getBytes()
+                        )
                 );
             case "org.mixql.remote.messages.module.worker.PlatformVarWasSet":
                 return new PlatformVarWasSet(
                         (String) anyMsgJsonObject.get("sender"),
-                        (String) anyMsgJsonObject.get("name"),
-                        ((String) anyMsgJsonObject.get("clientAddress")).getBytes()
+                        (String) anyMsgJsonObject.get("name")
                 );
             case "org.mixql.remote.messages.module.worker.SendMsgToPlatform":
                 return new SendMsgToPlatform(
@@ -316,33 +311,30 @@ public class RemoteMessageConverter {
         if (msg instanceof PlatformVar) {
             PlatformVar msgTmp = ((PlatformVar) msg);
             return JsonUtils.buildPlatformVar(msgTmp.type(), msgTmp.sender(),
-                    new String(msgTmp.clientAddress()), msgTmp.name, _toJsonObject(msgTmp.msg));
+                    msgTmp.name, _toJsonObject(msgTmp.msg));
         }
 
         if (msg instanceof PlatformVars) {
             PlatformVars msgTmp = ((PlatformVars) msg);
             return JsonUtils.buildPlatformVars(msgTmp.type(), msgTmp.sender(),
-                    new String(msgTmp.clientAddress()), _toJsonObjects(msgTmp.vars));
+                    _toJsonObjects(msgTmp.vars));
         }
 
         if (msg instanceof PlatformVarsNames) {
             PlatformVarsNames msgTmp = ((PlatformVarsNames) msg);
-            return JsonUtils.buildPlatformVarsNames(msgTmp.type(), msgTmp.names, msgTmp.sender(),
-                    new String(msgTmp.clientAddress()));
+            return JsonUtils.buildPlatformVarsNames(msgTmp.type(), msgTmp.names, msgTmp.sender());
         }
 
         if (msg instanceof PlatformVarsWereSet) {
             PlatformVarsWereSet msgTmp = ((PlatformVarsWereSet) msg);
             return JsonUtils.buildPlatformVarsWereSet(msgTmp.type(), msgTmp.names.toArray(new String[0]),
-                    msgTmp.sender(),
-                    new String(msgTmp.clientAddress()));
+                    msgTmp.sender());
         }
 
         if (msg instanceof PlatformVarWasSet) {
             PlatformVarWasSet msgTmp = ((PlatformVarWasSet) msg);
             return JsonUtils.buildPlatformVarWasSet(msgTmp.type(), msgTmp.name,
-                    msgTmp.sender(),
-                    new String(msgTmp.clientAddress()));
+                    msgTmp.sender());
         }
 
         if (msg instanceof SendMsgToPlatform) {
@@ -358,7 +350,6 @@ public class RemoteMessageConverter {
             SetPlatformVar msgTmp = ((SetPlatformVar) msg);
             return JsonUtils.buildSetPlatformVar(msgTmp.type(),
                     msgTmp.sender(),
-                    new String(msgTmp.clientAddress()),
                     msgTmp.name,
                     _toJsonObject(msgTmp.msg)
             );

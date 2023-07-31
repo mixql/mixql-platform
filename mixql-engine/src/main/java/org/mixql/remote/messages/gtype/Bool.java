@@ -1,8 +1,6 @@
 package org.mixql.remote.messages.gtype;
 
-import org.mixql.remote.messages.Message;
-
-public class Bool implements Message {
+public class Bool implements IGtypeMessage {
     public Boolean value;
 
     public Bool(Boolean value) {

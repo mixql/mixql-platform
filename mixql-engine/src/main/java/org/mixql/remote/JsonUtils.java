@@ -154,37 +154,43 @@ class JsonUtils {
         return jsonObject;
     }
 
-    public static JSONObject buildPlatformVar(String type, String senderID, String clientAddress, String name,
+    public static JSONObject buildPlatformVar(String type, String senderID, String name,
                                               JSONObject msg) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("sender", senderID);
-        jsonObject.put("clientAddress", clientAddress);
         jsonObject.put("msg", msg);
         jsonObject.put("name", name);
         return jsonObject;
     }
 
-    public static JSONObject buildPlatformVars(String type, String senderID, String clientAddress,
-                                               JSONObject[] vars) {
+    public static JSONObject buildPlatformVars(String type, String senderID, JSONObject[] vars) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("sender", senderID);
-        jsonObject.put("clientAddress", clientAddress);
         jsonObject.put("vars", buildJsonObjectsArray(vars));
         return jsonObject;
     }
 
-    public static JSONObject buildPlatformVarsNames(String type, String[] names, String senderID, String clientAddress) {
-        return buildGetPlatformVars(type, names, senderID, clientAddress);
+    public static JSONObject buildPlatformVarsNames(String type, String[] names, String senderID) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("type", type);
+
+        jsonObject.put("names", buildStringArray(names));
+        jsonObject.put("sender", senderID);
+        return jsonObject;
     }
 
-    public static JSONObject buildPlatformVarsWereSet(String type, String[] names, String senderID, String clientAddress) {
-        return buildGetPlatformVars(type, names, senderID, clientAddress);
+    public static JSONObject buildPlatformVarsWereSet(String type, String[] names, String senderID) {
+        return buildPlatformVarsNames(type, names, senderID);
     }
 
-    public static JSONObject buildPlatformVarWasSet(String type, String name, String senderID, String clientAddress) {
-        return buildGetPlatformVar(type, name, senderID, clientAddress);
+    public static JSONObject buildPlatformVarWasSet(String type, String name, String senderID) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("type", type);
+        jsonObject.put("sender", senderID);
+        jsonObject.put("name", name);
+        return jsonObject;
     }
 
     public static JSONObject buildSendMsgToPlatform(String type, String senderID, String clientAddress,
@@ -197,9 +203,9 @@ class JsonUtils {
         return jsonObject;
     }
 
-    public static JSONObject buildSetPlatformVar(String type, String senderID, String clientAddress, String name,
+    public static JSONObject buildSetPlatformVar(String type, String senderID, String name,
                                                  JSONObject msg) {
-        return buildPlatformVar(type, senderID, clientAddress, name, msg);
+        return buildPlatformVar(type, senderID, name, msg);
     }
 
     public static JSONObject buildSetPlatformVars(String type, String senderID, String clientAddress,

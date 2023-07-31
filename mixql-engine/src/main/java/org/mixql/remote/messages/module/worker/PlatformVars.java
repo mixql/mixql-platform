@@ -3,7 +3,7 @@ package org.mixql.remote.messages.module.worker;
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.module.Param;
 
-public class PlatformVars implements IWorkerSendToPlatform {
+public class PlatformVars implements IWorkerSender {
     public Param[] vars;
 
     @Override
@@ -12,17 +12,9 @@ public class PlatformVars implements IWorkerSendToPlatform {
     }
     private String _sender;
 
-    @Override
-    public byte[] clientAddress() {
-        return _clientAddress;
-    }
-    private byte[] _clientAddress;
-
-
-    public PlatformVars(String sender, Param[] params, byte[] clientAddress) {
+    public PlatformVars(String sender, Param[] params) {
         _sender = sender;
         this.vars = params;
-        _clientAddress = clientAddress;
     }
 
     @Override

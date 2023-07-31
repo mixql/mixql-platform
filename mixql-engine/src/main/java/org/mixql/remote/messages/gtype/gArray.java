@@ -2,7 +2,7 @@ package org.mixql.remote.messages.gtype;
 
 import org.mixql.remote.messages.Message;
 
-public class gArray implements Message {
+public class gArray implements IGtypeMessage {
     public Message[] arr;
 
     public gArray(Message[] arr){

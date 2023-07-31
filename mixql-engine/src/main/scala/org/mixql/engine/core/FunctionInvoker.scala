@@ -1,6 +1,6 @@
 package org.mixql.engine.core
 
-import org.mixql.protobuf.messages
+import org.mixql.remote.messages
 import org.mixql.remote.RemoteMessageConverter
 import org.mixql.remote.messages.Message
 

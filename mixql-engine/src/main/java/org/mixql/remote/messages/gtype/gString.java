@@ -1,8 +1,6 @@
 package org.mixql.remote.messages.gtype;
 
-import org.mixql.remote.messages.Message;
-
-public class gString implements Message {
+public class gString implements IGtypeMessage {
     public String value;
     public String quote;
 

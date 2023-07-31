@@ -15,18 +15,20 @@ object BrokerModule {
 
   // Key is identity, Value is list of messages
   val enginesStashedMsgs
-    : mutable.Map[String, ListBuffer[StashedClientMessage]] = mutable.Map()
+  : mutable.Map[String, ListBuffer[StashedClientMessage]] = mutable.Map()
   val engines: mutable.Set[String] = mutable.Set()
   val NOFLAGS = 0
 }
 
 class BrokerModule(portFrontend: Int, portBackend: Int, host: String)
-    extends java.lang.AutoCloseable {
+  extends java.lang.AutoCloseable {
 
   import BrokerModule.*
 
   def getPortFrontend = portFrontend
+
   def getPortBackend = portBackend
+
   def getHost = host
 
   def start() = {
@@ -60,11 +62,11 @@ class BrokerModule(portFrontend: Int, portBackend: Int, host: String)
 }
 
 class BrokerMainRunnable(
-  name: String,
-  host: String,
-  portFrontend: String,
-  portBackend: String
-) extends Thread(name) {
+                          name: String,
+                          host: String,
+                          portFrontend: String,
+                          portBackend: String
+                        ) extends Thread(name) {
 
   import BrokerModule.*
 
@@ -103,7 +105,7 @@ class BrokerMainRunnable(
         if (poller.pollin(initRes._1)) {
           val (workerAddrStr, ready, clientIDStr, msg, pingHeartBeatMsg) =
             receiveMessageFromBackend()
-          ready match
+          ready match {
             case Some(_) => // Its READY message from engine
               if !engines.contains(workerAddrStr) then
                 logDebug(s"Broker: Add $workerAddrStr as key in engines set")
@@ -122,7 +124,7 @@ class BrokerMainRunnable(
                 case None => // its message from engine to client
                   sendMessageToFrontend(clientIDStr.get, msg.get)
               }
-          end match
+          }
         }
         if (poller.pollin(initRes._2)) {
           val (clientAddrStr, engineIdentityStr, request) =
@@ -196,11 +198,11 @@ class BrokerMainRunnable(
 
   def receiveMessageFromBackend(): (
     String,
-    Option[String],
-    Option[String],
-    Option[Array[Byte]],
-    Option[String]
-  ) = {
+      Option[String],
+      Option[String],
+      Option[Array[Byte]],
+      Option[String]
+    ) = {
     // FOR PROTOCOL SEE BOOK OReilly ZeroMQ Messaging for any applications 2013 ~page 100
     val workerAddr =
       backend.recv(NOFLAGS) // Received engine module identity frame
@@ -276,11 +278,11 @@ class BrokerMainRunnable(
   }
 
   def sendMessageToBackend(
-    logMessagePrefix: String,
-    engineIdentityStr: String,
-    clientAddrStr: String,
-    request: Array[Byte]
-  ) = {
+                            logMessagePrefix: String,
+                            engineIdentityStr: String,
+                            clientAddrStr: String,
+                            request: Array[Byte]
+                          ) = {
     logDebug(
       s"$logMessagePrefix: sending $engineIdentityStr from $clientAddrStr to backend"
     )
@@ -304,10 +306,10 @@ class BrokerMainRunnable(
   }
 
   def sendMessageToBackend(
-    logMessagePrefix: String,
-    engineIdentityStr: String,
-    request: Array[Byte]
-  ) = {
+                            logMessagePrefix: String,
+                            engineIdentityStr: String,
+                            request: Array[Byte]
+                          ) = {
     logDebug(s"$logMessagePrefix: sending $engineIdentityStr  to backend")
     backend.send(engineIdentityStr.getBytes, ZMQ.SNDMORE)
     logDebug(
@@ -352,10 +354,10 @@ class BrokerMainRunnable(
   }
 
   def stashMessage(
-    engineIdentityStr: String,
-    clientAddrStr: String,
-    request: Array[Byte]
-  ) = {
+                    engineIdentityStr: String,
+                    clientAddrStr: String,
+                    request: Array[Byte]
+                  ) = {
     if enginesStashedMsgs.get(engineIdentityStr).isEmpty then
       enginesStashedMsgs.put(
         engineIdentityStr,

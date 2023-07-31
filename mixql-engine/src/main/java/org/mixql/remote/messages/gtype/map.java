@@ -5,7 +5,7 @@ import org.mixql.remote.messages.Message;
 import java.util.HashMap;
 import java.util.Map;
 
-public class map implements Message {
+public class map implements IGtypeMessage {
     Map<Message, Message> m = new HashMap<>();
 
     public Map<Message, Message> getMap() {

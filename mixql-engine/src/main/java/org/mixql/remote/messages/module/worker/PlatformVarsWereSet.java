@@ -4,7 +4,7 @@ import org.mixql.remote.RemoteMessageConverter;
 
 import java.util.ArrayList;
 
-public class PlatformVarsWereSet implements IWorkerSendToPlatform {
+public class PlatformVarsWereSet implements IWorkerSender {
     public ArrayList<String> names;
 
     @Override
@@ -15,15 +15,9 @@ public class PlatformVarsWereSet implements IWorkerSendToPlatform {
     private String _sender;
     private byte[] _clientAddress;
 
-    public PlatformVarsWereSet(String sender, ArrayList<String> names, byte[] clientAddress) {
+    public PlatformVarsWereSet(String sender, ArrayList<String> names) {
         _sender = sender;
         this.names = names;
-        _clientAddress = clientAddress;
-    }
-
-    @Override
-    public byte[] clientAddress() {
-        return _clientAddress;
     }
 
 

@@ -1,6 +1,8 @@
-package org.mixql.protobuf.messages;
+package org.mixql.remote.messages.gtype;
 
-public class gArray implements Message{
+import org.mixql.remote.messages.Message;
+
+public class gArray implements Message {
     public Message[] arr;
 
     public gArray(Message[] arr){

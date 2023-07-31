@@ -1,6 +1,6 @@
-package org.mixql.protobuf.messages;
+package org.mixql.remote.messages.gtype;
 
-import org.mixql.core.context.gtype.bool;
+import org.mixql.remote.messages.Message;
 
 public class Bool implements Message {
     public Boolean value;

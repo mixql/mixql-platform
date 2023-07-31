@@ -1,4 +1,6 @@
-package org.mixql.protobuf.messages;
+package org.mixql.remote.messages.module;
+
+import org.mixql.remote.messages.Message;
 
 public class GetDefinedFunctions implements Message {
     @Override

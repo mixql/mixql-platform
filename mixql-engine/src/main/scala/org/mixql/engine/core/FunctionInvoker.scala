@@ -1,16 +1,18 @@
 package org.mixql.engine.core
 
-import org.mixql.protobuf.{ProtoBufConverter, messages}
+import org.mixql.protobuf.messages
+import org.mixql.remote.RemoteMessageConverter
+import org.mixql.remote.messages.Message
 
 object FunctionInvoker {
   def invoke(
               functions: Map[String, Any],
               name: String,
               context: Object, // To support not only mixql-core context
-              params: List[messages.Message] = Nil,
-            ): messages.Message = {
+              params: List[Message] = Nil,
+            ): Message = {
     import org.mixql.core.context.gtype
-    import org.mixql.protobuf.GtypeConverter
+    import org.mixql.remote.GtypeConverter
     val gParams: Seq[gtype.Type] = if (params.nonEmpty) {
       GtypeConverter.messagesToGtypes(params.toArray)
     } else Seq()

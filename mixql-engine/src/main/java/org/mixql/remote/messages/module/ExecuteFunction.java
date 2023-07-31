@@ -1,6 +1,9 @@
-package org.mixql.protobuf.messages;
+package org.mixql.remote.messages.module;
 
-public class ExecuteFunction implements Message{
+import org.mixql.remote.messages.Message;
+import org.mixql.remote.messages.gtype.gString;
+
+public class ExecuteFunction implements Message {
 
     public String name;
     public Message[] params;

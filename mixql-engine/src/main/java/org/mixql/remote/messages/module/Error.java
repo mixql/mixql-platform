@@ -1,6 +1,8 @@
-package org.mixql.protobuf.messages;
+package org.mixql.remote.messages.module;
 
-public class Error implements Message{
+import org.mixql.remote.messages.Message;
+
+public class Error implements Message {
     public String msg;
 
     public Error(String msg){

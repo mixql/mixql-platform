@@ -1,6 +1,8 @@
-package org.mixql.protobuf.messages;
+package org.mixql.remote.messages.module;
 
-public class EngineName implements Message{
+import org.mixql.remote.messages.Message;
+
+public class EngineName implements Message {
     public String name;
     public EngineName(String name){
         this.name = name;

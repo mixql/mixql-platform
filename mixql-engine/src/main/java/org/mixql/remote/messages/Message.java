@@ -1,4 +1,4 @@
-package org.mixql.protobuf.messages;
+package org.mixql.remote.messages;
 
 public interface Message {
     default String type() {

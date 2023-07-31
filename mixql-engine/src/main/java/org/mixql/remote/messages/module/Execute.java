@@ -1,6 +1,8 @@
-package org.mixql.protobuf.messages;
+package org.mixql.remote.messages.module;
 
-public class Execute implements Message{
+import org.mixql.remote.messages.Message;
+
+public class Execute implements Message {
     public String statement;
 
     public Execute(String statement){

@@ -2,6 +2,7 @@ package org.mixql.cluster.internal.engine
 
 import org.mixql.core.engine.Engine
 import org.mixql.core.context.gtype.Type
+
 import java.io.File
 import java.net.{InetSocketAddress, SocketAddress}
 import java.nio.channels.{ServerSocketChannel, SocketChannel}
@@ -9,7 +10,7 @@ import scala.concurrent.Future
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
-import org.mixql.core.context.gtype
+import org.mixql.core.context.{ContextVars, gtype}
 import logger.ILogger
 
 case class StashedParam(name: String, value: gtype.Type)
@@ -24,103 +25,42 @@ object InternalEngine {
 abstract class InternalEngine extends Engine with ILogger {
 
   private var engineStarted: Boolean = false
-  private val engineStashedParams: ListBuffer[StashedParam] = ListBuffer()
 
-  private var haveSetStashedParams: Boolean = false
-
-  private def stashMessage(
-                    name: String,
-                    value: gtype.Type,
-                  ) = {
-    logDebug(
-      s"started to stash parameter $name with value $value"
-    )
-    engineStashedParams += StashedParam(name, value)
-    logDebug(
-      s"successfully stashed parameter $name with value $value"
-    )
-  }
-
-  private def setStashedParamsIfTheyAre() = {
-    haveSetStashedParams = true
-    logDebug(s"Check if there are stashed params")
-    if (engineStashedParams.isEmpty)
-      logDebug(
-        s"Checked: No stashed messages for $name"
-      )
-    else {
-      logDebug(
-        s"Have founded stashed messages (amount: ${engineStashedParams.length}). Set them"
-      )
-      engineStarted = true
-      engineStashedParams.foreach(msg =>
-        execSetParam(msg.name, msg.value)
-      )
-      engineStashedParams.clear()
-    }
-  }
-
-  final override def execute(stmt: String): Type = {
+  final override def execute(stmt: String, ctx: ContextVars): Type = {
     if (!engineStarted)
       logInfo(s" was triggered by execute request")
 
-    setStashedParamsIfTheyAre()
     engineStarted = true
 
-    executeStmt(stmt)
+    executeStmt(stmt, ctx)
   }
 
-  def executeStmt(stmt: String): Type
+  def executeStmt(stmt: String, ctx: ContextVars): Type
 
-  final override def executeFunc(name: String, params: Type*): Type = {
+  final override def executeFunc(name: String, ctx: ContextVars, params: Type*): Type = {
     if (!engineStarted)
       logInfo(s" was triggered by executeFunc request")
-    setStashedParamsIfTheyAre()
     engineStarted = true
-    execFunc(name, params: _*)
+    execFunc(name, ctx, params: _*)
   }
 
-  def execFunc(name: String, params: Type*): Type
+  def execFunc(name: String, ctx: ContextVars, params: Type*): Type
 
 
-  final override def getDefinedFunctions: List[String] = {
+  final override def getDefinedFunctions(ctx: ContextVars): List[String] = {
     if (!engineStarted)
       logInfo(s" was triggered by getDefinedFunctions request")
-    setStashedParamsIfTheyAre()
     engineStarted = true
     registeredFunctions
   }
 
   def registeredFunctions: List[String] = Nil
 
-  final override def setParam(name: String, value: Type): Unit = {
-    if (haveSetStashedParams) {
-      engineStarted = true
-      execSetParam(name, value)
-    }
-    else
-      stashMessage(name, value)
-  }
-
-  def execSetParam(name: String, value: Type): Unit
-
-  final override def getParam(name: String): Type = {
-    if (!engineStarted)
-      logInfo(s" was triggered by getParam request")
-    setStashedParamsIfTheyAre()
+  final override def paramChanged(name: String, ctx: ContextVars): Unit = {
     engineStarted = true
-    execGetParam(name)
+    execParamChanged(name, ctx)
   }
 
-  def execGetParam(name: String): Type
+  def execParamChanged(name: String, ctx: ContextVars): Unit
 
-  final override def isParam(name: String): Boolean = {
-    if (!engineStarted)
-      logInfo(s" was triggered by isParam request")
-    setStashedParamsIfTheyAre()
-    engineStarted = true
-    execIsParam(name)
-  }
-
-  def execIsParam(name: String): Boolean
 }

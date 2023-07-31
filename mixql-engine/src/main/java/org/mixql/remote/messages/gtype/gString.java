@@ -1,6 +1,8 @@
-package org.mixql.protobuf.messages;
+package org.mixql.remote.messages.gtype;
 
-public class gString implements Message{
+import org.mixql.remote.messages.Message;
+
+public class gString implements Message {
     public String value;
     public String quote;
 

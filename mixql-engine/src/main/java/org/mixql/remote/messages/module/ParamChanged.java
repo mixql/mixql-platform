@@ -1,10 +1,12 @@
-package org.mixql.protobuf.messages;
+package org.mixql.remote.messages.module;
 
-public class SetParam implements Message {
+import org.mixql.remote.messages.Message;
+
+public class ParamChanged implements Message {
     public String name;
     public Message msg;
 
-    public SetParam(String name, Message msg){
+    public ParamChanged(String name, Message msg){
         this.name = name;
         this.msg = msg;
     }

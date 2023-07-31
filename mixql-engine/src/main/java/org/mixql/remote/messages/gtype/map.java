@@ -1,4 +1,6 @@
-package org.mixql.protobuf.messages;
+package org.mixql.remote.messages.gtype;
+
+import org.mixql.remote.messages.Message;
 
 import java.util.HashMap;
 import java.util.Map;

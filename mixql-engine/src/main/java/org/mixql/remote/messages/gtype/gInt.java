@@ -1,6 +1,8 @@
-package org.mixql.protobuf.messages;
+package org.mixql.remote.messages.gtype;
 
-public class gInt implements Message{
+import org.mixql.remote.messages.Message;
+
+public class gInt implements Message {
     public int value;
     public gInt(int value){
         this.value = value;

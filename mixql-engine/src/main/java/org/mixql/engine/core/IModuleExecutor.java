@@ -1,21 +1,24 @@
 package org.mixql.engine.core;
 
-import org.mixql.protobuf.messages.*;
 import org.mixql.engine.core.logger.ModuleLogger;
+import org.mixql.remote.messages.*;
+import org.mixql.remote.messages.module.DefinedFunctions;
+import org.mixql.remote.messages.module.Execute;
+import org.mixql.remote.messages.module.ExecuteFunction;
+import org.mixql.remote.messages.module.ParamChanged;
 
 public interface IModuleExecutor {
 
-    Message reactOnExecute(Execute msg, String identity, String clientAddress, ModuleLogger logger);
+    Message reactOnExecute(Execute msg, String identity, String clientAddress, ModuleLogger logger,
+                           PlatformContext platformContext);
 
-    ParamWasSet reactOnSetParam(SetParam msg, String identity, String clientAddress, ModuleLogger logger);
-
-    Message reactOnGetParam(GetParam msg, String identity, String clientAddress, ModuleLogger logger);
-
-    Bool reactOnIsParam(IsParam msg, String identity, String clientAddress, ModuleLogger logger);
+    void reactOnParamChanged(ParamChanged msg, String identity, String clientAddress, ModuleLogger logger,
+                             PlatformContext platformContext);
 
     void reactOnShutDown(String identity, String clientAddress, ModuleLogger logger);
 
-    Message reactOnExecuteFunction(ExecuteFunction msg, String identity, String clientAddress, ModuleLogger logger);
+    Message reactOnExecuteFunction(ExecuteFunction msg, String identity, String clientAddress, ModuleLogger logger,
+                                   PlatformContext platformContext);
 
     DefinedFunctions reactOnGetDefinedFunctions(String identity, String clientAddress, ModuleLogger logger);
 }

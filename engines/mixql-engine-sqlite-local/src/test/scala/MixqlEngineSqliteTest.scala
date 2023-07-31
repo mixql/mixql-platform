@@ -1,13 +1,14 @@
 import org.mixql.engine.sqlite.local.SQLightJDBC
 import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
-import org.mixql.core.context.gtype
+import org.mixql.core.context.{ContextVars, gtype}
 
 import scala.collection.mutable
 
 class MixqlEngineSqliteTest(dbPathParameter: Option[String] = None) extends AnyFlatSpec with BeforeAndAfter :
   var context: SQLightJDBC = null
   val identity = "MixqlEngineSqliteTest"
+
   val engineParams: mutable.Map[String, gtype.Type] =
     mutable.Map(
       "mixql.org.engine.sqlight.db.path" -> gtype.string("jdbc:sqlite::memory:"),
@@ -17,7 +18,11 @@ class MixqlEngineSqliteTest(dbPathParameter: Option[String] = None) extends AnyF
 
 
   before {
-    context = SQLightJDBC(identity, engineParams, dbPathParameter)
+    context = SQLightJDBC(identity, new ContextVars(
+      new org.mixql.core.context.Context(
+        mutable.Map("stub" -> org.mixql.core.test.engines.StubEngine()), "stub",  mutable.Map(), engineParams
+      )
+    ), dbPathParameter)
   }
 
   def execute(code: String): gtype.Type =

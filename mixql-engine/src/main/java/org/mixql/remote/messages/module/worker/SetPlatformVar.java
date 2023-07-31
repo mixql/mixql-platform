@@ -1,5 +1,6 @@
 package org.mixql.remote.messages.module.worker;
 
+import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;
 
 public class SetPlatformVar implements IWorkerSendToPlatform {
@@ -29,7 +30,14 @@ public class SetPlatformVar implements IWorkerSendToPlatform {
 
     @Override
     public String toString() {
-        return "{ " + "sender: " + sender() + " type: " + type() + " mame: " + name + " msg: " + msg +
-                " clientAddress: " + new String(clientAddress()) + " }";
+        try {
+            return RemoteMessageConverter.toJson(this);
+        } catch (Exception e) {
+            System.out.println(
+                    String.format("Error while toString of class type %s, exception: %s\nUsing default toString",
+                            type(), e.getMessage())
+            );
+            return super.toString();
+        }
     }
 }

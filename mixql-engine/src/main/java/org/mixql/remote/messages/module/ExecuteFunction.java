@@ -1,5 +1,6 @@
 package org.mixql.remote.messages.module;
 
+import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;
 import org.mixql.remote.messages.gtype.gString;
 
@@ -14,20 +15,15 @@ public class ExecuteFunction implements Message {
 
     @Override
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
-        buffer.append("[");
-        for (int i = 0; i <= params.length - 1; i++) {
-            Message a = params[i];
-            if (a instanceof gString)
-                buffer.append(((gString) a).asLiteral());
-            else
-                buffer.append(a.toString());
-            if (i != params.length - 1) {
-                buffer.append(", ");
-            }
+        try {
+            return RemoteMessageConverter.toJson(this);
+        } catch (Exception e) {
+            System.out.println(
+                    String.format("Error while toString of class type %s, exception: %s\nUsing default toString",
+                            type(), e.getMessage())
+            );
+            return super.toString();
         }
-        buffer.append("]");
-        return "{ type: " + type() + "name: " + name + "params: " + buffer + "}";
     }
 
 }

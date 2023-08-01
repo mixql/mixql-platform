@@ -10,25 +10,34 @@ import scala.collection.immutable.List
 import scala.collection.mutable
 
 class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientAddress: Array[Byte])(implicit logger: ModuleLogger) {
+
+  import logger._
+
   def setVar(key: String, value: Type): Unit = {
+    logInfo(s"[PlatformContext]: was asked to set variable $key in platform context")
+    logInfo(s"[PlatformContext]: sending request SetPlatformVar to platform")
     workerSocket.send(RemoteMessageConverter.toArray(new SetPlatformVar(workersId,
       key, GtypeConverter.toGeneratedMsg(value), clientAddress
     )))
+
     RemoteMessageConverter.unpackAnyMsgFromArray(
       workerSocket.recv()
     ).asInstanceOf[PlatformVarWasSet]
+    logInfo(s"[PlatformContext]: received answer PlatformVarWasSet from platform")
   }
 
   def getVar(key: String): Type = {
+    logInfo(s"[PlatformContext]: was asked to get variable $key in platform context")
+    logInfo(s"[PlatformContext]: sending request GetPlatformVar to platform")
     workerSocket.send(
       RemoteMessageConverter.toArray(
         new GetPlatformVar(workersId, key, clientAddress))
     )
-    GtypeConverter.messageToGtype(
-      RemoteMessageConverter.unpackAnyMsgFromArray(
-        workerSocket.recv()
-      ).asInstanceOf[PlatformVar].msg
-    )
+    val res = RemoteMessageConverter.unpackAnyMsgFromArray(
+      workerSocket.recv()
+    ).asInstanceOf[PlatformVar]
+    logInfo(s"[PlatformContext]: received answer PlatformVar for variable ${res.name} from platform")
+    GtypeConverter.messageToGtype(res.msg)
   }
 
   def getVars(keys: List[String]): mutable.Map[String, Type] = {

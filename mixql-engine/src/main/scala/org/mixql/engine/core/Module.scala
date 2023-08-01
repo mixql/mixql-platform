@@ -232,11 +232,22 @@ class Module(
               val workerSocket = workerPoller.getSocket(index)
               val msg: Message = RemoteMessageConverter.unpackAnyMsgFromArray(workerSocket.recv(0))
               msg match {
-                case m: WorkerFinished => workersMap.remove(m.Id)
+                case m: WorkerFinished =>
+                  logInfo("Received message WorkerFinished from worker " + m.sender() +
+                    " Remove socket from workersMap")
+                  workersMap.remove(m.Id)
+                  logInfo("Unregister worker's " + m.sender() + " socket from workerPoller")
                   workerPoller.unregister(workerSocket)
+                  logInfo("Closing worker's " + m.sender() + " socket")
                   workerSocket.close()
-                case m: SendMsgToPlatform => sendMsgToServerBroker(m.msg, m.clientAddress(), logger)
-                case m: IWorkerSendToPlatform => sendMsgToServerBroker(m, m.clientAddress(), logger)
+                case m: SendMsgToPlatform =>
+                  logInfo("Received message SendMsgToPlatform from worker " + m.sender() +
+                    " and send it to platform")
+                  sendMsgToServerBroker(m.msg, m.clientAddress(), logger)
+                case m: IWorkerSendToPlatform =>
+                  logInfo("Received message of type IWorkerSendToPlatform from worker " + m.sender() +
+                    s" and proxy it (type: ${m.`type`()}) to platform")
+                  sendMsgToServerBroker(m, m.clientAddress(), logger)
               }
             }
           }
@@ -314,7 +325,8 @@ class Module(
 
   def reactOnExecuteMessageAsync(msg: Execute, clientAddressStr: String, clientAddress: Array[Byte]) = {
     reactOnRemoteMessageAsync(clientAddress,
-      ctxPlatform => {
+      (workersId, ctxPlatform) => {
+        logInfo(s"[workers-future-$workersId]: triggering onExecute")
         executor.reactOnExecute(msg, identity, clientAddressStr, logger, ctxPlatform)
       }, (value, socket, workerID) => {
         socket.send(RemoteMessageConverter.toArray(new SendMsgToPlatform(clientAddress,
@@ -331,7 +343,8 @@ class Module(
 
   def reactOnExecuteFunctionMessageAsync(msg: ExecuteFunction, clientAddressStr: String, clientAddress: Array[Byte]) = {
     reactOnRemoteMessageAsync(clientAddress,
-      ctxPlatform => {
+      (workersID, ctxPlatform) => {
+        logInfo(s"[workers-future-$workersID]: triggering onExecuteFunction")
         executor.reactOnExecuteFunction(msg, identity, clientAddressStr, logger, ctxPlatform)
       }, (value, socket, workerID) => {
         socket.send(RemoteMessageConverter.toArray(new SendMsgToPlatform(clientAddress,
@@ -348,7 +361,8 @@ class Module(
 
   def reactOnParamChangedMessageAsync(msg: ParamChanged, clientAddressStr: String, clientAddress: Array[Byte]) = {
     reactOnRemoteMessageAsync(clientAddress,
-      (ctxPlatform) => {
+      (workersID, ctxPlatform) => {
+        logInfo(s"[workers-future-$workersID]: triggering OnParamChanged")
         executor.reactOnParamChanged(msg, identity, clientAddressStr, logger, ctxPlatform)
         new NULL()
       },
@@ -364,7 +378,7 @@ class Module(
   }
 
   def reactOnRemoteMessageAsync(clientAddress: Array[Byte],
-                                executeFunc: (PlatformContext) => Message,
+                                executeFunc: (String, PlatformContext) => Message,
                                 onSuccess: (Message, ZMQ.Socket, String) => Unit,
                                 onFailure: (Throwable, ZMQ.Socket, String) => Unit): Unit = {
     import scala.util.{Success, Failure}
@@ -377,17 +391,23 @@ class Module(
     workersMap.put(workersName, workerSocket)
     var futurePairSocket: ZMQ.Socket = null
     Future {
+      logInfo(s"[workers-future-$workersName]: Creating future's pair socket for communicating with module")
       futurePairSocket = ctx.socket(SocketType.PAIR)
-      futurePairSocket.bind(s"inproc://$workersName")
-      executeFunc(new PlatformContext(futurePairSocket, workersName, clientAddress))
+      logInfo(s"[workers-future-$workersName]: Bind future's pair socket in inproc://$workersName")
+      futurePairSocket.connect(s"inproc://$workersName")
+      executeFunc(workersName, new PlatformContext(futurePairSocket, workersName, clientAddress))
     }.onComplete {
       case Success(value) => //sendMsgToServerBroker(value, clientAddress, logger)
         onSuccess(value, futurePairSocket, workersName)
+        logInfo(s"[workers-future-$workersName]: Sending WorkerFinished to inproc://$workersName")
         futurePairSocket.send(RemoteMessageConverter.toArray(new WorkerFinished(workersName)))
+        logInfo(s"[workers-future-$workersName]: Close future's pair socket inproc://$workersName")
         futurePairSocket.close()
       case Failure(ex) => //sendMsgToServerBroker(errorFunc(ex), clientAddress, logger)
         onFailure(ex, futurePairSocket, workersName)
+        logInfo(s"[workers-future-$workersName]: Sending WorkerFinished to inproc://$workersName")
         futurePairSocket.send(RemoteMessageConverter.toArray(new WorkerFinished(workersName)))
+        logInfo(s"[workers-future-$workersName]: Close future's pair socket inproc://$workersName")
         futurePairSocket.close()
     }
   }

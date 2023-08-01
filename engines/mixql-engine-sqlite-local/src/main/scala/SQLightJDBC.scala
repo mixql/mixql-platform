@@ -1,7 +1,7 @@
 package org.mixql.engine.sqlite.local
 
 import java.sql.*
-import org.mixql.core.context.{ContextVars, gtype}
+import org.mixql.core.context.{EngineContext, gtype}
 import org.mixql.engine.local.logger.IEngineLogger
 
 import scala.collection.mutable
@@ -11,7 +11,7 @@ object SQLightJDBC {
   var c: Connection = null
 }
 
-class SQLightJDBC(identity: String, ctx: ContextVars,
+class SQLightJDBC(identity: String, ctx: EngineContext,
                   dbPathParameter: Option[String] = None) extends java.lang.AutoCloseable
   with IEngineLogger :
 

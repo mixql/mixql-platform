@@ -1,7 +1,7 @@
 import org.mixql.engine.sqlite.SQLightJDBC
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
-import org.mixql.core.context.{ContextVars, gtype}
+import org.mixql.core.context.{EngineContext, gtype}
 
 import scala.collection.mutable
 import org.mixql.engine.core.logger.ModuleLogger

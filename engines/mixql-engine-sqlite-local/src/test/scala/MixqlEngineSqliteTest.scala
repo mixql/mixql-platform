@@ -1,7 +1,7 @@
 import org.mixql.engine.sqlite.local.SQLightJDBC
 import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
-import org.mixql.core.context.{ContextVars, gtype}
+import org.mixql.core.context.{EngineContext, gtype}
 
 import scala.collection.mutable
 
@@ -18,7 +18,7 @@ class MixqlEngineSqliteTest(dbPathParameter: Option[String] = None) extends AnyF
 
 
   before {
-    context = SQLightJDBC(identity, new ContextVars(
+    context = SQLightJDBC(identity, new EngineContext(
       new org.mixql.core.context.Context(
         mutable.Map("stub" -> org.mixql.core.test.engines.StubEngine()), "stub",  mutable.Map(), engineParams
       )

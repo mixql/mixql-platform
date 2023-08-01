@@ -2,7 +2,7 @@ import org.mixql.core.context.gtype.Type
 import org.mixql.engine.sqlite.SQLightJDBC
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
-import org.mixql.core.context.{ContextVars, gtype}
+import org.mixql.core.context.{EngineContext, gtype}
 import org.mixql.engine.core.PlatformContext
 import org.mixql.engine.core.logger.ModuleLogger
 import org.mixql.engine.test.PlatformContextTest

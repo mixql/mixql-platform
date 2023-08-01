@@ -17,7 +17,7 @@ import scala.concurrent.Future
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
-import org.mixql.core.context.{ContextVars, gtype}
+import org.mixql.core.context.{EngineContext, gtype}
 import org.mixql.remote.messages.Message
 import org.mixql.remote.messages.gtype.IGtypeMessage
 import org.mixql.remote.messages.module.worker.{GetPlatformVar, GetPlatformVars, GetPlatformVarsNames, IWorkerSendToPlatform, PlatformVar, PlatformVarWasSet, PlatformVars, PlatformVarsNames, PlatformVarsWereSet, SetPlatformVar, SetPlatformVars}
@@ -58,14 +58,14 @@ class ClientModule(
 
   override def name: String = clientName
 
-  override def execute(stmt: String, ctx: ContextVars): Type = {
+  override def execute(stmt: String, ctx: EngineContext): Type = {
     logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by execute request")
 
     sendMsg(messages.module.Execute(stmt))
     reactOnRequest(recvMsg(), ctx)
   }
 
-  override def executeFunc(name: String, ctx: ContextVars, params: Type*): Type = {
+  override def executeFunc(name: String, ctx: EngineContext, params: Type*): Type = {
     logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by executeFunc request")
     sendMsg(messages.module.ExecuteFunction(name, params.map(
       gParam => GtypeConverter.toGeneratedMsg(gParam)
@@ -86,12 +86,12 @@ class ClientModule(
       functionsList
   }
 
-  override def paramChanged(name: String, ctx: ContextVars): Unit = {
+  override def paramChanged(name: String, ctx: EngineContext): Unit = {
     sendMsg(new messages.module.ParamChanged(name, GtypeConverter.toGeneratedMsg(ctx.getVar(name))))
   }
 
   @tailrec
-  private def reactOnRequest(msg: Message, ctx: ContextVars): Type = {
+  private def reactOnRequest(msg: Message, ctx: EngineContext): Type = {
     msg match
       case msg: IGtypeMessage => GtypeConverter.messageToGtype(msg)
       case m: IWorkerSendToPlatform =>

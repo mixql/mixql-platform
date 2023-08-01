@@ -1,23 +1,20 @@
 package org.mixql.engine.sqlite.local
 
-import org.mixql.cluster.internal.engine.InternalEngine
 import org.mixql.core.context.{ContextVars, gtype}
 import org.mixql.core.context.gtype.Type
+import org.mixql.core.engine.Engine
+import org.mixql.engine.local.logger.IEngineLogger
 
 import scala.collection.mutable
 
 class EngineSqlightLocal(dbPathParameter: Option[String] = None)
-  extends InternalEngine
-    with java.lang.AutoCloseable:
-
-  //  val engineParams: mutable.Map[String, gtype.Type] =
-  //    mutable.Map()
+  extends Engine with IEngineLogger with java.lang.AutoCloseable:
 
   var context: SQLightJDBC = null
 
   override def name: String = "mixql-engine-sqlite-local"
 
-  override def executeStmt(statement: String, ctx: ContextVars): gtype.Type = {
+  override def execute(statement: String, ctx: ContextVars): gtype.Type = {
     logInfo(
       s"Received statement to execute: ${statement}"
     )
@@ -37,7 +34,7 @@ class EngineSqlightLocal(dbPathParameter: Option[String] = None)
     )
     context = SQLightJDBC(name, ctx, dbPathParameter)
 
-  override def execFunc(name: String, ctx: ContextVars, params: Type*): Type = {
+  override def executeFunc(name: String, ctx: ContextVars, params: Type*): Type = {
     try
       logInfo(s"Started executing function $name")
       logDebug(s"Params provided for function $name : " + params.toString())
@@ -54,7 +51,7 @@ class EngineSqlightLocal(dbPathParameter: Option[String] = None)
         )
   }
 
-  override def execParamChanged(name: String, ctx: ContextVars): Unit = {
+  override def paramChanged(name: String, ctx: ContextVars): Unit = {
     try {
       logDebug(
         s"Received notification that param $name was changed"

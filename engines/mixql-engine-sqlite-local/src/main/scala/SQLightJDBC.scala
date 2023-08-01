@@ -1,9 +1,8 @@
 package org.mixql.engine.sqlite.local
 
-import org.mixql.cluster.internal.engine.logger.ILogger
-
 import java.sql.*
 import org.mixql.core.context.{ContextVars, gtype}
+import org.mixql.engine.local.logger.IEngineLogger
 
 import scala.collection.mutable
 import scala.util.Try
@@ -14,7 +13,7 @@ object SQLightJDBC {
 
 class SQLightJDBC(identity: String, ctx: ContextVars,
                   dbPathParameter: Option[String] = None) extends java.lang.AutoCloseable
-  with ILogger :
+  with IEngineLogger :
 
   override def name: String = identity
 

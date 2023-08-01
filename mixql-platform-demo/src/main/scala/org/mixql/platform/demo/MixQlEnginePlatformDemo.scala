@@ -7,17 +7,16 @@ import org.rogach.scallop.ScallopConf
 
 import java.io.File
 import org.mixql.cluster.{BrokerModule, ClientModule}
-import org.mixql.core.Main.code
 import org.mixql.core.engine.Engine
 import org.mixql.net.PortOperations
 import org.mixql.core.context.{Context, gtype}
-import org.mixql.protobuf.messages.ShutDown
 import org.mixql.engine.stub.local.EngineStubLocal
 import org.mixql.engine.sqlite.local.EngineSqlightLocal
 import org.mixql.platform.demo.procedures.SimpleFuncs
 
 import scala.collection.mutable
 import org.mixql.platform.demo.logger.*
+import org.mixql.remote.messages.module.ShutDown
 import org.mixql.repl.{TerminalApp, TerminalOps, WebTextIoExecutor}
 
 import scala.util.Try

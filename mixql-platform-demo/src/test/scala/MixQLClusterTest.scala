@@ -13,7 +13,7 @@ import org.mixql.engine.sqlite.local.EngineSqlightLocal
 import org.mixql.engine.stub.local.EngineStubLocal
 import org.mixql.platform.demo.logger.logDebug
 import org.mixql.platform.demo.procedures.SimpleFuncs
-import org.mixql.protobuf.messages.ShutDown
+import org.mixql.remote.messages.module.ShutDown
 
 object MixQLClusterTest{
   val config = ConfigFactory.load()

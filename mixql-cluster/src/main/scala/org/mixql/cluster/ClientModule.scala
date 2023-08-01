@@ -62,7 +62,6 @@ class ClientModule(
     logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by execute request")
 
     sendMsg(messages.module.Execute(stmt))
-    //    GtypeConverter.messageToGtype(recvMsg())
     reactOnRequest(recvMsg(), ctx)
   }
 
@@ -71,7 +70,6 @@ class ClientModule(
     sendMsg(messages.module.ExecuteFunction(name, params.map(
       gParam => GtypeConverter.toGeneratedMsg(gParam)
     ).toArray))
-    //    GtypeConverter.messageToGtype(recvMsg())
     reactOnRequest(recvMsg(), ctx)
   }
 

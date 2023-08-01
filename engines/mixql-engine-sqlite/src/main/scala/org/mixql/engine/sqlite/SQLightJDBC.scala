@@ -1,17 +1,20 @@
 package org.mixql.engine.sqlite
 
-import org.mixql.protobuf.{GtypeConverter, ProtoBufConverter, messages}
+import org.mixql.core.context.gtype.string
 
-import java.sql._
+import java.sql.*
 import scala.collection.mutable
 import org.mixql.engine.core.logger.ModuleLogger
+import org.mixql.remote.{GtypeConverter, RemoteMessageConverter, messages}
+import org.mixql.remote.messages.{gtype, module}
+import org.mixql.remote.messages.gtype.{Bool, gArray, gDouble, gInt, gString}
+import org.mixql.engine.core.PlatformContext
 
 object SQLightJDBC {
   var c: Connection = null
 }
 
-class SQLightJDBC(identity: String,
-                  engineParams: mutable.Map[String, messages.Message] = mutable.Map())
+class SQLightJDBC(identity: String, platformCtx: PlatformContext)
   extends java.lang.AutoCloseable {
 
   val logger = new ModuleLogger(identity)
@@ -21,8 +24,7 @@ class SQLightJDBC(identity: String,
   def init() = {
     val url =
       try {
-        engineParams("mixql.org.engine.sqlight.db.path")
-          .asInstanceOf[messages.gString].value
+        platformCtx.getVar("mixql.org.engine.sqlight.db.path").asInstanceOf[string].getValue
       } catch {
         case e: Exception =>
           logWarn(
@@ -66,22 +68,22 @@ class SQLightJDBC(identity: String,
 
           import org.mixql.engine.sqlite.JavaSqlArrayConverter
 
-          var arr: Seq[messages.gArray] = Seq()
+          var arr: Seq[gArray] = Seq()
           while (remainedRows) {
             // simulate do while, as it is no longer supported in scala 3
             val rowValues = getRowFromResultSet(res, columnCount, columnTypes)
-            arr = arr :+ messages.gArray(rowValues.toArray)
+            arr = arr :+ gtype.gArray(rowValues.toArray)
             remainedRows = res.next()
           }
-          messages.gArray(arr.toArray)
+          gtype.gArray(arr.toArray)
         } finally {
           if (res != null) res.close()
         }
       }
-      else messages.NULL()
+      else messages.gtype.NULL()
     } catch {
       case e: Throwable =>
-        messages.Error(
+        module.Error(
           s"Module $identity: SQLightJDBC error while execute: " + e.getMessage
         )
     } finally {
@@ -97,52 +99,52 @@ class SQLightJDBC(identity: String,
 
     for (i <- 1 to columnCount) yield {
       columnTypes(i - 1) match {
-        case _: messages.gString =>
-          messages.gString(res.getString(i), "")
-        case _: messages.Bool =>
-          messages.Bool(res.getBoolean(i))
-        case _: messages.gInt =>
-          messages.gInt(res.getInt(i))
-        case _: messages.gDouble =>
-          messages.gDouble(res.getDouble(i))
-        case _: messages.gArray =>
+        case _: gString =>
+          gtype.gString(res.getString(i), "")
+        case _: Bool =>
+          gtype.Bool(res.getBoolean(i))
+        case _: gInt =>
+          gtype.gInt(res.getInt(i))
+        case _: gDouble =>
+          gDouble(res.getDouble(i))
+        case _: gArray =>
           readArrayFromResultSet(res.getArray(i))
       }
     }
 
-  def readArrayFromResultSet(javaSqlArray: java.sql.Array): messages.gArray = {
+  def readArrayFromResultSet(javaSqlArray: java.sql.Array): gArray = {
 
     javaSqlTypeToClientMsg(javaSqlArray.getBaseType) match {
-      case _: messages.gString =>
-        messages.gArray(
+      case _: gString =>
+        gtype.gArray(
           JavaSqlArrayConverter
             .toStringArray(javaSqlArray)
             .map { str =>
-              messages.gString(str, "")
+              gtype.gString(str, "")
             }.toArray
         )
-      case _: messages.Bool =>
-        messages.gArray(
+      case _: Bool =>
+        gtype.gArray(
           JavaSqlArrayConverter
             .toBooleanArray(javaSqlArray)
             .map {
-              value => messages.Bool(value)
+              value => gtype.Bool(value)
             }.toArray
         )
-      case _: messages.gInt =>
-        messages.gArray(
+      case _: gInt =>
+        gtype.gArray(
           JavaSqlArrayConverter
             .toIntArray(javaSqlArray)
             .map {
-              value => new messages.gInt(value)
+              value => new gInt(value)
             }.toArray
         )
-      case _: messages.gDouble =>
-        messages.gArray(
+      case _: gDouble =>
+        gtype.gArray(
           JavaSqlArrayConverter
             .toDoubleArray(javaSqlArray)
             .map {
-              value => new messages.gDouble(value)
+              value => new gDouble(value)
             }.toArray
         )
       case _: Any =>
@@ -157,66 +159,66 @@ class SQLightJDBC(identity: String,
     intType match {
 
       case Types.VARCHAR | Types.CHAR | Types.LONGVARCHAR =>
-        messages.gString("", "")
-      case Types.BIT | Types.BOOLEAN => messages.Bool(false)
+        gtype.gString("", "")
+      case Types.BIT | Types.BOOLEAN => gtype.Bool(false)
       case Types.NUMERIC =>
         logError(
           s"SQLightJDBC error while execute: " +
             "unsupported column type NUMERIC"
         )
-        messages.gString("", "")
+        gtype.gString("", "")
       case Types.TINYINT | Types.SMALLINT | Types.INTEGER =>
-        messages.gInt(-1)
+        gtype.gInt(-1)
       case Types.BIGINT =>
         logError(
           s"SQLightJDBC error while execute: " +
             "unsupported column type BIGINT"
         )
-        messages.gString("", "")
-      case Types.REAL | Types.FLOAT | Types.DOUBLE => messages.gDouble(0.0)
+        gtype.gString("", "")
+      case Types.REAL | Types.FLOAT | Types.DOUBLE => gtype.gDouble(0.0)
       case Types.VARBINARY | Types.BINARY =>
         logError(
           s"SQLightJDBC error while execute: " +
             "unsupported column type VARBINARY or BINARY"
         )
-        messages.gString("", "")
+        gtype.gString("", "")
       case Types.DATE =>
         logError(
           s"SQLightJDBC error while execute: " +
             "unsupported column type Date"
         )
-        messages.gString("", "")
+        gtype.gString("", "")
       case Types.TIMESTAMP =>
         logError(
           s"SQLightJDBC error while execute: " +
             "unsupported column type TIMESTAMP"
         )
-        messages.gString("", "")
+        gtype.gString("", "")
       case Types.CLOB =>
         logError(
           s"SQLightJDBC error while execute: " +
             "unsupported column type CLOB"
         )
-        messages.gString("", "")
+        gtype.gString("", "")
       case Types.BLOB =>
         logError(
           s"SQLightJDBC error while execute: " +
             "unsupported column type BLOB"
         )
-        messages.gString("", "")
-      case Types.ARRAY => messages.gArray(Seq().toArray)
+        gtype.gString("", "")
+      case Types.ARRAY => gtype.gArray(Seq().toArray)
       case Types.STRUCT =>
         logError(
           s"SQLightJDBC error while execute: " +
             "unsupported column type STRUCT"
         )
-        messages.gString("", "")
+        gtype.gString("", "")
       case Types.REF =>
         logError(
           s"SQLightJDBC error while execute: " +
             "unsupported column type REF"
         )
-        messages.gString("", "")
+        gtype.gString("", "")
     }
   }
 

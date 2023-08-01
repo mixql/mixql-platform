@@ -163,7 +163,7 @@ lazy val mixQLEngineStubLocal = project
 
 lazy val mixQLEngineSqliteLocal = project
   .in(file("engines/mixql-engine-sqlite-local"))
-  .dependsOn(mixQLEngineSCALA3, mixQLCoreSCALA3 % "compile->compile;compile->test")
+  .dependsOn(mixQLEngineSCALA3)//, mixQLCoreSCALA3 % "compile->compile;compile->test")
 
 lazy val mixQLPlatformDemo = project
   .in(file("mixql-platform-demo"))

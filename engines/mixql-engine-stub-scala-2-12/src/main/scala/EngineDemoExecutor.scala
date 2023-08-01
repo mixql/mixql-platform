@@ -1,19 +1,18 @@
 package org.mixql.engine.demo.scala.two.twelf
 
-import org.mixql.protobuf.messages
-
 import scala.collection.mutable
-import org.mixql.engine.core.IModuleExecutor
+import org.mixql.engine.core.{IModuleExecutor, PlatformContext}
 import org.mixql.engine.core.logger.ModuleLogger
+import org.mixql.remote.messages.gtype.{NULL}
+import org.mixql.remote.messages.module.{DefinedFunctions, Execute, ExecuteFunction, ParamChanged}
+import org.mixql.remote.messages.Message
 
 import _root_.scala.collection.immutable.Seq
 
 class EngineDemoExecutor extends IModuleExecutor {
-  val engineParams: mutable.Map[String, messages.Message] =
-    mutable.Map()
-
-  def reactOnExecute(msg: messages.Execute, identity: String,
-                     clientAddress: String, logger: ModuleLogger): messages.Message = {
+  override def reactOnExecute(msg: Execute, identity: String,
+                              clientAddress: String, logger: ModuleLogger,
+                              platformContext: PlatformContext): Message = {
     import logger._
     logInfo(
       s"Received Execute msg from server statement: ${msg.statement}"
@@ -22,56 +21,34 @@ class EngineDemoExecutor extends IModuleExecutor {
     Thread.sleep(1000)
     logInfo(s"Successfully executed command ${msg.statement}")
     logDebug(s"Sending reply on Execute msg")
-    new messages.NULL()
+    new NULL()
   }
 
-  def reactOnSetParam(msg: messages.SetParam, identity: String,
-                      clientAddress: String, logger: ModuleLogger): messages.ParamWasSet = {
+  override def reactOnParamChanged(msg: ParamChanged, identity: String, clientAddress: String,
+                                   logger: ModuleLogger, platformContext: PlatformContext): Unit = {
     import logger._
     logInfo(
-      s"Module $identity :Received SetParam msg from server $clientAddress: " +
-        s"must set parameter ${msg.name} with value ${msg.msg}"
+      s"Module $identity :Received notify msg about changed param ${msg.name} from server $clientAddress: "
     )
-    engineParams.put(
-      msg.name,
-      msg.msg
-    )
-    logDebug(s"Sending reply on SetParam  ${msg.name} msg")
-    new messages.ParamWasSet()
   }
 
-  def reactOnGetParam(msg: messages.GetParam, identity: String,
-                      clientAddress: String, logger: ModuleLogger): messages.Message = {
-    import logger._
-    logInfo(s"Received GetParam ${msg.name} msg from server")
-    logDebug(s" Sending reply on GetParam ${msg.name} msg")
-    engineParams.get(msg.name).get
-  }
-
-  def reactOnIsParam(msg: messages.IsParam, identity: String,
-                     clientAddress: String, logger: ModuleLogger): messages.Bool = {
-    import logger._
-    logInfo(s"Received GetParam ${msg.name} msg from server")
-    logDebug(s" Sending reply on GetParam ${msg.name} msg")
-    new messages.Bool(engineParams.keys.toSeq.contains(msg.name))
-  }
-
-  def reactOnExecuteFunction(msg: messages.ExecuteFunction, identity: String,
-                             clientAddress: String, logger: ModuleLogger): messages.Message = {
+  override def reactOnExecuteFunction(msg: ExecuteFunction, identity: String,
+                                      clientAddress: String, logger: ModuleLogger,
+                                      platformContext: PlatformContext): Message = {
     import logger._
     logInfo(s"Started executing function ${msg.name}")
     logDebug(s"Executing function ${msg.name} with params " +
       msg.params.mkString("[", ",", "]"))
-    new messages.NULL()
+    new NULL()
   }
 
-  def reactOnGetDefinedFunctions(identity: String, clientAddress: String,
-                                 logger: ModuleLogger): messages.DefinedFunctions = {
+  override def reactOnGetDefinedFunctions(identity: String, clientAddress: String,
+                                 logger: ModuleLogger): DefinedFunctions = {
     import logger._
     logInfo(s"Received request to get defined functions from server")
-    new messages.DefinedFunctions(Seq().toArray)
+    new DefinedFunctions(Seq().toArray)
   }
 
-  def reactOnShutDown(identity: String, clientAddress: String, logger: ModuleLogger): Unit = {}
+  override def reactOnShutDown(identity: String, clientAddress: String, logger: ModuleLogger): Unit = {}
 
 }

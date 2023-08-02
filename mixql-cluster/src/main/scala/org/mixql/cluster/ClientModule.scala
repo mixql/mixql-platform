@@ -20,7 +20,19 @@ import scala.util.Try
 import org.mixql.core.context.{EngineContext, gtype}
 import org.mixql.remote.messages.Message
 import org.mixql.remote.messages.gtype.IGtypeMessage
-import org.mixql.remote.messages.module.worker.{GetPlatformVar, GetPlatformVars, GetPlatformVarsNames, IWorkerSendToPlatform, PlatformVar, PlatformVarWasSet, PlatformVars, PlatformVarsNames, PlatformVarsWereSet, SetPlatformVar, SetPlatformVars}
+import org.mixql.remote.messages.module.worker.{
+  GetPlatformVar,
+  GetPlatformVars,
+  GetPlatformVarsNames,
+  IWorkerSendToPlatform,
+  PlatformVar,
+  PlatformVarWasSet,
+  PlatformVars,
+  PlatformVarsNames,
+  PlatformVarsWereSet,
+  SetPlatformVar,
+  SetPlatformVars
+}
 import org.mixql.remote.messages.module.{ParamChanged, ShutDown}
 import scalapb.options.ScalaPbOptions.OptionsScope
 
@@ -66,12 +78,9 @@ class ClientModule(clientName: String,
 
   override def executeFunc(name: String, ctx: EngineContext, params: Type*): Type = {
     logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by executeFunc request")
-    sendMsg(messages.module.ExecuteFunction(name, params.map(
-      gParam => GtypeConverter.toGeneratedMsg(gParam)
-    ).toArray))
+    sendMsg(messages.module.ExecuteFunction(name, params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray))
     reactOnRequest(recvMsg(), ctx)
   }
-
 
   override def getDefinedFunctions(): List[String] = {
     logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by getDefinedFunctions request")
@@ -79,10 +88,8 @@ class ClientModule(clientName: String,
     logInfo(s"Server: ClientModule: $clientName: ask defined functions from remote engine")
     sendMsg(messages.module.GetDefinedFunctions())
     val functionsList = recvMsg().asInstanceOf[messages.module.DefinedFunctions].arr.toList
-    if functionsList.isEmpty then
-      Nil
-    else
-      functionsList
+    if functionsList.isEmpty then Nil
+    else functionsList
   }
 
   override def paramChanged(name: String, ctx: EngineContext): Unit = {
@@ -96,38 +103,43 @@ class ClientModule(clientName: String,
       case msg: IGtypeMessage => GtypeConverter.messageToGtype(msg)
       case m: IWorkerSendToPlatform =>
         m match
-          case msg: GetPlatformVar => val v = ctx.getVar(msg.name)
+          case msg: GetPlatformVar =>
+            val v = ctx.getVar(msg.name)
             sendMsg(new PlatformVar(msg.sender(), msg.name, GtypeConverter.toGeneratedMsg(v)))
             reactOnRequest(recvMsg(), ctx)
-          case msg: SetPlatformVar => ctx.setVar(msg.name, GtypeConverter.messageToGtype(msg.msg))
+          case msg: SetPlatformVar =>
+            ctx.setVar(msg.name, GtypeConverter.messageToGtype(msg.msg))
             sendMsg(new PlatformVarWasSet(msg.sender(), msg.name))
             reactOnRequest(recvMsg(), ctx)
-          case msg: GetPlatformVars => val valMap = ctx.getVars(msg.names.toList)
-            sendMsg(new PlatformVars(msg.sender(), valMap.map(t => new messages.module.Param(
-              t._1, GtypeConverter.toGeneratedMsg(t._2)
-            )).toArray))
+          case msg: GetPlatformVars =>
+            val valMap = ctx.getVars(msg.names.toList)
+            sendMsg(
+              new PlatformVars(
+                msg.sender(),
+                valMap.map(t => new messages.module.Param(t._1, GtypeConverter.toGeneratedMsg(t._2))).toArray
+              )
+            )
             reactOnRequest(recvMsg(), ctx)
           case msg: SetPlatformVars =>
             import collection.JavaConverters._
             ctx.setVars(msg.vars.asScala.map(t => t._1 -> GtypeConverter.messageToGtype(t._2)))
-            sendMsg(new PlatformVarsWereSet(msg.sender(),
-              new java.util.ArrayList[String](msg.vars.keySet())))
+            sendMsg(new PlatformVarsWereSet(msg.sender(), new java.util.ArrayList[String](msg.vars.keySet())))
             reactOnRequest(recvMsg(), ctx)
           case msg: GetPlatformVarsNames =>
             sendMsg(new PlatformVarsNames(msg.sender(), ctx.getVarsNames().toArray))
             reactOnRequest(recvMsg(), ctx)
-      case msg: messages.module.Error => logError(
-        "Server: ClientModule: $clientName: error while reacting on request" +
-          msg.msg
-      )
+      case msg: messages.module.Error =>
+        logError(
+          "Server: ClientModule: $clientName: error while reacting on request" +
+            msg.msg
+        )
         throw new Exception(msg.msg)
   }
 
   private def sendMsg(msg: messages.Message): Unit = {
     import ClientModule.broker
     if !moduleStarted then
-      if broker == null then
-        startBroker()
+      if broker == null then startBroker()
       startModuleClient()
       ctx = ZMQ.context(1)
       client = ctx.socket(SocketType.REQ)
@@ -224,9 +236,7 @@ class ClientModule(clientName: String,
         )
         clientRemoteProcess = CmdOperations.runCmdNoWait(
           Some(
-            s"$scriptName.bat --port $portBackend --host $host --identity $moduleName ${
-              startScriptExtraOpts.getOrElse("")
-            }"
+            s"$scriptName.bat --port $portBackend --host $host --identity $moduleName ${startScriptExtraOpts.getOrElse("")}"
           ),
           Some(
             s"$scriptName --port $portBackend --host $host --identity $moduleName ${startScriptExtraOpts.getOrElse("")}"
@@ -247,7 +257,7 @@ class ClientModule(clientName: String,
   def ShutDown() = {
     if moduleStarted then
       sendMsg(messages.module.ShutDown())
-      moduleStarted = false //not to send occasionally more then once
+      moduleStarted = false // not to send occasionally more then once
   }
 
   override def close() = {

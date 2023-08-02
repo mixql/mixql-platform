@@ -8,14 +8,12 @@ import org.mixql.core.function.FunctionInvoker
 import org.mixql.engine.local.logger.IEngineLogger
 import org.mixql.engine.stub.local.EngineStubLocal.name
 
-object EngineStubLocal extends Engine with IEngineLogger{
+object EngineStubLocal extends Engine with IEngineLogger {
 
   override def name: String = "mixql-engine-stub-local"
 
   override def execute(statement: String, ctx: EngineContext): gtype.Type = {
-    logDebug(
-      s"Received statement to execute: ${statement}"
-    )
+    logDebug(s"Received statement to execute: ${statement}")
     logDebug(s"Executing command :${statement} for 1sec")
     Thread.sleep(1000)
     logInfo(s"executed: ${statement}")
@@ -51,9 +49,7 @@ object EngineStubLocal extends Engine with IEngineLogger{
 
   override def paramChanged(name: String, ctx: EngineContext): Unit = {
     try {
-      logDebug(
-        s"Received notification that parameter $name was changed"
-      )
+      logDebug(s"Received notification that parameter $name was changed")
     } catch {
       case e: Throwable => throw new Exception(s"[ENGINE ${this.name}] error while setting parameter: " + e.getMessage)
     }

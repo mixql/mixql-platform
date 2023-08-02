@@ -8,16 +8,16 @@ import org.mixql.engine.local.logger.IEngineLogger
 import scala.collection.mutable
 
 class EngineSqlightLocal(dbPathParameter: Option[String] = None)
-  extends Engine with IEngineLogger with java.lang.AutoCloseable:
+    extends Engine
+    with IEngineLogger
+    with java.lang.AutoCloseable:
 
   var context: SQLightJDBC = null
 
   override def name: String = "mixql-engine-sqlite-local"
 
   override def execute(statement: String, ctx: EngineContext): gtype.Type = {
-    logInfo(
-      s"Received statement to execute: ${statement}"
-    )
+    logInfo(s"Received statement to execute: ${statement}")
     logDebug(s"Executing command ${statement}")
 
     initContextIfEmpty(ctx)
@@ -28,11 +28,10 @@ class EngineSqlightLocal(dbPathParameter: Option[String] = None)
     res
   }
 
-  private def initContextIfEmpty(ctx: EngineContext): Unit = if context == null then
-    logDebug(
-      s"Init SQlightJDBC context"
-    )
-    context = SQLightJDBC(name, ctx, dbPathParameter)
+  private def initContextIfEmpty(ctx: EngineContext): Unit =
+    if context == null then
+      logDebug(s"Init SQlightJDBC context")
+      context = SQLightJDBC(name, ctx, dbPathParameter)
 
   override def executeFunc(name: String, ctx: EngineContext, params: Type*): Type = {
     try
@@ -53,13 +52,10 @@ class EngineSqlightLocal(dbPathParameter: Option[String] = None)
 
   override def paramChanged(name: String, ctx: EngineContext): Unit = {
     try {
-      logDebug(
-        s"Received notification that param $name was changed"
-      )
+      logDebug(s"Received notification that param $name was changed")
     } catch {
       case e: Throwable => throw new Exception(s"[ENGINE ${this.name}] error while setting parameter: " + e.getMessage)
     }
   }
 
-  override def close(): Unit =
-    if context != null then context.close()
+  override def close(): Unit = if context != null then context.close()

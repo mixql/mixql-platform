@@ -14,14 +14,12 @@ object BrokerModule {
   var threadBroker: Thread = null
 
   // Key is identity, Value is list of messages
-  val enginesStashedMsgs
-  : mutable.Map[String, ListBuffer[StashedClientMessage]] = mutable.Map()
+  val enginesStashedMsgs: mutable.Map[String, ListBuffer[StashedClientMessage]] = mutable.Map()
   val engines: mutable.Set[String] = mutable.Set()
   val NOFLAGS = 0
 }
 
-class BrokerModule(portFrontend: Int, portBackend: Int, host: String)
-  extends java.lang.AutoCloseable {
+class BrokerModule(portFrontend: Int, portBackend: Int, host: String) extends java.lang.AutoCloseable {
 
   import BrokerModule.*
 
@@ -53,12 +51,7 @@ class BrokerModule(portFrontend: Int, portBackend: Int, host: String)
   }
 }
 
-class BrokerMainRunnable(
-                          name: String,
-                          host: String,
-                          portFrontend: String,
-                          portBackend: String
-                        ) extends Thread(name) {
+class BrokerMainRunnable(name: String, host: String, portFrontend: String, portBackend: String) extends Thread(name) {
 
   import BrokerModule.*
 
@@ -94,8 +87,7 @@ class BrokerMainRunnable(
         logDebug("ThreadInterrupted: " + Thread.currentThread().isInterrupted())
         // Receive messages from engines
         if (poller.pollin(initRes._1)) {
-          val (workerAddrStr, ready, clientIDStr, msg, pingHeartBeatMsg) =
-            receiveMessageFromBackend()
+          val (workerAddrStr, ready, clientIDStr, msg, pingHeartBeatMsg) = receiveMessageFromBackend()
           ready match {
             case Some(_) => // Its READY message from engine
               if !engines.contains(workerAddrStr) then
@@ -161,13 +153,7 @@ class BrokerMainRunnable(
     logDebug("Broker thread finished...")
   }
 
-  def receiveMessageFromBackend(): (
-    String,
-      Option[String],
-      Option[String],
-      Option[Array[Byte]],
-      Option[String]
-    ) = {
+  def receiveMessageFromBackend(): (String, Option[String], Option[String], Option[Array[Byte]], Option[String]) = {
     // FOR PROTOCOL SEE BOOK OReilly ZeroMQ Messaging for any applications 2013 ~page 100
     val workerAddr = backend.recv(NOFLAGS) // Received engine module identity frame
     val workerAddrStr = String(workerAddr)
@@ -227,15 +213,11 @@ class BrokerMainRunnable(
     frontend.send(msg)
   }
 
-  def sendMessageToBackend(
-                            logMessagePrefix: String,
-                            engineIdentityStr: String,
-                            clientAddrStr: String,
-                            request: Array[Byte]
-                          ) = {
-    logDebug(
-      s"$logMessagePrefix: sending $engineIdentityStr from $clientAddrStr to backend"
-    )
+  def sendMessageToBackend(logMessagePrefix: String,
+                           engineIdentityStr: String,
+                           clientAddrStr: String,
+                           request: Array[Byte]) = {
+    logDebug(s"$logMessagePrefix: sending $engineIdentityStr from $clientAddrStr to backend")
     backend.send(engineIdentityStr.getBytes, ZMQ.SNDMORE)
     logDebug(s"$logMessagePrefix: sending epmpty frame to $engineIdentityStr from $clientAddrStr to backend")
     backend.send("".getBytes(), ZMQ.SNDMORE)
@@ -247,11 +229,7 @@ class BrokerMainRunnable(
     backend.send(request, NOFLAGS)
   }
 
-  def sendMessageToBackend(
-                            logMessagePrefix: String,
-                            engineIdentityStr: String,
-                            request: Array[Byte]
-                          ) = {
+  def sendMessageToBackend(logMessagePrefix: String, engineIdentityStr: String, request: Array[Byte]) = {
     logDebug(s"$logMessagePrefix: sending $engineIdentityStr  to backend")
     backend.send(engineIdentityStr.getBytes, ZMQ.SNDMORE)
     logDebug(s"$logMessagePrefix: sending epmpty frame to $engineIdentityStr to backend")
@@ -278,11 +256,7 @@ class BrokerMainRunnable(
     end match
   }
 
-  def stashMessage(
-                    engineIdentityStr: String,
-                    clientAddrStr: String,
-                    request: Array[Byte]
-                  ) = {
+  def stashMessage(engineIdentityStr: String, clientAddrStr: String, request: Array[Byte]) = {
     if enginesStashedMsgs.get(engineIdentityStr).isEmpty then
       enginesStashedMsgs.put(engineIdentityStr, ListBuffer(StashedClientMessage(clientAddrStr, request)))
     else

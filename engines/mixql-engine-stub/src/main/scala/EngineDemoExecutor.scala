@@ -10,8 +10,11 @@ import org.mixql.remote.messages.{Message, gtype}
 
 object EngineDemoExecutor extends IModuleExecutor {
 
-  override def reactOnExecute(msg: Execute, identity: String,
-                     clientAddress: String, logger: ModuleLogger, platformContext: PlatformContext): Message = {
+  override def reactOnExecute(msg: Execute,
+                              identity: String,
+                              clientAddress: String,
+                              logger: ModuleLogger,
+                              platformContext: PlatformContext): Message = {
     import logger._
     logDebug(s"Received Execute msg from server statement: ${msg.statement}")
     logInfo(s"Executing command ${msg.statement} for 1sec")
@@ -21,12 +24,13 @@ object EngineDemoExecutor extends IModuleExecutor {
     messages.gtype.NULL()
   }
 
-  override def reactOnParamChanged(msg: ParamChanged, identity: String, clientAddress: String,
-                                   logger: ModuleLogger, platformContext: PlatformContext): Unit = {
+  override def reactOnParamChanged(msg: ParamChanged,
+                                   identity: String,
+                                   clientAddress: String,
+                                   logger: ModuleLogger,
+                                   platformContext: PlatformContext): Unit = {
     import logger._
-    logInfo(
-      s"Module $identity :Received notify msg about changed param ${msg.name} from server $clientAddress: "
-    )
+    logInfo(s"Module $identity :Received notify msg about changed param ${msg.name} from server $clientAddress: ")
   }
 
   def functions: Map[String, Any] =
@@ -40,8 +44,11 @@ object EngineDemoExecutor extends IModuleExecutor {
 
   val context = StubContext()
 
-  override def reactOnExecuteFunction(msg: ExecuteFunction, identity: String,
-                             clientAddress: String, logger: ModuleLogger, platformContext: PlatformContext): Message = {
+  override def reactOnExecuteFunction(msg: ExecuteFunction,
+                                      identity: String,
+                                      clientAddress: String,
+                                      logger: ModuleLogger,
+                                      platformContext: PlatformContext): Message = {
     import logger._
     logInfo(s"Started executing function ${msg.name}")
     logDebug(
@@ -54,7 +61,8 @@ object EngineDemoExecutor extends IModuleExecutor {
   }
 
   override def reactOnGetDefinedFunctions(identity: String,
-                                 clientAddress: String, logger: ModuleLogger): DefinedFunctions = {
+                                          clientAddress: String,
+                                          logger: ModuleLogger): DefinedFunctions = {
     import logger._
     logInfo(s"Received request to get defined functions from server")
     DefinedFunctions(functions.keys.toArray)

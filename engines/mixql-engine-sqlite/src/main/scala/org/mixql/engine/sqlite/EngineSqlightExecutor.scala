@@ -8,9 +8,7 @@ import org.mixql.remote.messages.gtype.Bool
 import org.mixql.remote.messages.module.{DefinedFunctions, Execute, ExecuteFunction, ParamChanged}
 import org.mixql.remote.messages.{Message, gtype}
 
-object EngineSqlightExecutor
-  extends IModuleExecutor
-    with java.lang.AutoCloseable:
+object EngineSqlightExecutor extends IModuleExecutor with java.lang.AutoCloseable:
 
   var context: SQLightJDBC = null
 
@@ -21,13 +19,14 @@ object EngineSqlightExecutor
       "sqlite_simple_proc_context_params" -> SqliteSimpleProc.simple_func_context_params
     )
 
-  override def reactOnExecute(msg: Execute, identity: String,
-                     clientAddress: String, logger: ModuleLogger, platformContext: PlatformContext): Message = {
+  override def reactOnExecute(msg: Execute,
+                              identity: String,
+                              clientAddress: String,
+                              logger: ModuleLogger,
+                              platformContext: PlatformContext): Message = {
     import logger._
     if context == null then context = SQLightJDBC(identity, platformContext)
-    logInfo(
-      s"Received Execute msg from server statement: ${msg.statement}"
-    )
+    logInfo(s"Received Execute msg from server statement: ${msg.statement}")
     logDebug(s"Executing command ${msg.statement}")
     //        Thread.sleep(1000)
     val res = context.execute(msg.statement)
@@ -36,16 +35,19 @@ object EngineSqlightExecutor
     res
   }
 
-  override def reactOnParamChanged(msg: ParamChanged, identity: String, clientAddress: String,
-                                   logger: ModuleLogger, platformContext: PlatformContext): Unit = {
+  override def reactOnParamChanged(msg: ParamChanged,
+                                   identity: String,
+                                   clientAddress: String,
+                                   logger: ModuleLogger,
+                                   platformContext: PlatformContext): Unit = {
     import logger._
-    logInfo(
-      s"Module $identity :Received notify msg about changed param ${msg.name} from server $clientAddress: "
-    )
+    logInfo(s"Module $identity :Received notify msg about changed param ${msg.name} from server $clientAddress: ")
   }
 
-  override def reactOnExecuteFunction(msg: ExecuteFunction, identity: String,
-                             clientAddress: String, logger: ModuleLogger,
+  override def reactOnExecuteFunction(msg: ExecuteFunction,
+                                      identity: String,
+                                      clientAddress: String,
+                                      logger: ModuleLogger,
                                       platformContext: PlatformContext): Message = {
     if context == null then context = SQLightJDBC(identity, platformContext)
     import logger._
@@ -59,8 +61,9 @@ object EngineSqlightExecutor
     res
   }
 
-  override def reactOnGetDefinedFunctions(identity: String, clientAddress: String,
-                                 logger: ModuleLogger): DefinedFunctions = {
+  override def reactOnGetDefinedFunctions(identity: String,
+                                          clientAddress: String,
+                                          logger: ModuleLogger): DefinedFunctions = {
 
     import logger._
     import collection.JavaConverters._

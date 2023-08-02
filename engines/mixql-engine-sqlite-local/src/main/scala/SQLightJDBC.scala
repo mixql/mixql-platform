@@ -11,9 +11,9 @@ object SQLightJDBC {
   var c: Connection = null
 }
 
-class SQLightJDBC(identity: String, ctx: EngineContext,
-                  dbPathParameter: Option[String] = None) extends java.lang.AutoCloseable
-  with IEngineLogger :
+class SQLightJDBC(identity: String, ctx: EngineContext, dbPathParameter: Option[String] = None)
+    extends java.lang.AutoCloseable
+    with IEngineLogger:
 
   override def name: String = identity
 

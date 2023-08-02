@@ -21,4 +21,3 @@ trait IEngineLogger {
     log.error(s"[ENGINE ${this.name}] " + msg)
   }
 }
-

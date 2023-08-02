@@ -7,25 +7,26 @@ import org.mixql.engine.core.{IModuleExecutor, PlatformContext}
 import org.mixql.remote.messages.module.{DefinedFunctions, Execute, ExecuteFunction, ParamChanged}
 import org.mixql.remote.messages.Message
 
-class EngineSqlightExecutor
-  extends IModuleExecutor
-    with java.lang.AutoCloseable {
+class EngineSqlightExecutor extends IModuleExecutor with java.lang.AutoCloseable {
 
   var context: SQLightJDBC = null
 
-  def functions: Map[String, Any] = Map(
-    "sqlite_simple_proc" -> SqliteSimpleProc.simple_func,
-    "sqlite_simple_proc_params" -> SqliteSimpleProc.simple_func_params,
-    "sqlite_simple_proc_context_params" -> SqliteSimpleProc.simple_func_context_params,
-  )
-
-  override def reactOnExecute(msg: Execute, identity: String,
-                     clientAddress: String, logger: ModuleLogger, platformContext: PlatformContext): Message = {
-    import logger._
-    if (context == null) context = new SQLightJDBC(identity, platformContext)
-    logDebug(
-      s"Received Execute msg from server statement: ${msg.statement}"
+  def functions: Map[String, Any] =
+    Map(
+      "sqlite_simple_proc" -> SqliteSimpleProc.simple_func,
+      "sqlite_simple_proc_params" -> SqliteSimpleProc.simple_func_params,
+      "sqlite_simple_proc_context_params" -> SqliteSimpleProc.simple_func_context_params
     )
+
+  override def reactOnExecute(msg: Execute,
+                              identity: String,
+                              clientAddress: String,
+                              logger: ModuleLogger,
+                              platformContext: PlatformContext): Message = {
+    import logger._
+    if (context == null)
+      context = new SQLightJDBC(identity, platformContext)
+    logDebug(s"Received Execute msg from server statement: ${msg.statement}")
     logInfo(s"Executing command ${msg.statement}")
     //        Thread.sleep(1000)
     val res = context.execute(msg.statement)
@@ -34,19 +35,23 @@ class EngineSqlightExecutor
     res
   }
 
-  override def reactOnParamChanged(msg: ParamChanged, identity: String, clientAddress: String,
-                                   logger: ModuleLogger, platformContext: PlatformContext): Unit = {
+  override def reactOnParamChanged(msg: ParamChanged,
+                                   identity: String,
+                                   clientAddress: String,
+                                   logger: ModuleLogger,
+                                   platformContext: PlatformContext): Unit = {
     import logger._
-    logInfo(
-      s"Module $identity :Received notify msg about changed param ${msg.name} from server $clientAddress: "
-    )
+    logInfo(s"Module $identity :Received notify msg about changed param ${msg.name} from server $clientAddress: ")
   }
 
-  override def reactOnExecuteFunction(msg: ExecuteFunction, identity: String,
-                             clientAddress: String, logger: ModuleLogger,
-                             platformContext: PlatformContext): Message = {
+  override def reactOnExecuteFunction(msg: ExecuteFunction,
+                                      identity: String,
+                                      clientAddress: String,
+                                      logger: ModuleLogger,
+                                      platformContext: PlatformContext): Message = {
     import logger._
-    if (context == null) context = new SQLightJDBC(identity, platformContext)
+    if (context == null)
+      context = new SQLightJDBC(identity, platformContext)
     logDebug(s"Started executing function ${msg.name}")
     logInfo(
       s"Executing function ${msg.name} with params " +
@@ -57,8 +62,9 @@ class EngineSqlightExecutor
     res
   }
 
-  override def reactOnGetDefinedFunctions(identity: String, clientAddress: String,
-                                 logger: ModuleLogger): DefinedFunctions = {
+  override def reactOnGetDefinedFunctions(identity: String,
+                                          clientAddress: String,
+                                          logger: ModuleLogger): DefinedFunctions = {
 
     logger.logInfo(s"Received request to get defined functions from server")
     new DefinedFunctions(functions.keys.toArray)

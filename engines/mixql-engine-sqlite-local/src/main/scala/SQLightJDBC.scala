@@ -1,9 +1,8 @@
 package org.mixql.engine.sqlite.local
 
-import org.mixql.cluster.internal.engine.logger.ILogger
-
 import java.sql.*
-import org.mixql.core.context.gtype
+import org.mixql.core.context.{EngineContext, gtype}
+import org.mixql.engine.local.logger.IEngineLogger
 
 import scala.collection.mutable
 import scala.util.Try
@@ -12,17 +11,15 @@ object SQLightJDBC {
   var c: Connection = null
 }
 
-class SQLightJDBC(identity: String,
-                  engineParams: mutable.Map[String, gtype.Type] = mutable.Map(),
-                  dbPathParameter: Option[String] = None)
+class SQLightJDBC(identity: String, ctx: EngineContext, dbPathParameter: Option[String] = None)
     extends java.lang.AutoCloseable
-    with ILogger:
+    with IEngineLogger:
 
   override def name: String = identity
 
   def init() = {
     def getStringParam(name: String): String = {
-      val r = engineParams(name).asInstanceOf[gtype.string]
+      val r = ctx.getVar(name).asInstanceOf[gtype.string]
       logInfo(s"Got db path from provided params: " + name)
       r.toString
     }

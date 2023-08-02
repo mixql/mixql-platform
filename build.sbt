@@ -1,4 +1,4 @@
-ThisBuild / scalaVersion := "3.3.0"
+ThisBuild / scalaVersion := "3.2.1"
 
 inThisBuild(
   List(
@@ -28,7 +28,7 @@ inThisBuild(
   )
 )
 
-val Scala3 = "3.3.0"
+val Scala3 = "3.1.3"
 val Scala213 = "2.13.8"
 val Scala212 = "2.12.17"
 
@@ -111,7 +111,8 @@ lazy val stageEnginesOozie = taskKey[Seq[(File, String)]]("stage engines and get
 
 lazy val mixQLEngineStubLocal = project.in(file("engines/mixql-engine-stub-local")).dependsOn(mixQLEngineSCALA3)
 
-lazy val mixQLEngineSqliteLocal = project.in(file("engines/mixql-engine-sqlite-local")).dependsOn(mixQLEngineSCALA3)
+lazy val mixQLEngineSqliteLocal = project.in(file("engines/mixql-engine-sqlite-local"))
+  .dependsOn(mixQLEngineSCALA3) //, mixQLCoreSCALA3 % "compile->compile;compile->test")
 
 lazy val mixQLPlatformDemo = project.in(file("mixql-platform-demo"))
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin).dependsOn(
@@ -223,3 +224,9 @@ archiveMixQLPlatformDemo := Def
 lazy val archiveMixQLPlatformOozie = taskKey[Unit]("Create dist archive of platform-oozie")
 archiveMixQLPlatformOozie := Def
   .sequential(mixQLPlatformOozie / Universal / packageBin, mixQLPlatformOozie / Universal / packageZipTarball).value
+
+//lazy val format = taskKey[Unit]("format src, test, sbt")
+//format := {
+//  scalafmtAll.value
+//  (Compile / scalafmtSbt).value
+//}

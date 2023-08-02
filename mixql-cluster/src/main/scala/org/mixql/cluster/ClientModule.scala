@@ -2,11 +2,12 @@ package org.mixql.cluster
 
 import com.typesafe.config.ConfigFactory
 import org.mixql.cluster.ClientModule.broker
+import org.mixql.cluster.logger.{logDebug, logError, logInfo, logWarn}
 import org.mixql.core.engine.Engine
 import org.mixql.core.context.gtype.Type
 import org.mixql.net.PortOperations
-import org.mixql.protobuf.{GtypeConverter, ProtoBufConverter}
-import org.mixql.protobuf.messages
+import org.mixql.remote.{GtypeConverter, RemoteMessageConverter}
+import org.mixql.remote.messages
 import org.zeromq.{SocketType, ZMQ}
 
 import java.io.File
@@ -16,37 +17,32 @@ import scala.concurrent.Future
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
-import org.mixql.core.context.gtype
-import logger.*
-import org.mixql.core.logger.logDebug
-import org.mixql.protobuf.messages.ShutDown
+import org.mixql.core.context.{EngineContext, gtype}
+import org.mixql.remote.messages.Message
+import org.mixql.remote.messages.gtype.IGtypeMessage
+import org.mixql.remote.messages.module.worker.{
+  GetPlatformVar,
+  GetPlatformVars,
+  GetPlatformVarsNames,
+  IWorkerSendToPlatform,
+  PlatformVar,
+  PlatformVarWasSet,
+  PlatformVars,
+  PlatformVarsNames,
+  PlatformVarsWereSet,
+  SetPlatformVar,
+  SetPlatformVars
+}
+import org.mixql.remote.messages.module.{ParamChanged, ShutDown}
 import scalapb.options.ScalaPbOptions.OptionsScope
+
+import scala.annotation.tailrec
 
 case class StashedParam(name: String, value: gtype.Type)
 
 object ClientModule {
   var broker: BrokerModule = null
-  val engineStartedMap: mutable.Map[String, Boolean] = mutable.Map()
-  val enginesStashedParams: mutable.Map[String, ListBuffer[StashedParam]] = mutable.Map()
   val config = ConfigFactory.load()
-
-  def stashMessage(moduleName: String, clientName: String, name: String, value: gtype.Type) = {
-    logDebug(s"[ClientModule-$clientName]: started to stash parameter $name with value $value")
-    if enginesStashedParams.get(moduleName).isEmpty then
-      enginesStashedParams.put(moduleName, ListBuffer(StashedParam(name, value)))
-    else
-      enginesStashedParams.get(moduleName) match
-        case Some(messages) => messages += StashedParam(name, value)
-        case None =>
-          logWarn(
-            s"[ClientModule-$clientName]: warning! no key $moduleName in enginesStashedParams," +
-              s" thow it should be here! Strange!"
-          )
-          enginesStashedParams.put(moduleName, ListBuffer(StashedParam(name, value)))
-      end match
-    end if
-    logDebug(s"[ClientModule-$clientName]: successfully stashed parameter $name with value $value")
-  }
 }
 
 //if start script name is not none then client must start remote engine by executing script
@@ -69,117 +65,80 @@ class ClientModule(clientName: String,
 
   var clientRemoteProcess: sys.process.Process = null
   var clientFuture: Future[Unit] = null
+  var moduleStarted: Boolean = false
 
   override def name: String = clientName
 
-  private var haveSentStashedParams: Boolean = false
+  override def execute(stmt: String, ctx: EngineContext): Type = {
+    logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by execute request")
 
-  private def sendStashedParamsIfTheyAre() = {
-    haveSentStashedParams = true
-    import ClientModule.enginesStashedParams
-    logDebug(s"[ClientModule-$clientName]: Check if there are stashed params")
-    enginesStashedParams.get(moduleName) match
-      case Some(messages) =>
-        if messages.isEmpty then
-          logDebug(s"[ClientModule-$clientName]: Checked engines map. No stashed messages for $moduleName")
-        else
-          logDebug(
-            s"[ClientModule-$clientName]: Have founded stashed messages (amount: ${messages.length}) " +
-              s"for engine $moduleName. Sending them"
-          )
-          messages.foreach(msg => sendParam(msg.name, msg.value))
-          //                  engines.put(moduleName, ListBuffer())
-          messages.clear()
-
-      case None => logWarn(s"[ClientModule-$clientName]: warning! no key $moduleName, thow it should be here! Strange!")
-    end match
+    sendMsg(messages.module.Execute(stmt))
+    reactOnRequest(recvMsg(), ctx)
   }
 
-  override def execute(stmt: String): Type = {
-    if !engineStarted() then logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by execute request")
-
-    sendStashedParamsIfTheyAre()
-
-    import org.mixql.protobuf.messages
-    import org.mixql.protobuf.GtypeConverter
-    sendMsg(messages.Execute(stmt))
-    GtypeConverter.messageToGtype(recvMsg())
+  override def executeFunc(name: String, ctx: EngineContext, params: Type*): Type = {
+    logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by executeFunc request")
+    sendMsg(messages.module.ExecuteFunction(name, params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray))
+    reactOnRequest(recvMsg(), ctx)
   }
 
-  override def executeFunc(name: String, params: Type*): Type = {
-    if !engineStarted() then
-      logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by executeFunc request")
-    sendStashedParamsIfTheyAre()
-    sendMsg(messages.ExecuteFunction(name, params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray))
-    GtypeConverter.messageToGtype(recvMsg())
-  }
-
-  override def getDefinedFunctions: List[String] = {
-    if !engineStarted() then
-      logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by getDefinedFunctions request")
+  override def getDefinedFunctions(): List[String] = {
+    logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by getDefinedFunctions request")
     import org.mixql.core.context.gtype
-    sendStashedParamsIfTheyAre()
     logInfo(s"Server: ClientModule: $clientName: ask defined functions from remote engine")
-    sendMsg(messages.GetDefinedFunctions())
-    val functionsList = recvMsg().asInstanceOf[messages.DefinedFunctions].arr.toList
+    sendMsg(messages.module.GetDefinedFunctions())
+    val functionsList = recvMsg().asInstanceOf[messages.module.DefinedFunctions].arr.toList
     if functionsList.isEmpty then Nil
     else functionsList
   }
 
-  private def sendParam(name: String, value: Type): Unit = {
-    import org.mixql.protobuf.messages
-    import org.mixql.protobuf.GtypeConverter
+  override def paramChanged(name: String, ctx: EngineContext): Unit = {
+    if (engineStarted)
+      sendMsg(new messages.module.ParamChanged(name, GtypeConverter.toGeneratedMsg(ctx.getVar(name))))
+  }
 
-    sendMsg(messages.SetParam(name, GtypeConverter.toGeneratedMsg(value)))
-
-    recvMsg() match
-      case _: messages.ParamWasSet =>
-      case msg: messages.Error     => throw Exception(msg.msg)
-      case a: scala.Any =>
-        throw Exception(
-          s"engine-client-module: setParam error:  " +
-            s"error while receiving confirmation that param was set: got ${a.toString}," +
-            " when ParamWasSet or Error messages were expected"
+  @tailrec
+  private def reactOnRequest(msg: Message, ctx: EngineContext): Type = {
+    msg match
+      case msg: IGtypeMessage => GtypeConverter.messageToGtype(msg)
+      case m: IWorkerSendToPlatform =>
+        m match
+          case msg: GetPlatformVar =>
+            val v = ctx.getVar(msg.name)
+            sendMsg(new PlatformVar(msg.sender(), msg.name, GtypeConverter.toGeneratedMsg(v)))
+            reactOnRequest(recvMsg(), ctx)
+          case msg: SetPlatformVar =>
+            ctx.setVar(msg.name, GtypeConverter.messageToGtype(msg.msg))
+            sendMsg(new PlatformVarWasSet(msg.sender(), msg.name))
+            reactOnRequest(recvMsg(), ctx)
+          case msg: GetPlatformVars =>
+            val valMap = ctx.getVars(msg.names.toList)
+            sendMsg(
+              new PlatformVars(
+                msg.sender(),
+                valMap.map(t => new messages.module.Param(t._1, GtypeConverter.toGeneratedMsg(t._2))).toArray
+              )
+            )
+            reactOnRequest(recvMsg(), ctx)
+          case msg: SetPlatformVars =>
+            import collection.JavaConverters._
+            ctx.setVars(msg.vars.asScala.map(t => t._1 -> GtypeConverter.messageToGtype(t._2)))
+            sendMsg(new PlatformVarsWereSet(msg.sender(), new java.util.ArrayList[String](msg.vars.keySet())))
+            reactOnRequest(recvMsg(), ctx)
+          case msg: GetPlatformVarsNames =>
+            sendMsg(new PlatformVarsNames(msg.sender(), ctx.getVarsNames().toArray))
+            reactOnRequest(recvMsg(), ctx)
+      case msg: messages.module.Error =>
+        logError(
+          "Server: ClientModule: $clientName: error while reacting on request" +
+            msg.msg
         )
+        throw new Exception(msg.msg)
   }
-
-  override def setParam(name: String, value: Type): Unit = {
-    if haveSentStashedParams then sendParam(name, value)
-    else ClientModule.stashMessage(moduleName, clientName, name, value)
-  }
-
-  override def getParam(name: String): Type = {
-    if !engineStarted() then
-      logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by getParam request")
-    sendStashedParamsIfTheyAre()
-    import org.mixql.protobuf.messages
-    import org.mixql.protobuf.GtypeConverter
-
-    sendMsg(messages.GetParam(name))
-    GtypeConverter.messageToGtype(recvMsg())
-  }
-
-  override def isParam(name: String): Boolean = {
-    if !engineStarted() then logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by isParam request")
-    sendStashedParamsIfTheyAre()
-    import org.mixql.core.context.gtype
-    import org.mixql.protobuf.messages
-    import org.mixql.protobuf.GtypeConverter
-
-    sendMsg(messages.IsParam(name))
-    GtypeConverter.messageToGtype(recvMsg()).asInstanceOf[gtype.bool].getValue
-  }
-
-  def engineStarted(): Boolean =
-    import ClientModule.engineStartedMap
-    engineStartedMap.get(moduleName.trim) match
-      case Some(value) => value
-      case None        => false
 
   private def sendMsg(msg: messages.Message): Unit = {
-    import ClientModule.engineStartedMap
     import ClientModule.broker
-    if !engineStarted() then
+    if !moduleStarted then
       if broker == null then startBroker()
       startModuleClient()
       ctx = ZMQ.context(1)
@@ -191,7 +150,7 @@ class ClientModule(clientName: String,
           s"tcp://${broker.getHost}:${broker.getPortFrontend} " + client
             .connect(s"tcp://${broker.getHost}:${broker.getPortFrontend}")
       )
-      engineStartedMap.put(moduleName.trim, true)
+      moduleStarted = true
     end if
 
     logDebug(
@@ -204,12 +163,12 @@ class ClientModule(clientName: String,
     )
     logDebug(
       "server: Clientmodule " + clientName + " sending protobuf message to remote module " + moduleName + " " +
-        client.send(ProtoBufConverter.toArray(msg), 0)
+        client.send(RemoteMessageConverter.toArray(msg), 0)
     )
   }
 
   private def recvMsg(): messages.Message = {
-    ProtoBufConverter.unpackAnyMsgFromArray(client.recv(0))
+    RemoteMessageConverter.unpackAnyMsgFromArray(client.recv(0))
   }
 
   private def startBroker() = {
@@ -296,16 +255,9 @@ class ClientModule(clientName: String,
   }
 
   def ShutDown() = {
-    import ClientModule.engineStartedMap
-    val started =
-      engineStartedMap.get(moduleName.trim) match
-        case Some(value) => value
-        case None        => false
-
-    import ClientModule.broker
-    if started then
-      sendMsg(messages.ShutDown())
-      engineStartedMap.put(moduleName.trim, false) // not to send occasionally more then once
+    if moduleStarted then
+      sendMsg(messages.module.ShutDown())
+      moduleStarted = false // not to send occasionally more then once
   }
 
   override def close() = {

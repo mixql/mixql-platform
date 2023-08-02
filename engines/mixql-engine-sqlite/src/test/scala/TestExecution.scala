@@ -1,12 +1,12 @@
-import org.mixql.protobuf.messages.Message
+import org.mixql.remote.messages.Message
 class TestExecution extends MixqlEngineSqliteTest {
   import MixqlEngineSqliteTest.logger._
   behavior of "start engine, execute sql statements and close engine"
 
   it should ("execute statements that create table, insert value into it and" +
     " select values from table") in {
-    import org.mixql.protobuf.GtypeConverter
     import org.mixql.core.context.gtype
+    import org.mixql.remote.GtypeConverter
 
     {
       logInfo(MixqlEngineSqliteTest.identity + ": execute create table customers")

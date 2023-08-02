@@ -1,13 +1,13 @@
 package org.mixql.engine.sqlite
 
 import org.mixql.engine.core.logger.ModuleLogger
-import org.mixql.protobuf.messages
 
 import scala.collection.mutable
-import org.mixql.engine.core.{BrakeException, IModuleExecutor}
+import org.mixql.engine.core.{IModuleExecutor, PlatformContext}
+import org.mixql.remote.messages.module.{DefinedFunctions, Execute, ExecuteFunction, ParamChanged}
+import org.mixql.remote.messages.Message
 
 class EngineSqlightExecutor extends IModuleExecutor with java.lang.AutoCloseable {
-  val engineParams: mutable.Map[String, messages.Message] = mutable.Map()
 
   var context: SQLightJDBC = null
 
@@ -18,13 +18,14 @@ class EngineSqlightExecutor extends IModuleExecutor with java.lang.AutoCloseable
       "sqlite_simple_proc_context_params" -> SqliteSimpleProc.simple_func_context_params
     )
 
-  def reactOnExecute(msg: messages.Execute,
-                     identity: String,
-                     clientAddress: String,
-                     logger: ModuleLogger): messages.Message = {
+  override def reactOnExecute(msg: Execute,
+                              identity: String,
+                              clientAddress: String,
+                              logger: ModuleLogger,
+                              platformContext: PlatformContext): Message = {
     import logger._
     if (context == null)
-      context = new SQLightJDBC(identity, engineParams)
+      context = new SQLightJDBC(identity, platformContext)
     logDebug(s"Received Execute msg from server statement: ${msg.statement}")
     logInfo(s"Executing command ${msg.statement}")
     //        Thread.sleep(1000)
@@ -34,47 +35,23 @@ class EngineSqlightExecutor extends IModuleExecutor with java.lang.AutoCloseable
     res
   }
 
-  def reactOnSetParam(msg: messages.SetParam,
-                      identity: String,
-                      clientAddress: String,
-                      logger: ModuleLogger): messages.ParamWasSet = {
+  override def reactOnParamChanged(msg: ParamChanged,
+                                   identity: String,
+                                   clientAddress: String,
+                                   logger: ModuleLogger,
+                                   platformContext: PlatformContext): Unit = {
     import logger._
-    logInfo(
-      s":Received SetParam msg from server $clientAddress: " +
-        s"must set parameter ${msg.name}  with value ${msg.msg}"
-    )
-    engineParams.put(msg.name, msg.msg)
-    logDebug(s"Sending reply on SetParam  ${msg.name} msg")
-    new messages.ParamWasSet()
+    logInfo(s"Module $identity :Received notify msg about changed param ${msg.name} from server $clientAddress: ")
   }
 
-  def reactOnGetParam(msg: messages.GetParam,
-                      identity: String,
-                      clientAddress: String,
-                      logger: ModuleLogger): messages.Message = {
-    import logger._
-    logInfo(s"Received GetParam ${msg.name} msg from server")
-    logDebug(s" Sending reply on GetParam ${msg.name} msg")
-    engineParams(msg.name)
-  }
-
-  def reactOnIsParam(msg: messages.IsParam,
-                     identity: String,
-                     clientAddress: String,
-                     logger: ModuleLogger): messages.Bool = {
-    import logger._
-    logInfo(s"Received GetParam ${msg.name} msg from server")
-    logDebug(s" Sending reply on GetParam ${msg.name} msg")
-    new messages.Bool(engineParams.keys.toSeq.contains(msg.name))
-  }
-
-  def reactOnExecuteFunction(msg: messages.ExecuteFunction,
-                             identity: String,
-                             clientAddress: String,
-                             logger: ModuleLogger): messages.Message = {
+  override def reactOnExecuteFunction(msg: ExecuteFunction,
+                                      identity: String,
+                                      clientAddress: String,
+                                      logger: ModuleLogger,
+                                      platformContext: PlatformContext): Message = {
     import logger._
     if (context == null)
-      context = new SQLightJDBC(identity, engineParams)
+      context = new SQLightJDBC(identity, platformContext)
     logDebug(s"Started executing function ${msg.name}")
     logInfo(
       s"Executing function ${msg.name} with params " +
@@ -85,17 +62,15 @@ class EngineSqlightExecutor extends IModuleExecutor with java.lang.AutoCloseable
     res
   }
 
-  def reactOnGetDefinedFunctions(identity: String,
-                                 clientAddress: String,
-                                 logger: ModuleLogger): messages.DefinedFunctions = {
-
-    import collection.JavaConverters._
+  override def reactOnGetDefinedFunctions(identity: String,
+                                          clientAddress: String,
+                                          logger: ModuleLogger): DefinedFunctions = {
 
     logger.logInfo(s"Received request to get defined functions from server")
-    new messages.DefinedFunctions(functions.keys.toArray)
+    new DefinedFunctions(functions.keys.toArray)
   }
 
-  def reactOnShutDown(identity: String, clientAddress: String, logger: ModuleLogger): Unit = {}
+  override def reactOnShutDown(identity: String, clientAddress: String, logger: ModuleLogger): Unit = {}
 
   override def close(): Unit = {
     if (context != null)

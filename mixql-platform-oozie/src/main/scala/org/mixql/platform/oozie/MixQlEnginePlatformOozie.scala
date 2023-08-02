@@ -9,12 +9,12 @@ import java.io.File
 import org.mixql.cluster.ClientModule
 import org.mixql.core.engine.Engine
 import org.mixql.core.context.{Context, gtype}
-import org.mixql.protobuf.messages.ShutDown
 import org.mixql.engine.sqlite.local.EngineSqlightLocal
 
 import scala.collection.mutable
 import org.mixql.platform.oozie.logger.*
 import org.mixql.oozie.OozieParamsReader
+import org.mixql.remote.messages.module.ShutDown
 import org.mixql.repl.{TerminalApp, WebTextIoExecutor}
 
 import scala.util.Try
@@ -72,7 +72,7 @@ object MixQlEnginePlatformOozie:
         Try({
           oozieParams("org.mixql.platform.oozie.engines.default")
         }).getOrElse("sqlite-local"),
-        variables = variables
+        variablesInit = variables
       )
 
     logDebug(s"Mixql engine oozie platform: prepare sql files")

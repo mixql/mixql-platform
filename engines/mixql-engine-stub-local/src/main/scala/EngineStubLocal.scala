@@ -1,19 +1,18 @@
 package org.mixql.engine.stub.local
 
-import org.mixql.cluster.internal.engine.InternalEngine
-
 import scala.collection.mutable
-import org.mixql.core.context.gtype
+import org.mixql.core.context.{EngineContext, gtype}
 import org.mixql.core.context.gtype.Type
+import org.mixql.core.engine.Engine
 import org.mixql.core.function.FunctionInvoker
+import org.mixql.engine.local.logger.IEngineLogger
 import org.mixql.engine.stub.local.EngineStubLocal.name
 
-object EngineStubLocal extends InternalEngine {
-  val engineParams: mutable.Map[String, gtype.Type] = mutable.Map()
+object EngineStubLocal extends Engine with IEngineLogger {
 
   override def name: String = "mixql-engine-stub-local"
 
-  override def executeStmt(statement: String): gtype.Type = {
+  override def execute(statement: String, ctx: EngineContext): gtype.Type = {
     logDebug(s"Received statement to execute: ${statement}")
     logDebug(s"Executing command :${statement} for 1sec")
     Thread.sleep(1000)
@@ -28,7 +27,7 @@ object EngineStubLocal extends InternalEngine {
       "stub_simple_proc_context_params" -> StubSimpleProc.simple_func_context_params
     )
 
-  override def execFunc(name: String, params: Type*): Type = {
+  override def executeFunc(name: String, ctx: EngineContext, params: Type*): Type = {
     import org.mixql.core.context.gtype
     try
       logInfo(s"Started executing function $name")
@@ -48,36 +47,15 @@ object EngineStubLocal extends InternalEngine {
         )
   }
 
-  override def execSetParam(name: String, value: Type): Unit = {
+  override def paramChanged(name: String, ctx: EngineContext): Unit = {
     try {
-      logDebug(s"Received request to set parameter $name with value $value")
-      engineParams.put(name, value)
-      logDebug(s" Successfully have set parameter $name with value $value")
+      logDebug(s"Received notification that parameter $name was changed")
     } catch {
       case e: Throwable => throw new Exception(s"[ENGINE ${this.name}] error while setting parameter: " + e.getMessage)
     }
   }
 
-  override def execGetParam(name: String): Type = {
-    logDebug(s"Received command to get parameter $name")
-    logDebug(s"Trying to get parameter $name")
-    try {
-      val res = engineParams.get(name).get
-      logDebug(s" Successfully returned parameter $name with value $res")
-      res
-    } catch {
-      case e: Throwable =>
-        throw new Exception(s"[ENGINE ${this.name}]: error while executing get Param command: " + e.getMessage)
-    }
-  }
-
-  override def execIsParam(name: String): Boolean = {
-    logDebug(s" Received GetParam $name msg from server")
-    logDebug(s"  Sending reply on GetParam $name msg")
-    engineParams.keys.toSeq.contains(name)
-  }
-
-  override def registeredFunctions: List[String] = {
+  override def getDefinedFunctions(): List[String] = {
     logInfo(s" Was asked to get defined functions")
     functions.keys.toList
   }

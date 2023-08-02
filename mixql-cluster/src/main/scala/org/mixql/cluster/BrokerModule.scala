@@ -24,7 +24,9 @@ class BrokerModule(portFrontend: Int, portBackend: Int, host: String) extends ja
   import BrokerModule.*
 
   def getPortFrontend = portFrontend
+
   def getPortBackend = portBackend
+
   def getHost = host
 
   def start() = {
@@ -86,7 +88,7 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
         // Receive messages from engines
         if (poller.pollin(initRes._1)) {
           val (workerAddrStr, ready, clientIDStr, msg, pingHeartBeatMsg) = receiveMessageFromBackend()
-          ready match
+          ready match {
             case Some(_) => // Its READY message from engine
               if !engines.contains(workerAddrStr) then
                 logDebug(s"Broker: Add $workerAddrStr as key in engines set")
@@ -99,7 +101,7 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
                 case None => // its message from engine to client
                   sendMessageToFrontend(clientIDStr.get, msg.get)
               }
-          end match
+          }
         }
         if (poller.pollin(initRes._2)) {
           val (clientAddrStr, engineIdentityStr, request) = receiveMessageFromFrontend()

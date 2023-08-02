@@ -5,6 +5,7 @@ import org.mixql.engine.core.logger.ModuleLogger
 import org.mixql.remote.messages.module.worker.{GetPlatformVar, GetPlatformVars, GetPlatformVarsNames, PlatformVar, PlatformVarWasSet, PlatformVars, PlatformVarsNames, PlatformVarsWereSet, SetPlatformVar, SetPlatformVars}
 import org.mixql.remote.{GtypeConverter, RemoteMessageConverter}
 import org.zeromq.ZMQ
+import org.mixql.remote.messages
 
 import scala.collection.immutable.List
 import scala.collection.mutable
@@ -22,8 +23,17 @@ class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientAddress
 
     RemoteMessageConverter.unpackAnyMsgFromArray(
       workerSocket.recv()
-    ).asInstanceOf[PlatformVarWasSet]
-    logInfo(s"[PlatformContext]: received answer PlatformVarWasSet from platform")
+    ) match {
+      case _: PlatformVarWasSet => logInfo(s"[PlatformContext]: received answer PlatformVarWasSet from platform")
+      case m: messages.module.Error =>
+        val errorMsg = "[PlatformContext]: Received error while settingVar: " + m.msg
+        logError(errorMsg)
+        throw new Exception(errorMsg)
+      case m: messages.Message =>
+        val errorMsg = "[PlatformContext]: Received unexpected remote message on setVar request: " + m.`type`()
+        logError(errorMsg)
+        throw new Exception(errorMsg)
+    }
   }
 
   def getVar(key: String): Type = {
@@ -33,11 +43,21 @@ class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientAddress
       RemoteMessageConverter.toArray(
         new GetPlatformVar(workersId, key, clientAddress))
     )
-    val res = RemoteMessageConverter.unpackAnyMsgFromArray(
+    RemoteMessageConverter.unpackAnyMsgFromArray(
       workerSocket.recv()
-    ).asInstanceOf[PlatformVar]
-    logInfo(s"[PlatformContext]: received answer PlatformVar for variable ${res.name} from platform")
-    GtypeConverter.messageToGtype(res.msg)
+    ) match {
+      case m: PlatformVar =>
+        logInfo(s"[PlatformContext]: received answer PlatformVar for variable ${m.name} from platform")
+        GtypeConverter.messageToGtype(m.msg)
+      case m: messages.module.Error =>
+        val errorMsg = "[PlatformContext]: Received error while gettingVar: " + m.msg
+        logError(errorMsg)
+        throw new Exception(errorMsg)
+      case m: messages.Message =>
+        val errorMsg = "[PlatformContext]: Received unexpected remote message on getVar request: " + m.`type`()
+        logError(errorMsg)
+        throw new Exception(errorMsg)
+    }
   }
 
   def getVars(keys: List[String]): mutable.Map[String, Type] = {
@@ -45,19 +65,28 @@ class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientAddress
     logInfo(s"[PlatformContext]: sending request GetPlatformVars to platform")
     workerSocket.send(RemoteMessageConverter.toArray(new GetPlatformVars(workersId, keys.toArray, clientAddress)))
 
-    val rep = RemoteMessageConverter.unpackAnyMsgFromArray(
+    RemoteMessageConverter.unpackAnyMsgFromArray(
       workerSocket.recv()
-    ).asInstanceOf[PlatformVars].vars
+    ) match {
+      case m: PlatformVars =>
+        logInfo(s"[PlatformContext]: received answer PlatformVars with variables ${
+          m.vars.map(p => p.name).mkString(",")
+        } from platform")
 
-    logInfo(s"[PlatformContext]: received answer PlatformVars with variables ${
-      rep.map(p => p.name).mkString(",")
-    } from platform")
+        val vars: mutable.Map[String, Type] = mutable.Map()
 
-    val vars: mutable.Map[String, Type] = mutable.Map()
-
-    rep.foreach(param => vars.put(param.name, GtypeConverter.messageToGtype(param.msg)))
-
-    vars
+        m.vars.foreach(param => vars.put(param.name, GtypeConverter.messageToGtype(param.msg)))
+        vars
+      case m: messages.module.Error =>
+        val errorMsg = "[PlatformContext]: Received error while gettingVars: " + m.msg
+        logError(errorMsg)
+        throw new Exception(errorMsg)
+      case m: messages.Message =>
+        val errorMsg = "[PlatformContext]: Received unexpected remote message on GetPlatformVars request: " +
+          m.`type`()
+        logError(errorMsg)
+        throw new Exception(errorMsg)
+    }
   }
 
   def setVars(vars: Map[String, Type]): Unit = {
@@ -68,13 +97,23 @@ class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientAddress
       tuple._1 -> GtypeConverter.toGeneratedMsg(tuple._2)).asJava, clientAddress))
     )
 
-    val res = RemoteMessageConverter.unpackAnyMsgFromArray(
+    RemoteMessageConverter.unpackAnyMsgFromArray(
       workerSocket.recv()
-    ).asInstanceOf[PlatformVarsWereSet]
-
-    logInfo(s"[PlatformContext]: received answer PlatformVarsWereSet with variables ${
-      res.names.toArray().mkString(",")
-    } from platform")
+    ) match {
+      case m: PlatformVarsWereSet =>
+        logInfo(s"[PlatformContext]: received answer PlatformVarsWereSet with variables ${
+          m.names.toArray().mkString(",")
+        } from platform")
+      case m: messages.module.Error =>
+        val errorMsg = "[PlatformContext]: Received error while settingVars: " + m.msg
+        logError(errorMsg)
+        throw new Exception(errorMsg)
+      case m: messages.Message =>
+        val errorMsg = "[PlatformContext]: Received unexpected remote message on SetPlatformVars request: " +
+          m.`type`()
+        logError(errorMsg)
+        throw new Exception(errorMsg)
+    }
   }
 
   def getVarsNames(): List[String] = {
@@ -82,12 +121,24 @@ class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientAddress
     logInfo(s"[PlatformContext]: sending request GetPlatformVarsNames to platform")
     workerSocket.send(RemoteMessageConverter.toArray(new GetPlatformVarsNames(workersId, clientAddress)))
 
-    val res = RemoteMessageConverter.unpackAnyMsgFromArray(
+    RemoteMessageConverter.unpackAnyMsgFromArray(
       workerSocket.recv()
-    ).asInstanceOf[PlatformVarsNames].names.toList
-    logInfo(s"[PlatformContext]: received answer PlatformVarsNames with names ${
-      res.mkString(",")
-    } from platform")
-    res
+    ) match {
+      case m: PlatformVarsNames =>
+        val res = m.names.toList
+        logInfo(s"[PlatformContext]: received answer PlatformVarsNames with names ${
+          res.mkString(",")
+        } from platform")
+        res
+      case m: messages.module.Error =>
+        val errorMsg = "[PlatformContext]: Received error while settingVars: " + m.msg
+        logError(errorMsg)
+        throw new Exception(errorMsg)
+      case m: messages.Message =>
+        val errorMsg = "[PlatformContext]: Received unexpected remote message on SetPlatformVars request: " +
+          m.`type`()
+        logError(errorMsg)
+        throw new Exception(errorMsg)
+    }
   }
 }

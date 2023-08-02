@@ -10,7 +10,6 @@ package object logger {
   val config: com.typesafe.config.Config = ConfigFactory.load()
   Configurator.setAllLevels(LogManager.getRootLogger.getName, getLoggingLevel())
 
-
   val log = LogManager.getRootLogger
 
   def logInfo(msg: String) = {
@@ -28,21 +27,16 @@ package object logger {
   }
 
   def getLoggingLevel(): org.apache.logging.log4j.Level =
-    Try(
-      getLogLevelFromConfig(config.getString("org.mixql.platform.logger"))
-    ).getOrElse(
-      Try(getLogLevelFromConfig(config.getString("org.mixql.platform.oozie.logger")))
-        .getOrElse(Level.WARN)
-    )
+    Try(getLogLevelFromConfig(config.getString("org.mixql.platform.logger")))
+      .getOrElse(Try(getLogLevelFromConfig(config.getString("org.mixql.platform.oozie.logger"))).getOrElse(Level.WARN))
 
   private def getLogLevelFromConfig(logLevelConf: String): org.apache.logging.log4j.Level =
     logLevelConf.toUpperCase match
-      case "DEBUG" => Level.DEBUG
-      case "INFO" => Level.INFO
+      case "DEBUG"   => Level.DEBUG
+      case "INFO"    => Level.INFO
       case "WARNING" => Level.WARN
-      case "WARN" => Level.WARN
-      case "ERROR" => Level.ERROR
-      case "OFF" => Level.OFF
-      case "ALL" => Level.ALL
+      case "WARN"    => Level.WARN
+      case "ERROR"   => Level.ERROR
+      case "OFF"     => Level.OFF
+      case "ALL"     => Level.ALL
 }
-

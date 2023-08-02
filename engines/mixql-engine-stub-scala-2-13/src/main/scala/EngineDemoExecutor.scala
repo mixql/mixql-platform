@@ -13,9 +13,7 @@ class EngineDemoExecutor extends IModuleExecutor {
                               clientAddressString: String, logger: ModuleLogger,
                               platformContext: PlatformContext): Message = {
     import logger._
-    logInfo(
-      s"Received Execute msg from server statement: ${msg.statement}"
-    )
+    logInfo(s"Received Execute msg from server statement: ${msg.statement}")
     logDebug(s"Executing command ${msg.statement} for 1sec")
     Thread.sleep(1000)
     logInfo(s"Successfully executed command ${msg.statement}")

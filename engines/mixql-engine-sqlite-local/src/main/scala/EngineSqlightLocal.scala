@@ -57,8 +57,7 @@ class EngineSqlightLocal(dbPathParameter: Option[String] = None)
         s"Received notification that param $name was changed"
       )
     } catch {
-      case e: Throwable =>
-        throw new Exception(s"[ENGINE ${this.name}] error while setting parameter: " + e.getMessage)
+      case e: Throwable => throw new Exception(s"[ENGINE ${this.name}] error while setting parameter: " + e.getMessage)
     }
   }
 

@@ -42,9 +42,7 @@ object Module {
                              logger: ModuleLogger
                            ): Boolean = {
     import logger._
-    logDebug(
-      s"sendMsgToServerBroker: convert msg of type String to Array of bytes"
-    )
+    logDebug(s"sendMsgToServerBroker: convert msg of type String to Array of bytes")
     logDebug(s"sending empty frame")
     server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
     logDebug(s"Send msg to server ")
@@ -85,19 +83,13 @@ object Module {
     if (pongHeartMessage.get != "PONG-HEARTBEAT") {
       pongHeartMessage = None
 
-      logDebug(
-        s"readMsgFromServerBroker: got client address: " + new String(
-          clientAdrress
-        )
-      )
+      logDebug(s"readMsgFromServerBroker: got client address: " + new String(clientAdrress))
 
       if (server.recv(0) == null)
         throw new BrakeException() // empty frame
       logDebug(s"readMsgFromServerBroker: received empty frame")
 
-      logDebug(
-        s"have received message from server ${new String(clientAdrress)}"
-      )
+      logDebug(s"have received message from server ${new String(clientAdrress)}")
       msg = Some(server.recv(0))
     }
 
@@ -146,9 +138,7 @@ class Module(
   def startServer(): Unit = {
     logInfo(s"Starting main client")
 
-    logInfo(
-      s"host of server is " + host + " and port is " + port.toString
-    )
+    logInfo(s"host of server is " + host + " and port is " + port.toString)
 
     try {
       ctx = ZMQ.context(1)
@@ -191,9 +181,7 @@ class Module(
           val (clientAdrressTmp, msg, pongHeartBeatMsg) = readMsgFromServerBroker(logger)
           pongHeartBeatMsg match {
             case Some(_) => // got pong heart beat message
-              logDebug(
-                s"got pong heart beat message from broker server"
-              )
+              logDebug(s"got pong heart beat message from broker server")
             case None => // got protobuf message
               implicit val clientAddress: Array[Byte] = clientAdrressTmp
               brokerClientAdress = clientAddress
@@ -212,9 +200,7 @@ class Module(
           logDebug(s"elapsed: " + elapsed)
           liveness = liveness - 1
           if (liveness == 0) {
-            logError(
-              s"heartbeat failure, can't reach server's broker. Shutting down"
-            )
+            logError(s"heartbeat failure, can't reach server's broker. Shutting down")
             throw new BrakeException()
           }
           if (elapsed >= heartBeatInterval) {
@@ -452,8 +438,7 @@ class Module(
         )
       }
     } catch {
-      case _: Throwable =>
-        logError(s"tiemout of closing context exceeded:(")
+      case _: Throwable => logError(s"tiemout of closing context exceeded:(")
     }
   }
 }

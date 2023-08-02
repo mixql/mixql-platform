@@ -13,9 +13,7 @@ object EngineDemoExecutor extends IModuleExecutor {
   override def reactOnExecute(msg: Execute, identity: String,
                      clientAddress: String, logger: ModuleLogger, platformContext: PlatformContext): Message = {
     import logger._
-    logDebug(
-      s"Received Execute msg from server statement: ${msg.statement}"
-    )
+    logDebug(s"Received Execute msg from server statement: ${msg.statement}")
     logInfo(s"Executing command ${msg.statement} for 1sec")
     Thread.sleep(1000)
     logInfo(s"Successfully executed command ${msg.statement}")
@@ -31,13 +29,14 @@ object EngineDemoExecutor extends IModuleExecutor {
     )
   }
 
-  def functions: Map[String, Any] = Map(
-    "stub_simple_proc" -> StubSimpleProc.simple_func,
-    "stub_simple_proc_params" -> StubSimpleProc.simple_func_params,
-    "stub_simple_proc_context_params" -> StubSimpleProc.simple_func_context_params,
-    "stub_simple_func_return_arr" -> StubSimpleProc.simple_func_return_arr,
-    "stub_simple_func_return_map" -> StubSimpleProc.simple_func_return_map
-  )
+  def functions: Map[String, Any] =
+    Map(
+      "stub_simple_proc" -> StubSimpleProc.simple_func,
+      "stub_simple_proc_params" -> StubSimpleProc.simple_func_params,
+      "stub_simple_proc_context_params" -> StubSimpleProc.simple_func_context_params,
+      "stub_simple_func_return_arr" -> StubSimpleProc.simple_func_return_arr,
+      "stub_simple_func_return_map" -> StubSimpleProc.simple_func_return_map
+    )
 
   val context = StubContext()
 
@@ -45,8 +44,10 @@ object EngineDemoExecutor extends IModuleExecutor {
                              clientAddress: String, logger: ModuleLogger, platformContext: PlatformContext): Message = {
     import logger._
     logInfo(s"Started executing function ${msg.name}")
-    logDebug(s"Executing function ${msg.name} with params " +
-      msg.params.mkString("[", ",", "]"))
+    logDebug(
+      s"Executing function ${msg.name} with params " +
+        msg.params.mkString("[", ",", "]")
+    )
     val res = org.mixql.engine.core.FunctionInvoker.invoke(functions, msg.name, context, msg.params.toList)
     logInfo(s": Successfully executed function ${msg.name} ")
     res

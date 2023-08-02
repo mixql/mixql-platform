@@ -4,9 +4,8 @@ class TestSimpleQueries extends MixQLClusterTest {
 
   behavior of "correctly exeute simple commands"
 
-  it should("work correctly with variables") in {
-    run(
-      """
+  it should ("work correctly with variables") in {
+    run("""
         |let a='dfdff';
         |let c="dfdff";
         |let d=dfdff;
@@ -33,9 +32,8 @@ class TestSimpleQueries extends MixQLClusterTest {
         |""".stripMargin)
   }
 
-  it should("work correctly with variables 2 test") in {
-    run(
-      """
+  it should ("work correctly with variables 2 test") in {
+    run("""
         |let a="fgfg";
         |
         |use database ${$a || ""}; -- нет кавычек
@@ -49,16 +47,13 @@ class TestSimpleQueries extends MixQLClusterTest {
   }
 
   it should ("get current engine during executing") in {
-    run(
-      """
+    run("""
         |print($mixql.execution.engine);
         |""".stripMargin)
   }
 
-
-  it should("make for several variables in array in array") in {
-    run(
-      """
+  it should ("make for several variables in array in array") in {
+    run("""
         |let res = 0;
         |let c = [[1, 2, 4], [3, 4, 8], [5, 6, 9]];
         |for a, b in $c loop

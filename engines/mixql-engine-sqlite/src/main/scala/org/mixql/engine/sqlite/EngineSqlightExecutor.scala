@@ -14,11 +14,12 @@ object EngineSqlightExecutor
 
   var context: SQLightJDBC = null
 
-  def functions: Map[String, Any] = Map(
-    "sqlite_simple_proc" -> SqliteSimpleProc.simple_func,
-    "sqlite_simple_proc_params" -> SqliteSimpleProc.simple_func_params,
-    "sqlite_simple_proc_context_params" -> SqliteSimpleProc.simple_func_context_params,
-  )
+  def functions: Map[String, Any] =
+    Map(
+      "sqlite_simple_proc" -> SqliteSimpleProc.simple_func,
+      "sqlite_simple_proc_params" -> SqliteSimpleProc.simple_func_params,
+      "sqlite_simple_proc_context_params" -> SqliteSimpleProc.simple_func_context_params
+    )
 
   override def reactOnExecute(msg: Execute, identity: String,
                      clientAddress: String, logger: ModuleLogger, platformContext: PlatformContext): Message = {
@@ -31,9 +32,7 @@ object EngineSqlightExecutor
     //        Thread.sleep(1000)
     val res = context.execute(msg.statement)
     logInfo(s"Successfully executed command ${msg.statement}")
-    logDebug(
-      s"Sending reply on Execute msg " + res.getClass.getName
-    )
+    logDebug(s"Sending reply on Execute msg " + res.getClass.getName)
     res
   }
 
@@ -51,8 +50,10 @@ object EngineSqlightExecutor
     if context == null then context = SQLightJDBC(identity, platformContext)
     import logger._
     logDebug(s"Started executing function ${msg.name}")
-    logInfo(s"Executing function ${msg.name} with params " +
-      msg.params.mkString("[", ",", "]"))
+    logInfo(
+      s"Executing function ${msg.name} with params " +
+        msg.params.mkString("[", ",", "]")
+    )
     val res = org.mixql.engine.core.FunctionInvoker.invoke(functions, msg.name, context, msg.params.toList)
     logInfo(s": Successfully executed function ${msg.name} ")
     res
@@ -69,5 +70,4 @@ object EngineSqlightExecutor
 
   override def reactOnShutDown(identity: String, clientAddress: String, logger: ModuleLogger): Unit = {}
 
-  override def close(): Unit =
-    if context != null then context.close()
+  override def close(): Unit = if context != null then context.close()

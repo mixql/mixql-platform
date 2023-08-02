@@ -5,7 +5,7 @@ import org.mixql.core.context.{EngineContext, gtype}
 
 import scala.collection.mutable
 
-class MixqlEngineSqliteTest(dbPathParameter: Option[String] = None) extends AnyFlatSpec with BeforeAndAfter :
+class MixqlEngineSqliteTest(dbPathParameter: Option[String] = None) extends AnyFlatSpec with BeforeAndAfter:
   var context: SQLightJDBC = null
   val identity = "MixqlEngineSqliteTest"
 
@@ -25,8 +25,7 @@ class MixqlEngineSqliteTest(dbPathParameter: Option[String] = None) extends AnyF
     ), dbPathParameter)
   }
 
-  def execute(code: String): gtype.Type =
-    context.execute(code)
+  def execute(code: String): gtype.Type = context.execute(code)
 
   after {
     context.close()

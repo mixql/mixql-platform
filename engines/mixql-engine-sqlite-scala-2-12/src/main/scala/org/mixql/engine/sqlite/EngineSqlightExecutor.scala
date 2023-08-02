@@ -30,9 +30,7 @@ class EngineSqlightExecutor
     //        Thread.sleep(1000)
     val res = context.execute(msg.statement)
     logInfo(s"Successfully executed command ${msg.statement}")
-    logDebug(
-      s"Sending reply on Execute msg " + res.getClass.getName
-    )
+    logDebug(s"Sending reply on Execute msg " + res.getClass.getName)
     res
   }
 
@@ -50,8 +48,10 @@ class EngineSqlightExecutor
     import logger._
     if (context == null) context = new SQLightJDBC(identity, platformContext)
     logDebug(s"Started executing function ${msg.name}")
-    logInfo(s"Executing function ${msg.name} with params " +
-      msg.params.mkString("[", ",", "]"))
+    logInfo(
+      s"Executing function ${msg.name} with params " +
+        msg.params.mkString("[", ",", "]")
+    )
     val res = org.mixql.engine.core.FunctionInvoker.invoke(functions, msg.name, context, msg.params.toList)
     logInfo(s": Successfully executed function ${msg.name} ")
     res
@@ -67,6 +67,7 @@ class EngineSqlightExecutor
   override def reactOnShutDown(identity: String, clientAddress: String, logger: ModuleLogger): Unit = {}
 
   override def close(): Unit = {
-    if (context != null) context.close()
+    if (context != null)
+      context.close()
   }
 }

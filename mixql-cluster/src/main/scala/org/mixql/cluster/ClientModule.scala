@@ -37,18 +37,17 @@ object ClientModule {
 //which is {basePath}/{startScriptName}. P.S executor will be ignored
 //if executor is not none and startScriptName is none then execute it in scala future
 //if executor is none and startScript is none then just connect
-class ClientModule(
-                    clientName: String,
-                    moduleName: String,
-                    startScriptName: Option[String],
-                    executor: Option[IExecutor],
-                    hostArgs: Option[String],
-                    portFrontendArgs: Option[Int],
-                    portBackendArgs: Option[Int],
-                    basePathArgs: Option[File],
-                    startScriptExtraOpts: Option[String] = None
-                  ) extends Engine
-  with java.lang.AutoCloseable {
+class ClientModule(clientName: String,
+                   moduleName: String,
+                   startScriptName: Option[String],
+                   executor: Option[IExecutor],
+                   hostArgs: Option[String],
+                   portFrontendArgs: Option[Int],
+                   portBackendArgs: Option[Int],
+                   basePathArgs: Option[File],
+                   startScriptExtraOpts: Option[String] = None)
+    extends Engine
+    with java.lang.AutoCloseable {
   var client: ZMQ.Socket = null
   var ctx: ZMQ.Context = null
 
@@ -137,7 +136,7 @@ class ClientModule(
       logInfo(
         "server: Clientmodule " + clientName + " connected to " +
           s"tcp://${broker.getHost}:${broker.getPortFrontend} " + client
-          .connect(s"tcp://${broker.getHost}:${broker.getPortFrontend}")
+            .connect(s"tcp://${broker.getHost}:${broker.getPortFrontend}")
       )
       moduleStarted = true
     end if
@@ -165,32 +164,19 @@ class ClientModule(
     import ClientModule.config
 
     val portFrontend: Int = portFrontendArgs.getOrElse(
-      Try(
-        config.getInt("org.mixql.cluster.broker.portFrontend")
-      ).getOrElse(
-        PortOperations.isPortAvailable(0)
-      )
+      Try(config.getInt("org.mixql.cluster.broker.portFrontend")).getOrElse(PortOperations.isPortAvailable(0))
     )
 
     val portBackend: Int = portBackendArgs.getOrElse(
-      Try(
-        config.getInt("org.mixql.cluster.broker.portBackend")
-      ).getOrElse(
-        PortOperations.isPortAvailable(0)
-      )
+      Try(config.getInt("org.mixql.cluster.broker.portBackend")).getOrElse(PortOperations.isPortAvailable(0))
     )
 
-    val host: String = hostArgs.getOrElse(
-      Try(
-        config.getString("org.mixql.cluster.broker.host")
-      ).getOrElse(
-        "0.0.0.0"
-      )
+    val host: String = hostArgs.getOrElse(Try(config.getString("org.mixql.cluster.broker.host")).getOrElse("0.0.0.0"))
+
+    logInfo(
+      s"Mixql engine demo platform: Starting broker messager with" +
+        s" frontend port $portFrontend and backend port $portBackend on host $host"
     )
-
-
-    logInfo(s"Mixql engine demo platform: Starting broker messager with" +
-      s" frontend port $portFrontend and backend port $portBackend on host $host")
     broker = new BrokerModule(portFrontend, portBackend, host)
     broker.start()
   }
@@ -200,34 +186,34 @@ class ClientModule(
     val portBackend = broker.getPortBackend
 
     import ClientModule.config
-    val basePath: File = basePathArgs.getOrElse(
-      Try({
-        val file = new File(config.getString("org.mixql.cluster.basePath"))
-        if !file.isDirectory then
-          logError("Provided basePath in config in parameter org.mixql.cluster.basePath" +
-            " must be directory!!!")
-          throw new Exception("")
+    val basePath: File = basePathArgs.getOrElse(Try({
+      val file = new File(config.getString("org.mixql.cluster.basePath"))
+      if !file.isDirectory then
+        logError(
+          "Provided basePath in config in parameter org.mixql.cluster.basePath" +
+            " must be directory!!!"
+        )
+        throw new Exception("")
 
-        if !file.exists() then
-          logError("Provided basePath in config in parameter org.mixql.cluster.basePath" +
-            " must exist!!!")
-          throw new Exception("")
+      if !file.exists() then
+        logError(
+          "Provided basePath in config in parameter org.mixql.cluster.basePath" +
+            " must exist!!!"
+        )
+        throw new Exception("")
 
-        file
-      }).getOrElse(
-        Try({
-          val file = new File(sys.env("MIXQL_CLUSTER_BASE_PATH"))
-          if !file.isDirectory then
-            logError("Provided basePath in system variable MIXQL_CLUSTER_BASE_PATH must be directory!!!")
-            throw new Exception("")
+      file
+    }).getOrElse(Try({
+      val file = new File(sys.env("MIXQL_CLUSTER_BASE_PATH"))
+      if !file.isDirectory then
+        logError("Provided basePath in system variable MIXQL_CLUSTER_BASE_PATH must be directory!!!")
+        throw new Exception("")
 
-          if !file.exists() then
-            logError("Provided basePath in system variable MIXQL_CLUSTER_BASE_PATH must exist!!!")
-            throw new Exception("")
-          file
-        }).getOrElse(new File("."))
-      )
-    )
+      if !file.exists() then
+        logError("Provided basePath in system variable MIXQL_CLUSTER_BASE_PATH must exist!!!")
+        throw new Exception("")
+      file
+    }).getOrElse(new File("."))))
 
     startScriptName match
       case Some(scriptName) =>
@@ -243,9 +229,7 @@ class ClientModule(
             }"
           ),
           Some(
-            s"$scriptName --port $portBackend --host $host --identity $moduleName ${
-              startScriptExtraOpts.getOrElse("")
-            }"
+            s"$scriptName --port $portBackend --host $host --identity $moduleName ${startScriptExtraOpts.getOrElse("")}"
           ),
           basePath
         )

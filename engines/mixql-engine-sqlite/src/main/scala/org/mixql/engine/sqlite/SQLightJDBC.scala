@@ -27,9 +27,7 @@ class SQLightJDBC(identity: String, platformCtx: PlatformContext)
         platformCtx.getVar("mixql.org.engine.sqlight.db.path").asInstanceOf[string].getValue
       } catch {
         case e: Exception =>
-          logWarn(
-            s"Warning: could not read db path from provided params: " + e.getMessage
-          )
+          logWarn(s"Warning: could not read db path from provided params: " + e.getMessage)
           logInfo(s"use in memory db")
           "jdbc:sqlite::memory:"
       }
@@ -38,10 +36,10 @@ class SQLightJDBC(identity: String, platformCtx: PlatformContext)
   }
 
   def getSQLightJDBCConnection: Connection = {
-    if (SQLightJDBC.c == null) init()
+    if (SQLightJDBC.c == null)
+      init()
     SQLightJDBC.c
   }
-
 
   // returns messages.Type
   // TO-DO Should return iterator?
@@ -61,10 +59,10 @@ class SQLightJDBC(identity: String, platformCtx: PlatformContext)
 
           val resultSetMetaData = res.getMetaData
           val columnCount = resultSetMetaData.getColumnCount
-          val columnTypes: Seq[messages.Message] =
-            getColumnTypes(resultSetMetaData, columnCount)
+          val columnTypes: Seq[messages.Message] = getColumnTypes(resultSetMetaData, columnCount)
           val columnNames: Seq[String] =
-            for (i <- 1 to columnCount) yield resultSetMetaData.getColumnName(i)
+            for (i <- 1 to columnCount)
+              yield resultSetMetaData.getColumnName(i)
 
           import org.mixql.engine.sqlite.JavaSqlArrayConverter
 
@@ -77,7 +75,8 @@ class SQLightJDBC(identity: String, platformCtx: PlatformContext)
           }
           gtype.gArray(arr.toArray)
         } finally {
-          if (res != null) res.close()
+          if (res != null)
+            res.close()
         }
       }
       else messages.gtype.NULL()
@@ -87,7 +86,8 @@ class SQLightJDBC(identity: String, platformCtx: PlatformContext)
           s"Module $identity: SQLightJDBC error while execute: " + e.getMessage
         )
     } finally {
-      if (jdbcStmt != null) jdbcStmt.close()
+      if (jdbcStmt != null)
+        jdbcStmt.close()
     }
   }
 
@@ -110,7 +110,6 @@ class SQLightJDBC(identity: String, platformCtx: PlatformContext)
         case _: gArray =>
           readArrayFromResultSet(res.getArray(i))
       }
-    }
 
   def readArrayFromResultSet(javaSqlArray: java.sql.Array): gArray = {
 
@@ -222,12 +221,10 @@ class SQLightJDBC(identity: String, platformCtx: PlatformContext)
     }
   }
 
-  def getColumnTypes(
-                      resultSetMetaData: ResultSetMetaData,
-                      columnCount: Int
-                    ): Seq[messages.Message] = {
-    (for (i <- 1 to columnCount) yield resultSetMetaData.getColumnType(i)).map {
-      intType => javaSqlTypeToClientMsg(intType)
+  def getColumnTypes(resultSetMetaData: ResultSetMetaData, columnCount: Int): Seq[messages.Message] = {
+    (for (i <- 1 to columnCount)
+      yield resultSetMetaData.getColumnType(i)).map { intType =>
+      javaSqlTypeToClientMsg(intType)
     }
   }
 

@@ -22,11 +22,12 @@ object EngineStubLocal extends Engine with IEngineLogger{
     new gtype.Null()
   }
 
-  def functions: Map[String, Any] = Map(
-    "stub_simple_proc" -> StubSimpleProc.simple_func,
-    "stub_simple_proc_params" -> StubSimpleProc.simple_func_params,
-    "stub_simple_proc_context_params" -> StubSimpleProc.simple_func_context_params,
-  )
+  def functions: Map[String, Any] =
+    Map(
+      "stub_simple_proc" -> StubSimpleProc.simple_func,
+      "stub_simple_proc_params" -> StubSimpleProc.simple_func_params,
+      "stub_simple_proc_context_params" -> StubSimpleProc.simple_func_context_params
+    )
 
   override def executeFunc(name: String, ctx: EngineContext, params: Type*): Type = {
     import org.mixql.core.context.gtype
@@ -35,8 +36,10 @@ object EngineStubLocal extends Engine with IEngineLogger{
       logDebug(s"Params provided for function $name : " + params.toString())
       logDebug(s"Executing function $name with params " + params.toString)
       val res = FunctionInvoker.invoke(functions, name, StubContext(), params.map(p => gtype.unpack(p)).toList)
-      logInfo(s" Successfully executed function $name with params " + params.toString +
-        s"\nResult: $res")
+      logInfo(
+        s" Successfully executed function $name with params " + params.toString +
+          s"\nResult: $res"
+      )
       gtype.pack(res)
     catch
       case e: Throwable =>
@@ -52,8 +55,7 @@ object EngineStubLocal extends Engine with IEngineLogger{
         s"Received notification that parameter $name was changed"
       )
     } catch {
-      case e: Throwable =>
-        throw new Exception(s"[ENGINE ${this.name}] error while setting parameter: " + e.getMessage)
+      case e: Throwable => throw new Exception(s"[ENGINE ${this.name}] error while setting parameter: " + e.getMessage)
     }
   }
 

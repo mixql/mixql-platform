@@ -8,8 +8,10 @@ object PlatformOozieWorkflow {
     import org.apache.commons.io.FileUtils
 
     import java.nio.charset.StandardCharsets
-    FileUtils.writeStringToFile(target,
+    FileUtils.writeStringToFile(
+      target,
       xmlFile.toString.replace("&quot;", "\"").replaceAll("\\r(\\n)?", "\n"),
-      StandardCharsets.UTF_8)
+      StandardCharsets.UTF_8
+    )
   }
 }

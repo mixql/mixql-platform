@@ -85,6 +85,7 @@ lazy val mixQLEngine = projectMatrix.in(file("mixql-engine")).dependsOn(mixQLCor
 }).jvmPlatform(Seq(Scala3, Scala213, Scala212))
 
 lazy val mixQLEngineSCALA3 = mixQLEngine.jvm(Scala3)
+  .dependsOn(mixQLCoreSCALA3 % "compile->compile;compile->test;test->test;")
 lazy val mixQLEngineSCALA213 = mixQLEngine.jvm(Scala213)
 lazy val mixQLEngineSCALA212 = mixQLEngine.jvm(Scala212)
 
@@ -99,7 +100,8 @@ lazy val mixQLEngineStubScala213 = project.in(file("engines/mixql-engine-stub-sc
 lazy val mixQLEngineStubScala212 = project.in(file("engines/mixql-engine-stub-scala-2-12"))
   .dependsOn(mixQLEngineSCALA212).enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
 
-lazy val mixQLEngineSqlite = project.in(file("engines/mixql-engine-sqlite")).dependsOn(mixQLEngineSCALA3)
+lazy val mixQLEngineSqlite = project.in(file("engines/mixql-engine-sqlite"))
+  .dependsOn(mixQLEngineSCALA3 % "compile->compile;compile->test;test->test;")
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
 
 lazy val mixQLEngineSqliteScala212 = project.in(file("engines/mixql-engine-sqlite-scala-2-12"))

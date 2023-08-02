@@ -13,9 +13,7 @@ object SQLightJDBC {
   var c: Connection = null
 }
 
-class SQLightJDBC(identity: String,
-                  platformCtx: PlatformContext)
-  extends java.lang.AutoCloseable {
+class SQLightJDBC(identity: String, platformCtx: PlatformContext) extends java.lang.AutoCloseable {
 
   val logger = new ModuleLogger(identity)
 
@@ -59,8 +57,7 @@ class SQLightJDBC(identity: String,
 
           val resultSetMetaData = res.getMetaData
           val columnCount = resultSetMetaData.getColumnCount
-          val columnTypes: Seq[Message] =
-            getColumnTypes(resultSetMetaData, columnCount)
+          val columnTypes: Seq[Message] = getColumnTypes(resultSetMetaData, columnCount)
           val columnNames: Seq[String] =
             for (i <- 1 to columnCount)
               yield resultSetMetaData.getColumnName(i)
@@ -79,79 +76,50 @@ class SQLightJDBC(identity: String,
           if (res != null)
             res.close()
         }
-      }
-      else new NULL()
+      } else
+        new NULL()
     } catch {
-      case e: Throwable =>
-        new module.Error(
-          s"Module $identity: SQLightJDBC error while execute: " + e.getMessage
-        )
+      case e: Throwable => new module.Error(s"Module $identity: SQLightJDBC error while execute: " + e.getMessage)
     } finally {
       if (jdbcStmt != null)
         jdbcStmt.close()
     }
   }
 
-  def getRowFromResultSet(
-                           res: ResultSet,
-                           columnCount: Int,
-                           columnTypes: Seq[Message]
-                         ): Seq[Message] =
+  def getRowFromResultSet(res: ResultSet, columnCount: Int, columnTypes: Seq[Message]): Seq[Message] = {
 
-    for (i <- 1 to columnCount) yield {
-      columnTypes(i - 1) match {
-        case _: gString =>
-          new gString(res.getString(i), "")
-        case _: Bool =>
-          new Bool(res.getBoolean(i))
-        case _: gInt =>
-          new gInt(res.getInt(i))
-        case _: gDouble =>
-          new gDouble(res.getDouble(i))
-        case _: gArray =>
-          readArrayFromResultSet(res.getArray(i))
+    for (i <- 1 to columnCount)
+      yield {
+        columnTypes(i - 1) match {
+          case _: gString => new gString(res.getString(i), "")
+          case _: Bool    => new Bool(res.getBoolean(i))
+          case _: gInt    => new gInt(res.getInt(i))
+          case _: gDouble => new gDouble(res.getDouble(i))
+          case _: gArray  => readArrayFromResultSet(res.getArray(i))
+        }
       }
+  }
 
   def readArrayFromResultSet(javaSqlArray: java.sql.Array): gArray = {
 
     javaSqlTypeToClientMsg(javaSqlArray.getBaseType) match {
       case _: gString =>
-        new gArray(
-          JavaSqlArrayConverter
-            .toStringArray(javaSqlArray)
-            .map { str =>
-              new gString(str, "")
-            }
-            .toArray
-        )
+        new gArray(JavaSqlArrayConverter.toStringArray(javaSqlArray).map { str =>
+          new gString(str, "")
+        }.toArray)
       case _: Bool =>
-        new gArray(
-          JavaSqlArrayConverter
-            .toBooleanArray(javaSqlArray)
-            .map {
-              value => new Bool(value)
-            }.toArray
-        )
+        new gArray(JavaSqlArrayConverter.toBooleanArray(javaSqlArray).map { value =>
+          new Bool(value)
+        }.toArray)
       case _: gInt =>
-        new gArray(
-          JavaSqlArrayConverter
-            .toIntArray(javaSqlArray)
-            .map {
-              value => new gInt(value)
-            }.toArray
-        )
+        new gArray(JavaSqlArrayConverter.toIntArray(javaSqlArray).map { value =>
+          new gInt(value)
+        }.toArray)
       case _: gDouble =>
-        new gArray(
-          JavaSqlArrayConverter
-            .toDoubleArray(javaSqlArray)
-            .map {
-              value => new gDouble(value)
-            }.toArray
-        )
-      case _: Any =>
-        throw new Exception(
-          s"Module $identity: SQLightJDBC error while execute: unknown type of array"
-        )
+        new gArray(JavaSqlArrayConverter.toDoubleArray(javaSqlArray).map { value =>
+          new gDouble(value)
+        }.toArray)
+      case _: Any => throw new Exception(s"Module $identity: SQLightJDBC error while execute: unknown type of array")
     }
   }
 
@@ -159,17 +127,15 @@ class SQLightJDBC(identity: String,
 
     intType match {
 
-      case Types.VARCHAR | Types.CHAR | Types.LONGVARCHAR =>
-        new gString("", "")
-      case Types.BIT | Types.BOOLEAN => new Bool(false)
+      case Types.VARCHAR | Types.CHAR | Types.LONGVARCHAR => new gString("", "")
+      case Types.BIT | Types.BOOLEAN                      => new Bool(false)
       case Types.NUMERIC =>
         logError(
           s"SQLightJDBC error while execute: " +
             "unsupported column type NUMERIC"
         )
         new gString("", "")
-      case Types.TINYINT | Types.SMALLINT | Types.INTEGER =>
-        new gInt(-1)
+      case Types.TINYINT | Types.SMALLINT | Types.INTEGER => new gInt(-1)
       case Types.BIGINT =>
         logError(
           s"SQLightJDBC error while execute: " +
@@ -223,12 +189,10 @@ class SQLightJDBC(identity: String,
     }
   }
 
-  def getColumnTypes(
-                      resultSetMetaData: ResultSetMetaData,
-                      columnCount: Int
-                    ): Seq[Message] = {
-    (for (i <- 1 to columnCount) yield resultSetMetaData.getColumnType(i)).map {
-      intType => javaSqlTypeToClientMsg(intType)
+  def getColumnTypes(resultSetMetaData: ResultSetMetaData, columnCount: Int): Seq[Message] = {
+    (for (i <- 1 to columnCount)
+      yield resultSetMetaData.getColumnType(i)).map { intType =>
+      javaSqlTypeToClientMsg(intType)
     }
   }
 

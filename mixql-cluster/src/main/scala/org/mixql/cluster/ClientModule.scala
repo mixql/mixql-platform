@@ -87,7 +87,8 @@ class ClientModule(
   }
 
   override def paramChanged(name: String, ctx: EngineContext): Unit = {
-    sendMsg(new messages.module.ParamChanged(name, GtypeConverter.toGeneratedMsg(ctx.getVar(name))))
+    if (engineStarted)
+      sendMsg(new messages.module.ParamChanged(name, GtypeConverter.toGeneratedMsg(ctx.getVar(name))))
   }
 
   @tailrec

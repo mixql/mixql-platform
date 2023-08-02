@@ -318,6 +318,9 @@ class Module(
 
   def sendMessageToWorker(msg: IWorkerSender, messageRAW: Array[Byte]) = {
     val workersName = msg.sender()
+    logInfo(s"received message ${msg.`type`()} from platfrom to workers-future-$workersName " +
+      "Sending it to worker")
+
     val workerSocket = workersMap(workersName)
     workerSocket.send(messageRAW)
   }

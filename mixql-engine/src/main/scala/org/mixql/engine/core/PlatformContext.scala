@@ -41,11 +41,17 @@ class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientAddress
   }
 
   def getVars(keys: List[String]): mutable.Map[String, Type] = {
+    logInfo(s"[PlatformContext]: was asked to get variables ${keys.mkString(",")} in platform context")
+    logInfo(s"[PlatformContext]: sending request GetPlatformVars to platform")
     workerSocket.send(RemoteMessageConverter.toArray(new GetPlatformVars(workersId, keys.toArray, clientAddress)))
 
     val rep = RemoteMessageConverter.unpackAnyMsgFromArray(
       workerSocket.recv()
     ).asInstanceOf[PlatformVars].vars
+
+    logInfo(s"[PlatformContext]: received answer PlatformVars with variables ${
+      rep.map(p => p.name).mkString(",")
+    } from platform")
 
     val vars: mutable.Map[String, Type] = mutable.Map()
 
@@ -56,19 +62,32 @@ class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientAddress
 
   def setVars(vars: Map[String, Type]): Unit = {
     import collection.JavaConverters._
+    logInfo(s"[PlatformContext]: was asked to set variables ${vars.keys.mkString(",")} in platform context")
+    logInfo(s"[PlatformContext]: sending request SetPlatformVars to platform")
     workerSocket.send(RemoteMessageConverter.toArray(new SetPlatformVars(workersId, vars.map(tuple =>
       tuple._1 -> GtypeConverter.toGeneratedMsg(tuple._2)).asJava, clientAddress))
     )
-    RemoteMessageConverter.unpackAnyMsgFromArray(
+
+    val res = RemoteMessageConverter.unpackAnyMsgFromArray(
       workerSocket.recv()
     ).asInstanceOf[PlatformVarsWereSet]
+
+    logInfo(s"[PlatformContext]: received answer PlatformVarsWereSet with variables ${
+      res.names.toArray().mkString(",")
+    } from platform")
   }
 
   def getVarsNames(): List[String] = {
+    logInfo(s"[PlatformContext]: was asked to get vars names in platform context")
+    logInfo(s"[PlatformContext]: sending request GetPlatformVarsNames to platform")
     workerSocket.send(RemoteMessageConverter.toArray(new GetPlatformVarsNames(workersId, clientAddress)))
 
-    RemoteMessageConverter.unpackAnyMsgFromArray(
+    val res = RemoteMessageConverter.unpackAnyMsgFromArray(
       workerSocket.recv()
     ).asInstanceOf[PlatformVarsNames].names.toList
+    logInfo(s"[PlatformContext]: received answer PlatformVarsNames with names ${
+      res.mkString(",")
+    } from platform")
+    res
   }
 }

@@ -8,6 +8,7 @@ import org.mixql.remote.messages.module.{Execute, ExecuteFunction, GetDefinedFun
 import org.mixql.remote.messages.module.worker.{
   IWorkerSendToPlatform,
   IWorkerSender,
+  InvokedFunctionResult,
   PlatformVar,
   PlatformVarWasSet,
   PlatformVars,
@@ -287,11 +288,13 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
             )
         }
       case m: messages.module.Error => sendMsgToServerBroker(m, clientAddress, logger)
-      case msg: PlatformVarWasSet   => sendMessageToWorker(msg, messageRAW)
-      case msg: PlatformVar         => sendMessageToWorker(msg, messageRAW)
-      case msg: PlatformVars        => sendMessageToWorker(msg, messageRAW)
-      case msg: PlatformVarsWereSet => sendMessageToWorker(msg, messageRAW)
-      case msg: PlatformVarsNames   => sendMessageToWorker(msg, messageRAW)
+//      case msg: PlatformVarWasSet     => sendMessageToWorker(msg, messageRAW)
+//      case msg: PlatformVar           => sendMessageToWorker(msg, messageRAW)
+//      case msg: PlatformVars          => sendMessageToWorker(msg, messageRAW)
+//      case msg: PlatformVarsWereSet   => sendMessageToWorker(msg, messageRAW)
+//      case msg: PlatformVarsNames     => sendMessageToWorker(msg, messageRAW)
+//      case msg: InvokedFunctionResult => sendMessageToWorker(msg, messageRAW)
+      case msg: IWorkerSender => sendMessageToWorker(msg, messageRAW)
     }
   }
 

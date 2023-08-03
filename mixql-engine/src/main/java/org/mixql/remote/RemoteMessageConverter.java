@@ -190,6 +190,21 @@ public class RemoteMessageConverter {
                 return new WorkerFinished(
                         (String) anyMsgJsonObject.get("sender")
                 );
+            case "org.mixql.remote.messages.module.worker.InvokeFunction":
+                return new InvokeFunction(
+                        (String) anyMsgJsonObject.get("sender"),
+                        (String) anyMsgJsonObject.get("name"),
+                        parseMessagesArray((JSONArray) anyMsgJsonObject
+                                .get("args")
+                        ),
+                        ((String) anyMsgJsonObject.get("clientAddress")).getBytes()
+                );
+            case "org.mixql.remote.messages.module.worker.InvokedFunctionResult":
+                return new InvokedFunctionResult(
+                        (String) anyMsgJsonObject.get("sender"),
+                        (String) anyMsgJsonObject.get("name"),
+                        _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("result"))
+                );
         }
         throw new Exception("_unpackAnyMsg: unknown anyMsgJsonObject" + anyMsgJsonObject);
     }
@@ -374,6 +389,20 @@ public class RemoteMessageConverter {
                                     new Message[msgTmp.vars.values().size()]
                             )
                     )
+            );
+        }
+
+        if (msg instanceof InvokeFunction) {
+            InvokeFunction msgTmp = ((InvokeFunction) msg);
+            return JsonUtils.buildInvokeFunction(msgTmp.type(),
+                    msgTmp.sender(), msgTmp.name, _toJsonObjects(msgTmp.args), new String(msgTmp.clientAddress())
+            );
+        }
+
+        if (msg instanceof InvokedFunctionResult) {
+            InvokedFunctionResult msgTmp = ((InvokedFunctionResult) msg);
+            return JsonUtils.buildInvokedFunctionResult(msgTmp.type(),
+                    msgTmp.sender(), msgTmp.name, _toJsonObject(msgTmp.result)
             );
         }
 

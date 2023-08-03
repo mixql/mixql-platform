@@ -85,9 +85,14 @@ class ClientModule(clientName: String,
   }
 
   override def getDefinedFunctions(): List[String] = {
-    logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by getDefinedFunctions request")
+    if (!engineStarted) {
+      logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by getDefinedFunctions request")
+    }
+    engineStarted = true
+
     import org.mixql.core.context.gtype
     logInfo(s"Server: ClientModule: $clientName: ask defined functions from remote engine")
+
     sendMsg(messages.module.GetDefinedFunctions())
     val functionsList = recvMsg().asInstanceOf[messages.module.DefinedFunctions].arr.toList
     if functionsList.isEmpty then Nil

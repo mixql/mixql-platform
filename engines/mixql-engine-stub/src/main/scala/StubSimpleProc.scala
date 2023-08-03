@@ -1,5 +1,8 @@
 package org.mixql.engine.demo
 
+import org.mixql.core.context.gtype.{Type, gInt, string}
+import org.mixql.engine.core.PlatformContext
+
 object StubSimpleProc {
   val simple_func =
     new (() => String) {
@@ -40,6 +43,23 @@ object StubSimpleProc {
           Array("4", "Around the Horn", "Thomas Hardy", "120 Hanover Sq.", "London", "WA1 1DP", "UK"),
           Array("5", "Berglunds snabbköp", "Christina Berglund", "Berguvsvägen 8", "Luleå", "S-958 22", "Sweden")
         )
+      }
+    }
+
+  val execute_platform_func_in_stub_func =
+    new ((PlatformContext, String) => String) {
+      override def apply(ctx: PlatformContext, a: String): String = {
+        val funcArgs = List(new string(a))
+        s"SUCCESS:${ctx.invokeFunction("base64", funcArgs).asInstanceOf[string]}:$a"
+      }
+    }
+
+  // closure
+  val execute_stub_func_using_platform_in_stub_func =
+    new ((PlatformContext, String, Int) => String) {
+      override def apply(ctx: PlatformContext, a: String, b: Int): String = {
+        val funcArgs = List(new string(a), new gInt(b))
+        s"CLOSURE:${ctx.invokeFunction("stub_simple_proc_context_params", funcArgs).asInstanceOf[string]}"
       }
     }
 

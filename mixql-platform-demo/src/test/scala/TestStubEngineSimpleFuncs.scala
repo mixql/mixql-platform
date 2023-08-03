@@ -38,6 +38,25 @@ class TestStubEngineSimpleFuncs extends MixQLClusterTest {
         |""".stripMargin)
   }
 
+  it should ("execute execute_platform_func_in_stub_func function") in {
+    run("""
+        |let engine "stub";
+        |let res = execute_platform_func_in_stub_func("test_invoke_of_platform_base64_func_from_stub");
+        |print("SUCCESS:" || $res);
+        |let engine "stub-local";
+        |""".stripMargin)
+  }
+
+  it should ("CLOSURE: execute execute_stub_func_using_platform_in_stub_func function") in {
+    run("""
+        |let engine "stub";
+        |let res = execute_stub_func_using_platform_in_stub_func(
+        |     "test_execute_stub_func_using_platform_in_stub_func", 4);
+        |print("SUCCESS:" || $res);
+        |let engine "stub-local";
+        |""".stripMargin)
+  }
+
   it should ("execute stub_simple_func_return_map function") in {
     run("""
         |let engine "stub";

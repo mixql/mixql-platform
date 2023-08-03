@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.mixql.cluster.ClientModule.broker
 import org.mixql.cluster.logger.{logDebug, logError, logInfo, logWarn}
 import org.mixql.core.engine.Engine
-import org.mixql.core.context.gtype.Type
+import org.mixql.core.context.gtype.{Type, unpack}
 import org.mixql.net.PortOperations
 import org.mixql.remote.{GtypeConverter, RemoteMessageConverter}
 import org.mixql.remote.messages
@@ -18,13 +18,15 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 import org.mixql.core.context.{EngineContext, gtype}
-import org.mixql.remote.messages.Message
+import org.mixql.remote.messages.{Message, module}
 import org.mixql.remote.messages.gtype.IGtypeMessage
 import org.mixql.remote.messages.module.worker.{
   GetPlatformVar,
   GetPlatformVars,
   GetPlatformVarsNames,
   IWorkerSendToPlatform,
+  InvokeFunction,
+  InvokedFunctionResult,
   PlatformVar,
   PlatformVarWasSet,
   PlatformVars,
@@ -128,6 +130,17 @@ class ClientModule(clientName: String,
           case msg: GetPlatformVarsNames =>
             sendMsg(new PlatformVarsNames(msg.sender(), ctx.getVarsNames().toArray))
             reactOnRequest(recvMsg(), ctx)
+          case msg: InvokeFunction =>
+//            try {
+            val res = ctx
+              .invokeFunction(msg.name, msg.args.map(arg => unpack(GtypeConverter.messageToGtype(arg))).toList)
+            sendMsg(new InvokedFunctionResult(msg.sender(), msg.name, GtypeConverter.toGeneratedMsg(res)))
+            reactOnRequest(recvMsg(), ctx)
+//            } catch {
+//              case e: Throwable =>
+//                sendMsg(new module.Error(e.getMessage()))
+//                reactOnRequest(recvMsg(), ctx)
+//            }
       case msg: messages.module.Error =>
         logError(
           "Server: ClientModule: $clientName: error while reacting on request" +

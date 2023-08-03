@@ -6,6 +6,8 @@ import org.mixql.remote.messages.module.worker.{
   GetPlatformVar,
   GetPlatformVars,
   GetPlatformVarsNames,
+  InvokeFunction,
+  InvokedFunctionResult,
   PlatformVar,
   PlatformVarWasSet,
   PlatformVars,
@@ -143,6 +145,45 @@ class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientAddress
       case m: messages.Message =>
         val errorMsg =
           "[PlatformContext]: Received unexpected remote message on SetPlatformVars request: " +
+            m.`type`()
+        logError(errorMsg)
+        throw new Exception(errorMsg)
+    }
+  }
+
+  /** invoke function using context, can call also functions from other engines
+    * and default context functions
+    *
+    * @param funcName
+    *   name of function
+    * @param args
+    *   arguments for function
+    */
+  def invokeFunction(funcName: String, args: List[Type] = Nil): Type = {
+    logInfo(s"[PlatformContext]: was asked to invoke function $funcName using platform context")
+    logInfo(s"[PlatformContext]: sending request InvokeFunction to platform")
+    workerSocket.send(
+      RemoteMessageConverter.toArray(
+        new InvokeFunction(
+          workersId,
+          funcName,
+          args.map(arg => GtypeConverter.toGeneratedMsg(arg)).toArray,
+          clientAddress
+        )
+      )
+    )
+
+    RemoteMessageConverter.unpackAnyMsgFromArray(workerSocket.recv()) match {
+      case m: InvokedFunctionResult =>
+        logInfo(s"[PlatformContext]: received answer InvokedFunctionResult of function ${m.name} from platform")
+        GtypeConverter.messageToGtype(m.result)
+      case m: messages.module.Error =>
+        val errorMsg = s"[PlatformContext]: Received error while invoking function ${funcName}: " + m.msg
+        logError(errorMsg)
+        throw new Exception(errorMsg)
+      case m: messages.Message =>
+        val errorMsg =
+          s"[PlatformContext]: Received unexpected remote message on invoking function ${funcName}: " +
             m.`type`()
         logError(errorMsg)
         throw new Exception(errorMsg)

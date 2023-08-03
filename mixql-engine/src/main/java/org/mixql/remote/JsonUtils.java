@@ -164,11 +164,32 @@ class JsonUtils {
         return jsonObject;
     }
 
+    public static JSONObject buildInvokedFunctionResult(String type, String senderID, String name,
+                                              JSONObject result) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("type", type);
+        jsonObject.put("sender", senderID);
+        jsonObject.put("result", result);
+        jsonObject.put("name", name);
+        return jsonObject;
+    }
+
     public static JSONObject buildPlatformVars(String type, String senderID, JSONObject[] vars) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("sender", senderID);
         jsonObject.put("vars", buildJsonObjectsArray(vars));
+        return jsonObject;
+    }
+
+    public static JSONObject buildInvokeFunction(String type, String senderID, String name, JSONObject[] args,
+                                                 String clientAddress) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("type", type);
+        jsonObject.put("sender", senderID);
+        jsonObject.put("name", name);
+        jsonObject.put("args", buildJsonObjectsArray(args));
+        jsonObject.put("clientAddress", clientAddress);
         return jsonObject;
     }
 

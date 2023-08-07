@@ -4,7 +4,7 @@ name := "mixql-engine-stub"
 
 description := "MixQL stub engine."
 
-scalaVersion := "3.3.0"
+scalaVersion := "3.2.1"
 
 libraryDependencies ++= {
   val vScallop = "4.1.0"

@@ -6,7 +6,7 @@ description := "MixQL oozie lib"
 
 run / fork := true
 
-scalaVersion := "3.3.0"
+scalaVersion := "3.2.1"
 
 libraryDependencies ++= {
   val vOozieClient = "5.2.0"

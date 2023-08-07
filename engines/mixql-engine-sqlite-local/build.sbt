@@ -2,7 +2,7 @@ updateOptions in ThisBuild := updateOptions.value.withGigahorse(false)
 
 name := "mixql-engine-sqlite-local"
 description := "MixQL sqlite internal engine."
-scalaVersion := "3.3.0"
+scalaVersion := "3.2.1"
 
 libraryDependencies ++= {
   Seq(

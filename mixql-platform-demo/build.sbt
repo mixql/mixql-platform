@@ -3,7 +3,7 @@ import com.typesafe.sbt.packager.SettingsHelper.{addPackage, makeDeploymentSetti
 name := "mixql-platform-demo"
 
 description := "MixQL platform demo, that can run and test remote MixQl engines locally"
-scalaVersion := "3.3.0"
+scalaVersion := "3.2.1"
 
 licenses := List("Apache 2" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt"))
 

@@ -10,8 +10,7 @@ scalaVersion := "3.2.1"
 
 libraryDependencies ++= {
   val vOozieClient = "5.2.0"
-  val vXml = "2.2.0"
-  Seq("org.apache.oozie" % "oozie-client" % vOozieClient % Provided, "org.scala-lang.modules" %% "scala-xml" % vXml)
+  Seq("org.apache.oozie" % "oozie-client" % vOozieClient % Provided)
 }
 
 excludeDependencies ++= Seq(ExclusionRule("com.eclipsesource.j2v8", "j2v8_win32_x86"))

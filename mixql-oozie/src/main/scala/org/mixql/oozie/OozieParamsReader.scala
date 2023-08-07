@@ -18,8 +18,10 @@ object OozieParamsReader {
 }
 
 import org.apache.oozie.client.{AuthOozieClient, WorkflowJob}
+import org.w3c.dom.{Element, Node, NodeList}
 
 import java.net.URLDecoder
+import javax.xml.parsers.{DocumentBuilder, DocumentBuilderFactory}
 
 class OozieParamsReader(jobId: String, get: String, OOZIE_URL: String) {
 
@@ -27,18 +29,29 @@ class OozieParamsReader(jobId: String, get: String, OOZIE_URL: String) {
 
   private val job: WorkflowJob = client.getJobInfo(jobId)
 
-  private val xmlJobConfig = scala.xml.XML.loadString(job.getConf)
+  private val builder: DocumentBuilder = DocumentBuilderFactory.newInstance.newDocumentBuilder
+  private val xmlJobConfig: org.w3c.dom.Document = builder.parse(job.getConf)
 
-  private val xmlProperties: scala.xml.NodeSeq = xmlJobConfig \ "property"
+  private val xmlProperties: NodeList = xmlJobConfig.getElementsByTagName("property")
 
-  private val xmlProperty: scala.xml.NodeSeq = xmlProperties.filter(node => (node \ "name").text == get)
+  val propertyValue: String = URLDecoder.decode(_allProperties(get), "UTF-8")
 
-  val propertyValue: String = URLDecoder.decode((xmlProperty \ "value").text, "UTF-8")
+  val _allProperties: Map[String, String] = {
+    val size = xmlProperties.getLength
+    val propertiesList =
+      for (i <- 0 until size if xmlProperties.item(i).getNodeType() == Node.ELEMENT_NODE)
+        yield xmlProperties.item(i).asInstanceOf[Element]
 
-  val _allProperties: Map[String, String] =
-    xmlProperties.map { node =>
-      ((node \ "name").text, (node \ "value").text)
-    }.toMap
+    var propertiesMap: Map[String, String] = Map()
+
+    propertiesList.foreach(property =>
+      propertiesMap = propertiesMap.updated(
+        property.getElementsByTagName("name").item(0).getTextContent,
+        property.getElementsByTagName("value").item(0).getTextContent
+      )
+    )
+    propertiesMap
+  }
 
   def allProperties = {
     _allProperties.map(a => {

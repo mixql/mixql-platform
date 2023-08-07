@@ -27,4 +27,4 @@ pomIncludeRepository := { _ => false }
 
 scmInfo := Some(ScmInfo(url("https://github.com/mixql/mixql-engine"), "scm:git@github.com:mixql/mixql-engine.git"))
 
-val scala3Version = "3.3.0"
+val scala3Version = "3.2.1"

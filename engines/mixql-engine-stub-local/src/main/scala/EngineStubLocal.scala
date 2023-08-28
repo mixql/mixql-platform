@@ -12,7 +12,7 @@ object EngineStubLocal extends Engine with IEngineLogger {
 
   override def name: String = "mixql-engine-stub-local"
 
-  override def execute(statement: String, ctx: EngineContext): gtype.Type = {
+  override def executeImpl(statement: String, ctx: EngineContext): gtype.Type = {
     logDebug(s"Received statement to execute: ${statement}")
     logDebug(s"Executing command :${statement} for 1sec")
     Thread.sleep(1000)
@@ -27,7 +27,7 @@ object EngineStubLocal extends Engine with IEngineLogger {
       "stub_simple_proc_context_params" -> StubSimpleProc.simple_func_context_params
     )
 
-  override def executeFunc(name: String, ctx: EngineContext, params: Type*): Type = {
+  override def executeFuncImpl(name: String, ctx: EngineContext, params: Type*): Type = {
     import org.mixql.core.context.gtype
     try
       logInfo(s"Started executing function $name")
@@ -47,7 +47,7 @@ object EngineStubLocal extends Engine with IEngineLogger {
         )
   }
 
-  override def paramChanged(name: String, ctx: EngineContext): Unit = {
+  override def paramChangedImpl(name: String, ctx: EngineContext): Unit = {
     try {
       logDebug(s"Received notification that parameter $name was changed")
     } catch {

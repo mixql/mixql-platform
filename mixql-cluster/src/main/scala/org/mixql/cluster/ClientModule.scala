@@ -71,14 +71,14 @@ class ClientModule(clientName: String,
 
   override def name: String = clientName
 
-  override def execute(stmt: String, ctx: EngineContext): Type = {
+  override def executeImpl(stmt: String, ctx: EngineContext): Type = {
     logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by execute request")
 
     sendMsg(messages.module.Execute(stmt))
     reactOnRequest(recvMsg(), ctx)
   }
 
-  override def executeFunc(name: String, ctx: EngineContext, params: Type*): Type = {
+  override def executeFuncImpl(name: String, ctx: EngineContext, params: Type*): Type = {
     logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by executeFunc request")
     sendMsg(messages.module.ExecuteFunction(name, params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray))
     reactOnRequest(recvMsg(), ctx)
@@ -99,7 +99,7 @@ class ClientModule(clientName: String,
     else functionsList
   }
 
-  override def paramChanged(name: String, ctx: EngineContext): Unit = {
+  override def paramChangedImpl(name: String, ctx: EngineContext): Unit = {
     if (engineStarted)
       sendMsg(new messages.module.ParamChanged(name, GtypeConverter.toGeneratedMsg(ctx.getVar(name))))
   }

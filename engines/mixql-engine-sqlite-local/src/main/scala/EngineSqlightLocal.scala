@@ -16,7 +16,7 @@ class EngineSqlightLocal(dbPathParameter: Option[String] = None)
 
   override def name: String = "mixql-engine-sqlite-local"
 
-  override def execute(statement: String, ctx: EngineContext): gtype.Type = {
+  override def executeImpl(statement: String, ctx: EngineContext): gtype.Type = {
     logInfo(s"Received statement to execute: ${statement}")
     logDebug(s"Executing command ${statement}")
 
@@ -33,7 +33,7 @@ class EngineSqlightLocal(dbPathParameter: Option[String] = None)
       logDebug(s"Init SQlightJDBC context")
       context = SQLightJDBC(name, ctx, dbPathParameter)
 
-  override def executeFunc(name: String, ctx: EngineContext, params: Type*): Type = {
+  override def executeFuncImpl(name: String, ctx: EngineContext, params: Type*): Type = {
     try
       logInfo(s"Started executing function $name")
       logDebug(s"Params provided for function $name : " + params.toString())
@@ -50,7 +50,7 @@ class EngineSqlightLocal(dbPathParameter: Option[String] = None)
         )
   }
 
-  override def paramChanged(name: String, ctx: EngineContext): Unit = {
+  override def paramChangedImpl(name: String, ctx: EngineContext): Unit = {
     try {
       logDebug(s"Received notification that param $name was changed")
     } catch {

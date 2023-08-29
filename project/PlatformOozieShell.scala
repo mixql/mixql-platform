@@ -1,6 +1,7 @@
 import java.io.File
 
 object PlatformOozieShell {
+
   def gen_shell(target: File, PLATFORM_OOZIE_CLASS: String, JARS: List[String]) = {
     val shFile = txt.platform_oozie_shell.apply(PLATFORM_OOZIE_CLASS, JARS)
 

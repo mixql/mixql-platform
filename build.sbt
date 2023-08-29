@@ -237,8 +237,9 @@ Test / test := Def.sequential(
 
 Test / parallelExecution := false
 
-//lazy val format = taskKey[Unit]("format src, test, sbt")
-//format := {
-//  scalafmtAll.value
-//  (Compile / scalafmtSbt).value
-//}
+lazy val format = taskKey[Unit]("format src, test, sbt")
+
+format := {
+  scalafmtAll.value
+  (Compile / scalafmtSbt).value
+}

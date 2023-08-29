@@ -2,6 +2,7 @@ package org.mixql.engine.demo
 
 import org.mixql.core.context.gtype.{Type, gInt, string}
 import org.mixql.engine.core.PlatformContext
+import collection.mutable
 
 object StubSimpleProc {
   val simple_func =
@@ -51,6 +52,16 @@ object StubSimpleProc {
       override def apply(ctx: PlatformContext, a: String): String = {
         val funcArgs = List(new string(a))
         s"SUCCESS:${ctx.invokeFunction("base64", funcArgs).asInstanceOf[string]}:$a"
+      }
+    }
+
+  val stub_simple_proc_context =
+    new ((PlatformContext) => String) {
+      override def apply(ctx: PlatformContext): String = {
+        val filteredNames = ctx.getVarsNames().filter(p => p.startsWith("a."))
+        val namesMap: mutable.Map[String, String] = mutable.Map()
+        filteredNames.foreach(name => namesMap.put(name, ctx.getVar(name).toString))
+        namesMap.mkString(" ")
       }
     }
 

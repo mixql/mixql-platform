@@ -41,7 +41,8 @@ object EngineDemoExecutor extends IModuleExecutor {
       "stub_simple_func_return_arr" -> StubSimpleProc.simple_func_return_arr,
       "stub_simple_func_return_map" -> StubSimpleProc.simple_func_return_map,
       "execute_platform_func_in_stub_func" -> StubSimpleProc.execute_platform_func_in_stub_func,
-      "execute_stub_func_using_platform_in_stub_func" -> StubSimpleProc.execute_stub_func_using_platform_in_stub_func
+      "execute_stub_func_using_platform_in_stub_func" -> StubSimpleProc.execute_stub_func_using_platform_in_stub_func,
+      "stub_simple_proc_context" -> StubSimpleProc.stub_simple_proc_context
     )
 
   val context = StubContext()
@@ -57,12 +58,17 @@ object EngineDemoExecutor extends IModuleExecutor {
       s"Executing function ${msg.name} with params " +
         msg.params.mkString("[", ",", "]")
     )
-    val res =
-      if (msg.name.trim != "execute_platform_func_in_stub_func" && msg.name.trim !=
-            "execute_stub_func_using_platform_in_stub_func")
-        org.mixql.engine.core.FunctionInvoker.invoke(functions, msg.name, context, msg.params.toList)
-      else
-        org.mixql.engine.core.FunctionInvoker.invoke(functions, msg.name, platformContext, msg.params.toList)
+    val res = org.mixql.engine.core.FunctionInvoker.invoke(
+      functions,
+      msg.name, {
+        val contexts: Map[String, Object] = Map(
+          "org.mixql.engine.core.PlatformContext" -> platformContext,
+          "org.mixql.engine.demo.StubContext" -> context
+        )
+        contexts
+      },
+      msg.params.toList
+    )
     logInfo(s": Successfully executed function ${msg.name} ")
     res
   }

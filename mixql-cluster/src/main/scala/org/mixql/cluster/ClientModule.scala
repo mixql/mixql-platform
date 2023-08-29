@@ -78,7 +78,10 @@ class ClientModule(clientName: String,
     reactOnRequest(recvMsg(), ctx)
   }
 
-  override def executeFuncImpl(name: String, ctx: EngineContext, params: Type*): Type = {
+  override def executeFuncImpl(name: String, ctx: EngineContext, kwargs: Map[String, Object], params: Type*): Type = {
+    if (kwargs.nonEmpty)
+      throw new UnsupportedOperationException("named arguments are not supported in functions in remote engine " + name)
+
     logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by executeFunc request")
     sendMsg(messages.module.ExecuteFunction(name, params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray))
     reactOnRequest(recvMsg(), ctx)

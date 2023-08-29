@@ -18,11 +18,11 @@ class EngineSqlightExecutor extends IModuleExecutor with java.lang.AutoCloseable
       "sqlite_simple_proc_context_params" -> SqliteSimpleProc.simple_func_context_params
     )
 
-  override def reactOnExecute(msg: Execute,
-                              identity: String,
-                              clientAddress: String,
-                              logger: ModuleLogger,
-                              platformContext: PlatformContext): Message = {
+  override def reactOnExecuteAsync(msg: Execute,
+                                   identity: String,
+                                   clientAddress: String,
+                                   logger: ModuleLogger,
+                                   platformContext: PlatformContext): Message = {
     import logger._
     if (context == null)
       context = new SQLightJDBC(identity, platformContext)
@@ -35,20 +35,20 @@ class EngineSqlightExecutor extends IModuleExecutor with java.lang.AutoCloseable
     res
   }
 
-  override def reactOnParamChanged(msg: ParamChanged,
-                                   identity: String,
-                                   clientAddress: String,
-                                   logger: ModuleLogger,
-                                   platformContext: PlatformContext): Unit = {
+  override def reactOnParamChangedAsync(msg: ParamChanged,
+                                        identity: String,
+                                        clientAddress: String,
+                                        logger: ModuleLogger,
+                                        platformContext: PlatformContext): Unit = {
     import logger._
     logInfo(s"Module $identity :Received notify msg about changed param ${msg.name} from server $clientAddress: ")
   }
 
-  override def reactOnExecuteFunction(msg: ExecuteFunction,
-                                      identity: String,
-                                      clientAddress: String,
-                                      logger: ModuleLogger,
-                                      platformContext: PlatformContext): Message = {
+  override def reactOnExecuteFunctionAsync(msg: ExecuteFunction,
+                                           identity: String,
+                                           clientAddress: String,
+                                           logger: ModuleLogger,
+                                           platformContext: PlatformContext): Message = {
     import logger._
     if (context == null)
       context = new SQLightJDBC(identity, platformContext)
@@ -57,7 +57,8 @@ class EngineSqlightExecutor extends IModuleExecutor with java.lang.AutoCloseable
       s"Executing function ${msg.name} with params " +
         msg.params.mkString("[", ",", "]")
     )
-    val res = org.mixql.engine.core.FunctionInvoker.invoke(functions, msg.name, context, msg.params.toList)
+    val res = org.mixql.engine.core.FunctionInvoker
+      .invoke(functions, msg.name, List[Object](context, platformContext), msg.params.toList)
     logInfo(s": Successfully executed function ${msg.name} ")
     res
   }

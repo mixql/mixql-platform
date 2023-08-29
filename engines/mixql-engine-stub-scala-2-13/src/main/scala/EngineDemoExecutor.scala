@@ -9,11 +9,11 @@ import org.mixql.remote.messages.Message
 
 class EngineDemoExecutor extends IModuleExecutor {
 
-  override def reactOnExecute(msg: Execute,
-                              identity: String,
-                              clientAddressString: String,
-                              logger: ModuleLogger,
-                              platformContext: PlatformContext): Message = {
+  override def reactOnExecuteAsync(msg: Execute,
+                                   identity: String,
+                                   clientAddressString: String,
+                                   logger: ModuleLogger,
+                                   platformContext: PlatformContext): Message = {
     import logger._
     logInfo(s"Received Execute msg from server statement: ${msg.statement}")
     logDebug(s"Executing command ${msg.statement} for 1sec")
@@ -23,20 +23,20 @@ class EngineDemoExecutor extends IModuleExecutor {
     new NULL()
   }
 
-  override def reactOnParamChanged(msg: ParamChanged,
-                                   identity: String,
-                                   clientAddress: String,
-                                   logger: ModuleLogger,
-                                   platformContext: PlatformContext): Unit = {
+  override def reactOnParamChangedAsync(msg: ParamChanged,
+                                        identity: String,
+                                        clientAddress: String,
+                                        logger: ModuleLogger,
+                                        platformContext: PlatformContext): Unit = {
     import logger._
     logInfo(s"Received notify msg about changed param ${msg.name} from server $clientAddress: ")
   }
 
-  override def reactOnExecuteFunction(msg: ExecuteFunction,
-                                      identity: String,
-                                      clientAddress: String,
-                                      logger: ModuleLogger,
-                                      platformContext: PlatformContext): Message = {
+  override def reactOnExecuteFunctionAsync(msg: ExecuteFunction,
+                                           identity: String,
+                                           clientAddress: String,
+                                           logger: ModuleLogger,
+                                           platformContext: PlatformContext): Message = {
     import logger._
     logDebug(s"Started executing function ${msg.name}")
     logInfo(

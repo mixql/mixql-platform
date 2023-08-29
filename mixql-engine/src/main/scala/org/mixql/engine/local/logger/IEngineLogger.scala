@@ -14,9 +14,11 @@ trait IEngineLogger {
   def logDebug(msg: String) = {
     log.debug(s"[ENGINE ${this.name}] " + msg)
   }
+
   def logWarn(msg: String) = {
     log.warn(s"[ENGINE ${this.name}] " + msg)
   }
+
   def logError(msg: String) = {
     log.error(s"[ENGINE ${this.name}] " + msg)
   }

@@ -19,9 +19,11 @@ package object logger {
   def logDebug(msg: String) = {
     log.debug("[mixql-platform-demo] " + msg)
   }
+
   def logWarn(msg: String) = {
     log.warn("[mixql-platform-demo] " + msg)
   }
+
   def logError(msg: String) = {
     log.error("[mixql-platform-demo] " + msg)
   }

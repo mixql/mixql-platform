@@ -20,6 +20,7 @@ import org.mixql.repl.{TerminalApp, WebTextIoExecutor}
 import scala.util.Try
 
 object MixQlEnginePlatformOozie:
+
   def main(args: Array[String]): Unit =
     logDebug("Mixql engine oozie platform: parsing args")
     val oozieId = AppArgs(args).oozieId.toOption.get

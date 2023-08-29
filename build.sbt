@@ -78,7 +78,7 @@ lazy val mixQLEngine = projectMatrix.in(file("mixql-engine")).dependsOn(mixQLCor
   Seq(
     "com.typesafe"               % "config"      % "1.4.2",
     "org.scalameta"             %% "munit"       % "0.7.29" % Test,
-    "org.zeromq"                 % "jeromq"      % "0.5.2",
+    "org.zeromq"                 % "jeromq"      % "0.5.3",
     "com.github.nscala-time"    %% "nscala-time" % "2.32.0",
     "com.googlecode.json-simple" % "json-simple" % "1.1.1"
   )
@@ -211,6 +211,7 @@ lazy val mixQLPlatformOozie = project.in(file("mixql-platform-oozie"))
 //
 
 lazy val buildAllMixQLCore = taskKey[Unit]("Build all mixql core projects")
+
 buildAllMixQLCore := {
   //  (mixQLCluster / Compile / packageBin).value
   //  (mixQLProtobuf / Compile / packageBin).value
@@ -220,15 +221,44 @@ buildAllMixQLCore := {
 }
 
 lazy val archiveMixQLPlatformDemo = taskKey[Unit]("Create dist archive of platform-demo")
+
 archiveMixQLPlatformDemo := Def
   .sequential(mixQLPlatformDemo / Universal / packageBin, mixQLPlatformDemo / Universal / packageZipTarball).value
 
 lazy val archiveMixQLPlatformOozie = taskKey[Unit]("Create dist archive of platform-oozie")
+
 archiveMixQLPlatformOozie := Def
   .sequential(mixQLPlatformOozie / Universal / packageBin, mixQLPlatformOozie / Universal / packageZipTarball).value
 
-//lazy val format = taskKey[Unit]("format src, test, sbt")
-//format := {
-//  scalafmtAll.value
-//  (Compile / scalafmtSbt).value
-//}
+Test / test := Def.sequential(
+//  test in Test,
+  test.all(ScopeFilter(inProjects(mixQLPlatformDemo), inConfigurations(Test)))
+).value
+
+Test / parallelExecution := false
+
+lazy val format = taskKey[Unit]("format src, test, sbt")
+
+val projects = inProjects(
+  mixQLPlatformDemo,
+  mixQLPlatformOozie,
+  mixQLOozie,
+  mixQLRepl,
+  mixQLCoreSCALA3,
+  mixQLEngineSqliteLocal,
+  mixQLEngineStubLocal,
+  mixQLEngineSqliteScala212,
+  mixQLEngineSqlite,
+  mixQLEngineStubScala212,
+  mixQLEngineStubScala213,
+  mixQLEngineStub,
+  mixQLCluster,
+  mixQLEngineSCALA3
+)
+
+format := Def.sequential(
+  scalafmtAll.all(ScopeFilter(projects, inConfigurations(Test, Compile))),
+  scalafmtSbt.all(ScopeFilter(projects, inConfigurations(Compile)))
+  //  scalafmtAll.value
+  //  (Compile / scalafmtSbt).value
+).value

@@ -12,9 +12,11 @@ class ModuleLogger(indentity: String) {
   def logDebug(msg: String) = {
     log.debug(s"[module-$indentity] " + msg)
   }
+
   def logWarn(msg: String) = {
     log.warn(s"[module-$indentity] " + msg)
   }
+
   def logError(msg: String) = {
     log.error(s"[module-$indentity] " + msg)
   }

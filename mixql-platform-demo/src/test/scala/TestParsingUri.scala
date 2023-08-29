@@ -3,6 +3,7 @@ import org.mixql.platform.demo.logger.logDebug
 // For more information on writing tests, see
 // https://scalameta.org/munit/docs/getting-started.html
 class TestParsingUri extends munit.FunSuite {
+
   test("test parsing of uri") {
     val uri = "http://127.0.0.1:8080/org/mixql/engine-demo/mixql-engine-demo-0.1.0-SNAPSHOT.tar.gz"
     val expected = "mixql-engine-demo"

@@ -1,8 +1,6 @@
 class TestStubEngineSimpleFuncs extends MixQLClusterTest {
 
-  behavior of "correctly execute stub engine's functions, pass parameters to them and work with result"
-
-  it should ("execute stub_simple_proc function") in {
+  test("execute stub_simple_proc function") {
     run("""
         |let engine "stub";
         |print("stub_simple_proc res: " || stub_simple_proc());
@@ -10,7 +8,7 @@ class TestStubEngineSimpleFuncs extends MixQLClusterTest {
         |""".stripMargin)
   }
 
-  it should ("execute stub_simple_proc_params function") in {
+  test("execute stub_simple_proc_params function") {
     run("""
         |let engine "stub";
         |let a = "test";
@@ -20,7 +18,7 @@ class TestStubEngineSimpleFuncs extends MixQLClusterTest {
         |""".stripMargin)
   }
 
-  it should ("execute stub_simple_proc_context_params function") in {
+  test("execute stub_simple_proc_context_params function") {
     run("""
         |let engine "stub";
         |let a = "test";
@@ -30,7 +28,7 @@ class TestStubEngineSimpleFuncs extends MixQLClusterTest {
         |""".stripMargin)
   }
 
-  it should ("execute stub_simple_func_return_arr function") in {
+  test("execute stub_simple_func_return_arr function") {
     run("""
         |let engine "stub";
         |print("SUCCESS:" || stub_simple_func_return_arr());
@@ -38,7 +36,7 @@ class TestStubEngineSimpleFuncs extends MixQLClusterTest {
         |""".stripMargin)
   }
 
-  it should ("execute execute_platform_func_in_stub_func function") in {
+  test("execute execute_platform_func_in_stub_func function") {
     run("""
         |let engine "stub";
         |let res = execute_platform_func_in_stub_func("test_invoke_of_platform_base64_func_from_stub");
@@ -47,7 +45,7 @@ class TestStubEngineSimpleFuncs extends MixQLClusterTest {
         |""".stripMargin)
   }
 
-  it should ("CLOSURE: execute execute_stub_func_using_platform_in_stub_func function") in {
+  test("CLOSURE: execute execute_stub_func_using_platform_in_stub_func function") {
     run("""
         |let engine "stub";
         |let res = execute_stub_func_using_platform_in_stub_func(
@@ -57,7 +55,7 @@ class TestStubEngineSimpleFuncs extends MixQLClusterTest {
         |""".stripMargin)
   }
 
-  it should ("execute stub_simple_func_return_map function") in {
+  test("execute stub_simple_func_return_map function") {
     run("""
         |let engine "stub";
         |

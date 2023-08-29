@@ -1,15 +1,13 @@
 class TestSqliteEngineSimpleFuncs extends MixQLClusterTest {
 
-  behavior of "correctly execute remote sqlite engine's functions, pass parameters to them and work with result"
-
-  it should ("execute sqlite_simple_proc function") in {
+  test("execute sqlite_simple_proc function") {
     run("""
         |let engine "sqlite";
         |print("sqlite_simple_proc res: " || sqlite_simple_proc());
         |""".stripMargin)
   }
 
-  it should ("execute sqlite_simple_proc_params function") in {
+  test("execute sqlite_simple_proc_params function") {
     run("""
         |let engine "sqlite";
         |let a = "test";
@@ -18,7 +16,7 @@ class TestSqliteEngineSimpleFuncs extends MixQLClusterTest {
         |""".stripMargin)
   }
 
-  it should ("execute sqlite_simple_proc_context_params function") in {
+  test("execute sqlite_simple_proc_context_params function") {
     run("""
         |let engine "sqlite";
         |let a = "test";

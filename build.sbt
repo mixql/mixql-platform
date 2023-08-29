@@ -211,6 +211,7 @@ lazy val mixQLPlatformOozie = project.in(file("mixql-platform-oozie"))
 //
 
 lazy val buildAllMixQLCore = taskKey[Unit]("Build all mixql core projects")
+
 buildAllMixQLCore := {
   //  (mixQLCluster / Compile / packageBin).value
   //  (mixQLProtobuf / Compile / packageBin).value
@@ -220,12 +221,21 @@ buildAllMixQLCore := {
 }
 
 lazy val archiveMixQLPlatformDemo = taskKey[Unit]("Create dist archive of platform-demo")
+
 archiveMixQLPlatformDemo := Def
   .sequential(mixQLPlatformDemo / Universal / packageBin, mixQLPlatformDemo / Universal / packageZipTarball).value
 
 lazy val archiveMixQLPlatformOozie = taskKey[Unit]("Create dist archive of platform-oozie")
+
 archiveMixQLPlatformOozie := Def
   .sequential(mixQLPlatformOozie / Universal / packageBin, mixQLPlatformOozie / Universal / packageZipTarball).value
+
+Test / test := Def.sequential(
+//  test in Test,
+  test.all(ScopeFilter(inProjects(mixQLPlatformDemo), inConfigurations(Test)))
+).value
+
+Test / parallelExecution := false
 
 //lazy val format = taskKey[Unit]("format src, test, sbt")
 //format := {

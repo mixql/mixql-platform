@@ -1,8 +1,6 @@
 class TestStubEngineRemoteContext extends MixQLClusterTest {
 
-  behavior of "correctly execute stub engine's functions, using remote context"
-
-  it should ("execute stub_simple_proc function") in {
+  test("execute stub_simple_proc function") {
     run("""
         |let engine "stub";
         |

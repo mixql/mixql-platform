@@ -314,7 +314,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
       clientAddress,
       (workersId, ctxPlatform) => {
         logInfo(s"[workers-future-$workersId]: triggering onExecute")
-        executor.reactOnExecute(msg, identity, clientAddressStr, logger, ctxPlatform)
+        executor.reactOnExecuteAsync(msg, identity, clientAddressStr, logger, ctxPlatform)
       },
       (value, socket, workerID) => {
         socket.send(RemoteMessageConverter.toArray(new SendMsgToPlatform(clientAddress, value, workerID)))
@@ -341,7 +341,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
       clientAddress,
       (workersID, ctxPlatform) => {
         logInfo(s"[workers-future-$workersID]: triggering onExecuteFunction")
-        executor.reactOnExecuteFunction(msg, identity, clientAddressStr, logger, ctxPlatform)
+        executor.reactOnExecuteFunctionAsync(msg, identity, clientAddressStr, logger, ctxPlatform)
       },
       (value, socket, workerID) => {
         socket.send(RemoteMessageConverter.toArray(new SendMsgToPlatform(clientAddress, value, workerID)))
@@ -368,7 +368,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
       clientAddress,
       (workersID, ctxPlatform) => {
         logInfo(s"[workers-future-$workersID]: triggering OnParamChanged")
-        executor.reactOnParamChanged(msg, identity, clientAddressStr, logger, ctxPlatform)
+        executor.reactOnParamChangedAsync(msg, identity, clientAddressStr, logger, ctxPlatform)
         new NULL()
       },
       (_, _, _) => {},

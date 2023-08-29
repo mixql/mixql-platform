@@ -97,7 +97,12 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
             case None => // its message from engine to client or heart beat message from engine
               pingHeartBeatMsg match {
                 case Some(_) => // Its heart beat message from engine
-                  sendMessageToBackend(s"Broker backend heart beat pong:", workerAddrStr, "PONG-HEARTBEAT".getBytes)
+                  sendMessageToBackend(
+                    s"Broker backend heart beat pong:",
+                    workerAddrStr, {
+                      "PONG-HEARTBEAT".getBytes
+                    }
+                  )
                 case None => // its message from engine to client
                   sendMessageToFrontend(clientIDStr.get, msg.get)
               }
@@ -153,7 +158,8 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
     logDebug("Broker thread finished...")
   }
 
-  def receiveMessageFromBackend(): (String, Option[String], Option[String], Option[Array[Byte]], Option[String]) = {
+  private def receiveMessageFromBackend()
+    : (String, Option[String], Option[String], Option[Array[Byte]], Option[String]) = {
     // FOR PROTOCOL SEE BOOK OReilly ZeroMQ Messaging for any applications 2013 ~page 100
     val workerAddr = backend.recv(NOFLAGS) // Received engine module identity frame
     val workerAddrStr = String(workerAddr)
@@ -188,7 +194,7 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
     (workerAddrStr, ready, clientIDStr, msg, pingHeartBeat)
   }
 
-  def receiveMessageFromFrontend(): (String, String, Array[Byte]) = {
+  private def receiveMessageFromFrontend(): (String, String, Array[Byte]) = {
     val clientAddr = frontend.recv()
     val clientAddrStr = String(clientAddr)
     logDebug("Broker frontend: received client's identity " + clientAddrStr)
@@ -204,7 +210,7 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
     (clientAddrStr, engineIdentityStr, request)
   }
 
-  def sendMessageToFrontend(clientIDStr: String, msg: Array[Byte]) = {
+  private def sendMessageToFrontend(clientIDStr: String, msg: Array[Byte]) = {
     logDebug(s"Broker backend : sending clientId $clientIDStr to frontend")
     frontend.send(clientIDStr.getBytes, ZMQ.SNDMORE)
     logDebug(s"Broker backend : sending empty frame to frontend")
@@ -213,10 +219,10 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
     frontend.send(msg)
   }
 
-  def sendMessageToBackend(logMessagePrefix: String,
-                           engineIdentityStr: String,
-                           clientAddrStr: String,
-                           request: Array[Byte]) = {
+  private def sendMessageToBackend(logMessagePrefix: String,
+                                   engineIdentityStr: String,
+                                   clientAddrStr: String,
+                                   request: Array[Byte]) = {
     logDebug(s"$logMessagePrefix: sending $engineIdentityStr from $clientAddrStr to backend")
     backend.send(engineIdentityStr.getBytes, ZMQ.SNDMORE)
     logDebug(s"$logMessagePrefix: sending epmpty frame to $engineIdentityStr from $clientAddrStr to backend")
@@ -229,7 +235,7 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
     backend.send(request, NOFLAGS)
   }
 
-  def sendMessageToBackend(logMessagePrefix: String, engineIdentityStr: String, request: Array[Byte]) = {
+  private def sendMessageToBackend(logMessagePrefix: String, engineIdentityStr: String, request: Array[Byte]) = {
     logDebug(s"$logMessagePrefix: sending $engineIdentityStr  to backend")
     backend.send(engineIdentityStr.getBytes, ZMQ.SNDMORE)
     logDebug(s"$logMessagePrefix: sending epmpty frame to $engineIdentityStr to backend")
@@ -238,7 +244,7 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
     backend.send(request, NOFLAGS)
   }
 
-  def sendStashedMessagesToBackendIfTheyAre(workerAddrStr: String) = {
+  private def sendStashedMessagesToBackendIfTheyAre(workerAddrStr: String): Unit = {
     logDebug(s"Broker: Check if there are stashed messages for our engine")
     enginesStashedMsgs.get(workerAddrStr) match
       case Some(messages) =>
@@ -256,8 +262,8 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
     end match
   }
 
-  def stashMessage(engineIdentityStr: String, clientAddrStr: String, request: Array[Byte]) = {
-    if enginesStashedMsgs.get(engineIdentityStr).isEmpty then
+  private def stashMessage(engineIdentityStr: String, clientAddrStr: String, request: Array[Byte]) = {
+    if !enginesStashedMsgs.contains(engineIdentityStr) then
       enginesStashedMsgs.put(engineIdentityStr, ListBuffer(StashedClientMessage(clientAddrStr, request)))
     else
       enginesStashedMsgs.get(engineIdentityStr) match

@@ -18,6 +18,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 import org.mixql.core.context.{EngineContext, gtype}
+import org.mixql.remote.messages.cluster.EngineStarted
 import org.mixql.remote.messages.{Message, module}
 import org.mixql.remote.messages.gtype.IGtypeMessage
 import org.mixql.remote.messages.module.worker.{
@@ -154,6 +155,21 @@ class ClientModule(clientName: String,
         throw new Exception(msg.msg)
   }
 
+  private def _sendMsg(msg: messages.Message): Unit = {
+    logDebug(
+      "server: Clientmodule " + clientName + " sending identity of remote module " + moduleName + " " +
+        client.send(moduleName.getBytes, ZMQ.SNDMORE)
+    )
+    logDebug(
+      "server: Clientmodule " + clientName + " sending empty frame to remote module " + moduleName + " " +
+        client.send("".getBytes, ZMQ.SNDMORE)
+    )
+    logDebug(
+      "server: Clientmodule " + clientName + " sending protobuf message to remote module " + moduleName + " " +
+        client.send(RemoteMessageConverter.toArray(msg), 0)
+    )
+  }
+
   private def sendMsg(msg: messages.Message): Unit = {
     import ClientModule.broker
     if !moduleStarted then
@@ -169,20 +185,11 @@ class ClientModule(clientName: String,
             .connect(s"tcp://${broker.getHost}:${broker.getPortFrontend}")
       )
       moduleStarted = true
+      logInfo(s" Clientmodule $clientName: notify broker about started engine " + moduleName)
+      _sendMsg(new EngineStarted(moduleName))
     end if
 
-    logDebug(
-      "server: Clientmodule " + clientName + " sending identity of remote module " + moduleName + " " +
-        client.send(moduleName.getBytes, ZMQ.SNDMORE)
-    )
-    logDebug(
-      "server: Clientmodule " + clientName + " sending empty frame to remote module " + moduleName + " " +
-        client.send("".getBytes, ZMQ.SNDMORE)
-    )
-    logDebug(
-      "server: Clientmodule " + clientName + " sending protobuf message to remote module " + moduleName + " " +
-        client.send(RemoteMessageConverter.toArray(msg), 0)
-    )
+    _sendMsg(msg)
   }
 
   private def recvMsg(): messages.Message = {

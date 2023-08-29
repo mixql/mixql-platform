@@ -41,7 +41,7 @@ object MixQlEnginePlatformDemo:
         "mixql-engine-stub",
         // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
         // in base path
-        Some("mixql-engine-stub"),
+        Some("mixql-engine-stub-test"),
         None,
         host,
         portFrontend,

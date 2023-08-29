@@ -4,6 +4,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.mixql.remote.messages.*;
+import org.mixql.remote.messages.cluster.EngineStarted;
 import org.mixql.remote.messages.module.*;
 import org.mixql.remote.messages.gtype.*;
 import org.mixql.remote.messages.module.Error;
@@ -205,6 +206,10 @@ public class RemoteMessageConverter {
                         (String) anyMsgJsonObject.get("name"),
                         _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("result"))
                 );
+            case "org.mixql.remote.messages.cluster.EngineStarted":
+                return new EngineStarted(
+                        (String) anyMsgJsonObject.get("engineName")
+                );
         }
         throw new Exception("_unpackAnyMsg: unknown anyMsgJsonObject" + anyMsgJsonObject);
     }
@@ -404,6 +409,11 @@ public class RemoteMessageConverter {
             return JsonUtils.buildInvokedFunctionResult(msgTmp.type(),
                     msgTmp.sender(), msgTmp.name, _toJsonObject(msgTmp.result)
             );
+        }
+
+        if (msg instanceof EngineStarted) {
+            EngineStarted msgTmp = ((EngineStarted) msg);
+            return JsonUtils.buildEngineStarted(msgTmp.type(), msgTmp.engineName);
         }
 
         throw new Exception("_toJsonObject Error. Unknown type of message " + msg);

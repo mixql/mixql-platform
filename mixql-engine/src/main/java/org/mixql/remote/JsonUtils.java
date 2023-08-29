@@ -13,6 +13,13 @@ class JsonUtils {
         return jsonObject;
     }
 
+    public static JSONObject buildEngineStarted(String type, String name) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("type", type);
+        jsonObject.put("engineName", name);
+        return jsonObject;
+    }
+
     public static JSONObject buildShutDown(String type) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);

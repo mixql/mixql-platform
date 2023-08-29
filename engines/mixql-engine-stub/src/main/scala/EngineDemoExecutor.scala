@@ -58,17 +58,8 @@ object EngineDemoExecutor extends IModuleExecutor {
       s"Executing function ${msg.name} with params " +
         msg.params.mkString("[", ",", "]")
     )
-    val res = org.mixql.engine.core.FunctionInvoker.invoke(
-      functions,
-      msg.name, {
-        val contexts: Map[String, Object] = Map(
-          "org.mixql.engine.core.PlatformContext" -> platformContext,
-          "org.mixql.engine.demo.StubContext" -> context
-        )
-        contexts
-      },
-      msg.params.toList
-    )
+    val res = org.mixql.engine.core.FunctionInvoker
+      .invoke(functions, msg.name, List[Object](platformContext, context), msg.params.toList)
     logInfo(s": Successfully executed function ${msg.name} ")
     res
   }

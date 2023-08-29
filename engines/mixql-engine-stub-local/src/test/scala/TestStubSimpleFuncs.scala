@@ -6,7 +6,15 @@ class TestStubSimpleFuncs extends AnyFunSuite {
   val engine = EngineStubLocal
 
   test("Invoke stub_simple_proc function") {
-    val res = gtype.unpack(engine.executeFunc("stub_simple_proc", null))
+    val res = gtype.unpack(
+      engine.executeFunc(
+        "stub_simple_proc",
+        null, {
+          val kwargs: Map[String, Object] = Map.empty
+          kwargs
+        }
+      )
+    )
     assert(res == "SUCCESS")
   }
 
@@ -15,7 +23,17 @@ class TestStubSimpleFuncs extends AnyFunSuite {
     val b = 5
 
     val res = {
-      gtype.unpack(engine.executeFunc("stub_simple_proc_params", null, gtype.pack(a), gtype.pack(b)))
+      gtype.unpack(
+        engine.executeFunc(
+          "stub_simple_proc_params",
+          null, {
+            val kwargs: Map[String, Object] = Map.empty
+            kwargs
+          },
+          gtype.pack(a),
+          gtype.pack(b)
+        )
+      )
     }
     assert(res == s"SUCCESS:$a:${b.toString}")
   }
@@ -28,7 +46,15 @@ class TestStubSimpleFuncs extends AnyFunSuite {
 
     val res = {
       gtype.unpack({
-        engine.executeFunc("stub_simple_proc_context_params", null, gtype.pack(a), gtype.pack(b))
+        engine.executeFunc(
+          "stub_simple_proc_context_params",
+          null, {
+            val kwargs: Map[String, Object] = Map.empty
+            kwargs
+          },
+          gtype.pack(a),
+          gtype.pack(b)
+        )
       })
     }
     assert(res == s"SUCCESS:${ctx.name}:$a:${b.toString}")

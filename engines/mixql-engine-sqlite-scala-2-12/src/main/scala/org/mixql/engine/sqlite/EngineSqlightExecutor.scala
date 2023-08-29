@@ -57,7 +57,8 @@ class EngineSqlightExecutor extends IModuleExecutor with java.lang.AutoCloseable
       s"Executing function ${msg.name} with params " +
         msg.params.mkString("[", ",", "]")
     )
-    val res = org.mixql.engine.core.FunctionInvoker.invoke(functions, msg.name, context, msg.params.toList)
+    val res = org.mixql.engine.core.FunctionInvoker
+      .invoke(functions, msg.name, List[Object](context, platformContext), msg.params.toList)
     logInfo(s": Successfully executed function ${msg.name} ")
     res
   }

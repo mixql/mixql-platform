@@ -33,11 +33,12 @@ class EngineSqlightLocal(dbPathParameter: Option[String] = None)
       logDebug(s"Init SQlightJDBC context")
       context = SQLightJDBC(name, ctx, dbPathParameter)
 
-  override def executeFuncImpl(name: String, ctx: EngineContext, params: Type*): Type = {
+  override def executeFuncImpl(name: String, ctx: EngineContext, kwargs: Map[String, Object], params: Type*): Type = {
     try
       logInfo(s"Started executing function $name")
       logDebug(s"Params provided for function $name : " + params.toString())
-      logDebug(s"Executing function $name with params " + params.toString)
+      logDebug(s"Executing function $name with params " + params.toString + "\n" +
+      "And named params: " + kwargs.mkString(","))
       initContextIfEmpty(ctx)
       Thread.sleep(1000)
       logInfo(s"Successfully executed function $name with params " + params.toString)

@@ -27,26 +27,14 @@ object EngineStubLocal extends Engine with IEngineLogger {
       "stub_simple_proc_context_params" -> StubSimpleProc.simple_func_context_params
     )
 
-  override def executeFuncImpl(name: String, ctx: EngineContext, params: Type*): Type = {
+  override def executeFuncImpl(name: String, ctx: EngineContext, kwargs: Map[String, Object], params: Type*): Type = {
     import org.mixql.core.context.gtype
     try
       logInfo(s"Started executing function $name")
       logDebug(s"Params provided for function $name : " + params.toString())
       logDebug(s"Executing function $name with params " + params.toString)
-      val res = FunctionInvoker.invoke(
-        functions,
-        name, {
-          val contexts: Map[String, Object] = Map(
-            "org.mixql.engine.stub.local.StubContext" -> StubContext(),
-            "org.mixql.core.context.EngineContext" -> ctx
-          )
-          contexts
-        },
-        params.map(p => gtype.unpack(p)).toList, {
-          val kwargs: Map[String, Object] = Map.empty
-          kwargs
-        }
-      )
+      val res = FunctionInvoker
+        .invoke(functions, name, List[Object](StubContext(), ctx), params.map(p => gtype.unpack(p)).toList, kwargs)
       logInfo(
         s" Successfully executed function $name with params " + params.toString +
           s"\nResult: $res"

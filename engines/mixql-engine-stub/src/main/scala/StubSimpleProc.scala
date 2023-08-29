@@ -5,8 +5,10 @@ import org.mixql.engine.core.PlatformContext
 import collection.mutable
 
 object StubSimpleProc {
+
   val simple_func =
     new (() => String) {
+
       override def apply(): String = {
         "SUCCESS"
       }
@@ -14,6 +16,7 @@ object StubSimpleProc {
 
   val simple_func_params =
     new ((String, Int) => String) {
+
       override def apply(a: String, b: Int): String = {
         s"SUCCESS:$a:${b.toString}"
       }
@@ -21,6 +24,7 @@ object StubSimpleProc {
 
   val simple_func_context_params =
     new ((StubContext, String, Int) => String) {
+
       override def apply(ctx: StubContext, a: String, b: Int): String = {
         s"SUCCESS:${ctx.name}:$a:${b.toString}"
       }
@@ -28,6 +32,7 @@ object StubSimpleProc {
 
   val simple_func_return_arr =
     new ((StubContext) => Array[Array[String]]) {
+
       override def apply(ctx: StubContext): Array[Array[String]] = {
         Array(
           Array("1", "Alfreds Futterkiste", "Maria Anders", "Obere Str. 57", "Berlin", "12209", "Germany"),
@@ -49,6 +54,7 @@ object StubSimpleProc {
 
   val execute_platform_func_in_stub_func =
     new ((PlatformContext, String) => String) {
+
       override def apply(ctx: PlatformContext, a: String): String = {
         val funcArgs = List(new string(a))
         s"SUCCESS:${ctx.invokeFunction("base64", funcArgs).asInstanceOf[string]}:$a"
@@ -57,6 +63,7 @@ object StubSimpleProc {
 
   val stub_simple_proc_context =
     new ((PlatformContext) => String) {
+
       override def apply(ctx: PlatformContext): String = {
         val filteredNames = ctx.getVarsNames().filter(p => p.startsWith("a."))
         val namesMap: mutable.Map[String, String] = mutable.Map()
@@ -68,6 +75,7 @@ object StubSimpleProc {
   // closure
   val execute_stub_func_using_platform_in_stub_func =
     new ((PlatformContext, String, Int) => String) {
+
       override def apply(ctx: PlatformContext, a: String, b: Int): String = {
         val funcArgs = List(new string(a), new gInt(b))
         s"CLOSURE:${ctx.invokeFunction("stub_simple_proc_context_params", funcArgs).asInstanceOf[string]}"
@@ -76,6 +84,7 @@ object StubSimpleProc {
 
   val simple_func_return_map =
     new ((StubContext) => Map[String, Map[String, String]]) {
+
       override def apply(ctx: StubContext): Map[String, Map[String, String]] = {
         Map(
           "1" -> Map(

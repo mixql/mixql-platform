@@ -239,7 +239,26 @@ Test / parallelExecution := false
 
 lazy val format = taskKey[Unit]("format src, test, sbt")
 
-format := {
-  scalafmtAll.value
-  (Compile / scalafmtSbt).value
-}
+val projects = inProjects(
+  mixQLPlatformDemo,
+  mixQLPlatformOozie,
+  mixQLOozie,
+  mixQLRepl,
+  mixQLCoreSCALA3,
+  mixQLEngineSqliteLocal,
+  mixQLEngineStubLocal,
+  mixQLEngineSqliteScala212,
+  mixQLEngineSqlite,
+  mixQLEngineStubScala212,
+  mixQLEngineStubScala213,
+  mixQLEngineStub,
+  mixQLCluster,
+  mixQLEngineSCALA3
+)
+
+format := Def.sequential(
+  scalafmtAll.all(ScopeFilter(projects, inConfigurations(Test, Compile))),
+  scalafmtSbt.all(ScopeFilter(projects, inConfigurations(Compile)))
+  //  scalafmtAll.value
+  //  (Compile / scalafmtSbt).value
+).value

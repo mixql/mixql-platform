@@ -12,9 +12,11 @@ package object logger {
   def logDebug(msg: String) = {
     log.debug("[mixql-cluster] " + msg)
   }
+
   def logWarn(msg: String) = {
     log.warn("[mixql-cluster] " + msg)
   }
+
   def logError(msg: String) = {
     log.error("[mixql-cluster] " + msg)
   }

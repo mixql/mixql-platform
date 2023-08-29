@@ -37,8 +37,10 @@ class EngineSqlightLocal(dbPathParameter: Option[String] = None)
     try
       logInfo(s"Started executing function $name")
       logDebug(s"Params provided for function $name : " + params.toString())
-      logDebug(s"Executing function $name with params " + params.toString + "\n" +
-      "And named params: " + kwargs.mkString(","))
+      logDebug(
+        s"Executing function $name with params " + params.toString + "\n" +
+          "And named params: " + kwargs.mkString(",")
+      )
       initContextIfEmpty(ctx)
       Thread.sleep(1000)
       logInfo(s"Successfully executed function $name with params " + params.toString)

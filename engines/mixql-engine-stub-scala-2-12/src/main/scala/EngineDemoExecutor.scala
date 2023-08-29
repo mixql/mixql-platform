@@ -10,6 +10,7 @@ import org.mixql.remote.messages.Message
 import _root_.scala.collection.immutable.Seq
 
 class EngineDemoExecutor extends IModuleExecutor {
+
   override def reactOnExecuteAsync(msg: Execute,
                                    identity: String,
                                    clientAddress: String,

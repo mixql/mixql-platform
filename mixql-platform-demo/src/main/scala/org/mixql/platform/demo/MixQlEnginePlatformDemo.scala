@@ -22,6 +22,7 @@ import org.mixql.repl.{TerminalApp, TerminalOps, WebTextIoExecutor}
 import scala.util.Try
 
 object MixQlEnginePlatformDemo:
+
   def main(args: Array[String]): Unit =
     logDebug("Mixql engine demo platform: parsing args")
     val (host, portFrontend, portBackend, homePath, sqlScriptFiles) = parseArgs(args.toList)
@@ -237,6 +238,7 @@ case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments):
     descr = "frontend port of platform's broker, client modules will connect to it",
     required = false
   ) // , default = Some(0))
+
   val portBackend = opt[Int](
     descr = "backend port of platform's broker, remote engines will connect to it",
     required = false

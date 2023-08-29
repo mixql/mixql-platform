@@ -5,6 +5,7 @@ import org.mixql.remote.RemoteMessageConverter
 import org.mixql.remote.messages.Message
 
 object FunctionInvoker {
+
   def invoke(functions: Map[String, Any],
              name: String,
              contexts: List[Object], // To support not only mixql-core context

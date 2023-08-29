@@ -1,4 +1,5 @@
 import org.mixql.remote.messages.Message
+
 class TestExecution extends MixqlEngineSqliteTest {
   import MixqlEngineSqliteTest.logger._
   behavior of "start engine, execute sql statements and close engine"

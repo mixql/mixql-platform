@@ -29,125 +29,136 @@ class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientAddress
   import logger._
 
   def setVar(key: String, value: Type): Unit = {
-    logInfo(s"[PlatformContext]: was asked to set variable $key in platform context")
-    logInfo(s"[PlatformContext]: sending request SetPlatformVar to platform")
-    workerSocket.send(
-      RemoteMessageConverter
-        .toArray(new SetPlatformVar(workersId, key, GtypeConverter.toGeneratedMsg(value), clientAddress))
-    )
+    this.synchronized {
+      logInfo(s"[PlatformContext]: was asked to set variable $key in platform context")
+      logInfo(s"[PlatformContext]: sending request SetPlatformVar to platform")
+      workerSocket.send(
+        RemoteMessageConverter
+          .toArray(new SetPlatformVar(workersId, key, GtypeConverter.toGeneratedMsg(value), clientAddress))
+      )
 
-    RemoteMessageConverter.unpackAnyMsgFromArray(workerSocket.recv()) match {
-      case _: PlatformVarWasSet => logInfo(s"[PlatformContext]: received answer PlatformVarWasSet from platform")
-      case m: messages.module.Error =>
-        val errorMsg = "[PlatformContext]: Received error while settingVar: " + m.msg
-        logError(errorMsg)
-        throw new Exception(errorMsg)
-      case m: messages.Message =>
-        val errorMsg = "[PlatformContext]: Received unexpected remote message on setVar request: " + m.`type`()
-        logError(errorMsg)
-        throw new Exception(errorMsg)
+      RemoteMessageConverter.unpackAnyMsgFromArray(workerSocket.recv()) match {
+        case _: PlatformVarWasSet => logInfo(s"[PlatformContext]: received answer PlatformVarWasSet from platform")
+        case m: messages.module.Error =>
+          val errorMsg = "[PlatformContext]: Received error while settingVar: " + m.msg
+          logError(errorMsg)
+          throw new Exception(errorMsg)
+        case m: messages.Message =>
+          val errorMsg = "[PlatformContext]: Received unexpected remote message on setVar request: " + m.`type`()
+          logError(errorMsg)
+          throw new Exception(errorMsg)
+      }
     }
   }
 
   def getVar(key: String): Type = {
-    logInfo(s"[PlatformContext]: was asked to get variable $key in platform context")
-    logInfo(s"[PlatformContext]: sending request GetPlatformVar to platform")
-    workerSocket.send(RemoteMessageConverter.toArray(new GetPlatformVar(workersId, key, clientAddress)))
-    RemoteMessageConverter.unpackAnyMsgFromArray(workerSocket.recv()) match {
-      case m: PlatformVar =>
-        logInfo(s"[PlatformContext]: received answer PlatformVar for variable ${m.name} from platform")
-        GtypeConverter.messageToGtype(m.msg)
-      case m: messages.module.Error =>
-        val errorMsg = "[PlatformContext]: Received error while gettingVar: " + m.msg
-        logError(errorMsg)
-        throw new Exception(errorMsg)
-      case m: messages.Message =>
-        val errorMsg = "[PlatformContext]: Received unexpected remote message on getVar request: " + m.`type`()
-        logError(errorMsg)
-        throw new Exception(errorMsg)
+    this.synchronized {
+      logInfo(s"[PlatformContext]: was asked to get variable $key in platform context")
+      logInfo(s"[PlatformContext]: sending request GetPlatformVar to platform")
+      workerSocket.send(RemoteMessageConverter.toArray(new GetPlatformVar(workersId, key, clientAddress)))
+      RemoteMessageConverter.unpackAnyMsgFromArray(workerSocket.recv()) match {
+        case m: PlatformVar =>
+          logInfo(s"[PlatformContext]: received answer PlatformVar for variable ${m.name} from platform")
+          GtypeConverter.messageToGtype(m.msg)
+        case m: messages.module.Error =>
+          val errorMsg = "[PlatformContext]: Received error while gettingVar: " + m.msg
+          logError(errorMsg)
+          throw new Exception(errorMsg)
+        case m: messages.Message =>
+          val errorMsg = "[PlatformContext]: Received unexpected remote message on getVar request: " + m.`type`()
+          logError(errorMsg)
+          throw new Exception(errorMsg)
+
+      }
     }
   }
 
   def getVars(keys: List[String]): mutable.Map[String, Type] = {
-    logInfo(s"[PlatformContext]: was asked to get variables ${keys.mkString(",")} in platform context")
-    logInfo(s"[PlatformContext]: sending request GetPlatformVars to platform")
-    workerSocket.send(RemoteMessageConverter.toArray(new GetPlatformVars(workersId, keys.toArray, clientAddress)))
+    this.synchronized {
+      logInfo(s"[PlatformContext]: was asked to get variables ${keys.mkString(",")} in platform context")
+      logInfo(s"[PlatformContext]: sending request GetPlatformVars to platform")
+      workerSocket.send(RemoteMessageConverter.toArray(new GetPlatformVars(workersId, keys.toArray, clientAddress)))
 
-    RemoteMessageConverter.unpackAnyMsgFromArray(workerSocket.recv()) match {
-      case m: PlatformVars =>
-        logInfo(
-          s"[PlatformContext]: received answer PlatformVars with variables ${m.vars.map(p => p.name).mkString(",")} from platform"
-        )
+      RemoteMessageConverter.unpackAnyMsgFromArray(workerSocket.recv()) match {
+        case m: PlatformVars =>
+          logInfo(
+            s"[PlatformContext]: received answer PlatformVars with variables ${m.vars.map(p => p.name).mkString(",")} from platform"
+          )
 
-        val vars: mutable.Map[String, Type] = mutable.Map()
+          val vars: mutable.Map[String, Type] = mutable.Map()
 
-        m.vars.foreach(param => vars.put(param.name, GtypeConverter.messageToGtype(param.msg)))
-        vars
-      case m: messages.module.Error =>
-        val errorMsg = "[PlatformContext]: Received error while gettingVars: " + m.msg
-        logError(errorMsg)
-        throw new Exception(errorMsg)
-      case m: messages.Message =>
-        val errorMsg =
-          "[PlatformContext]: Received unexpected remote message on GetPlatformVars request: " +
-            m.`type`()
-        logError(errorMsg)
-        throw new Exception(errorMsg)
+          m.vars.foreach(param => vars.put(param.name, GtypeConverter.messageToGtype(param.msg)))
+          vars
+        case m: messages.module.Error =>
+          val errorMsg = "[PlatformContext]: Received error while gettingVars: " + m.msg
+          logError(errorMsg)
+          throw new Exception(errorMsg)
+        case m: messages.Message =>
+          val errorMsg =
+            "[PlatformContext]: Received unexpected remote message on GetPlatformVars request: " +
+              m.`type`()
+          logError(errorMsg)
+          throw new Exception(errorMsg)
+      }
     }
   }
 
   def setVars(vars: Map[String, Type]): Unit = {
-    import collection.JavaConverters._
-    logInfo(s"[PlatformContext]: was asked to set variables ${vars.keys.mkString(",")} in platform context")
-    logInfo(s"[PlatformContext]: sending request SetPlatformVars to platform")
-    workerSocket.send(
-      RemoteMessageConverter.toArray(
-        new SetPlatformVars(
-          workersId,
-          vars.map(tuple => tuple._1 -> GtypeConverter.toGeneratedMsg(tuple._2)).asJava,
-          clientAddress
+    this.synchronized {
+      import collection.JavaConverters._
+      logInfo(s"[PlatformContext]: was asked to set variables ${vars.keys.mkString(",")} in platform context")
+      logInfo(s"[PlatformContext]: sending request SetPlatformVars to platform")
+      workerSocket.send(
+        RemoteMessageConverter.toArray(
+          new SetPlatformVars(
+            workersId,
+            vars.map(tuple => tuple._1 -> GtypeConverter.toGeneratedMsg(tuple._2)).asJava,
+            clientAddress
+          )
         )
       )
-    )
 
-    RemoteMessageConverter.unpackAnyMsgFromArray(workerSocket.recv()) match {
-      case m: PlatformVarsWereSet =>
-        logInfo(
-          s"[PlatformContext]: received answer PlatformVarsWereSet with variables ${m.names.toArray().mkString(",")} from platform"
-        )
-      case m: messages.module.Error =>
-        val errorMsg = "[PlatformContext]: Received error while settingVars: " + m.msg
-        logError(errorMsg)
-        throw new Exception(errorMsg)
-      case m: messages.Message =>
-        val errorMsg =
-          "[PlatformContext]: Received unexpected remote message on SetPlatformVars request: " +
-            m.`type`()
-        logError(errorMsg)
-        throw new Exception(errorMsg)
+      RemoteMessageConverter.unpackAnyMsgFromArray(workerSocket.recv()) match {
+        case m: PlatformVarsWereSet =>
+          logInfo(
+            s"[PlatformContext]: received answer PlatformVarsWereSet with variables ${m.names.toArray().mkString(",")} from platform"
+          )
+        case m: messages.module.Error =>
+          val errorMsg = "[PlatformContext]: Received error while settingVars: " + m.msg
+          logError(errorMsg)
+          throw new Exception(errorMsg)
+        case m: messages.Message =>
+          val errorMsg =
+            "[PlatformContext]: Received unexpected remote message on SetPlatformVars request: " +
+              m.`type`()
+          logError(errorMsg)
+          throw new Exception(errorMsg)
+      }
     }
   }
 
   def getVarsNames(): List[String] = {
-    logInfo(s"[PlatformContext]: was asked to get vars names in platform context")
-    logInfo(s"[PlatformContext]: sending request GetPlatformVarsNames to platform")
-    workerSocket.send(RemoteMessageConverter.toArray(new GetPlatformVarsNames(workersId, clientAddress)))
+    this.synchronized {
+      logInfo(s"[PlatformContext]: was asked to get vars names in platform context")
+      logInfo(s"[PlatformContext]: sending request GetPlatformVarsNames to platform")
+      workerSocket.send(RemoteMessageConverter.toArray(new GetPlatformVarsNames(workersId, clientAddress)))
 
-    RemoteMessageConverter.unpackAnyMsgFromArray(workerSocket.recv()) match {
-      case m: PlatformVarsNames =>
-        val res = m.names.toList
-        logInfo(s"[PlatformContext]: received answer PlatformVarsNames with names ${res.mkString(",")} from platform")
-        res
-      case m: messages.module.Error =>
-        val errorMsg = "[PlatformContext]: Received error while settingVars: " + m.msg
-        logError(errorMsg)
-        throw new Exception(errorMsg)
-      case m: messages.Message =>
-        val errorMsg =
-          "[PlatformContext]: Received unexpected remote message on SetPlatformVars request: " +
-            m.`type`()
-        logError(errorMsg)
-        throw new Exception(errorMsg)
+      RemoteMessageConverter.unpackAnyMsgFromArray(workerSocket.recv()) match {
+        case m: PlatformVarsNames =>
+          val res = m.names.toList
+          logInfo(s"[PlatformContext]: received answer PlatformVarsNames with names ${res.mkString(",")} from platform")
+          res
+        case m: messages.module.Error =>
+          val errorMsg = "[PlatformContext]: Received error while settingVars: " + m.msg
+          logError(errorMsg)
+          throw new Exception(errorMsg)
+        case m: messages.Message =>
+          val errorMsg =
+            "[PlatformContext]: Received unexpected remote message on SetPlatformVars request: " +
+              m.`type`()
+          logError(errorMsg)
+          throw new Exception(errorMsg)
+      }
     }
   }
 
@@ -160,33 +171,35 @@ class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientAddress
     *   arguments for function
     */
   def invokeFunction(funcName: String, args: List[Type] = Nil): Type = {
-    logInfo(s"[PlatformContext]: was asked to invoke function $funcName using platform context")
-    logInfo(s"[PlatformContext]: sending request InvokeFunction to platform")
-    workerSocket.send(
-      RemoteMessageConverter.toArray(
-        new InvokeFunction(
-          workersId,
-          funcName,
-          args.map(arg => GtypeConverter.toGeneratedMsg(arg)).toArray,
-          clientAddress
+    this.synchronized {
+      logInfo(s"[PlatformContext]: was asked to invoke function $funcName using platform context")
+      logInfo(s"[PlatformContext]: sending request InvokeFunction to platform")
+      workerSocket.send(
+        RemoteMessageConverter.toArray(
+          new InvokeFunction(
+            workersId,
+            funcName,
+            args.map(arg => GtypeConverter.toGeneratedMsg(arg)).toArray,
+            clientAddress
+          )
         )
       )
-    )
 
-    RemoteMessageConverter.unpackAnyMsgFromArray(workerSocket.recv()) match {
-      case m: InvokedFunctionResult =>
-        logInfo(s"[PlatformContext]: received answer InvokedFunctionResult of function ${m.name} from platform")
-        GtypeConverter.messageToGtype(m.result)
-      case m: messages.module.Error =>
-        val errorMsg = s"[PlatformContext]: Received error while invoking function ${funcName}: " + m.msg
-        logError(errorMsg)
-        throw new Exception(errorMsg)
-      case m: messages.Message =>
-        val errorMsg =
-          s"[PlatformContext]: Received unexpected remote message on invoking function ${funcName}: " +
-            m.`type`()
-        logError(errorMsg)
-        throw new Exception(errorMsg)
+      RemoteMessageConverter.unpackAnyMsgFromArray(workerSocket.recv()) match {
+        case m: InvokedFunctionResult =>
+          logInfo(s"[PlatformContext]: received answer InvokedFunctionResult of function ${m.name} from platform")
+          GtypeConverter.messageToGtype(m.result)
+        case m: messages.module.Error =>
+          val errorMsg = s"[PlatformContext]: Received error while invoking function ${funcName}: " + m.msg
+          logError(errorMsg)
+          throw new Exception(errorMsg)
+        case m: messages.Message =>
+          val errorMsg =
+            s"[PlatformContext]: Received unexpected remote message on invoking function ${funcName}: " +
+              m.`type`()
+          logError(errorMsg)
+          throw new Exception(errorMsg)
+      }
     }
   }
 }

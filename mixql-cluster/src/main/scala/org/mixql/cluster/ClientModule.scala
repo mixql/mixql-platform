@@ -157,37 +157,41 @@ class ClientModule(clientName: String,
   }
 
   private def sendMsg(msg: messages.Message): Unit = {
-    if !moduleStarted then
-      if !BrokerModule.wasStarted then startBroker()
-      startModuleClient()
-      ctx = ZMQ.context(1)
-      client = ctx.socket(SocketType.REQ)
-      // set id for client
-      client.setIdentity(clientName.getBytes)
-      logInfo(
-        "server: Clientmodule " + clientName + " connected to " +
-          s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPortFrontend.get} " + client
-            .connect(s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPortFrontend.get}")
-      )
-      moduleStarted = true
-    end if
+    this.synchronized {
+      if !moduleStarted then
+        if !BrokerModule.wasStarted then startBroker()
+        startModuleClient()
+        ctx = ZMQ.context(1)
+        client = ctx.socket(SocketType.REQ)
+        // set id for client
+        client.setIdentity(clientName.getBytes)
+        logInfo(
+          "server: Clientmodule " + clientName + " connected to " +
+            s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPortFrontend.get} " + client
+              .connect(s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPortFrontend.get}")
+        )
+        moduleStarted = true
+      end if
 
-    logDebug(
-      "server: Clientmodule " + clientName + " sending identity of remote module " + moduleName + " " +
-        client.send(moduleName.getBytes, ZMQ.SNDMORE)
-    )
-    logDebug(
-      "server: Clientmodule " + clientName + " sending empty frame to remote module " + moduleName + " " +
-        client.send("".getBytes, ZMQ.SNDMORE)
-    )
-    logDebug(
-      "server: Clientmodule " + clientName + " sending protobuf message to remote module " + moduleName + " " +
-        client.send(RemoteMessageConverter.toArray(msg), 0)
-    )
+      logDebug(
+        "server: Clientmodule " + clientName + " sending identity of remote module " + moduleName + " " +
+          client.send(moduleName.getBytes, ZMQ.SNDMORE)
+      )
+      logDebug(
+        "server: Clientmodule " + clientName + " sending empty frame to remote module " + moduleName + " " +
+          client.send("".getBytes, ZMQ.SNDMORE)
+      )
+      logDebug(
+        "server: Clientmodule " + clientName + " sending protobuf message to remote module " + moduleName + " " +
+          client.send(RemoteMessageConverter.toArray(msg), 0)
+      )
+    }
   }
 
   private def recvMsg(): messages.Message = {
-    RemoteMessageConverter.unpackAnyMsgFromArray(client.recv(0))
+    this.synchronized {
+      RemoteMessageConverter.unpackAnyMsgFromArray(client.recv(0))
+    }
   }
 
   private def startBroker() = {

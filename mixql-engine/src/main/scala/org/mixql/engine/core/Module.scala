@@ -454,7 +454,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
         //          scala.concurrent.ExecutionContext.global
         Await.result(
           Future {
-            ctx.term()
+            ctx.close()
           },
           scala.concurrent.duration.Duration(5000, "millis")
         )

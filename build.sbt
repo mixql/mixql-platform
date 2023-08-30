@@ -230,16 +230,33 @@ lazy val archiveMixQLPlatformOozie = taskKey[Unit]("Create dist archive of platf
 archiveMixQLPlatformOozie := Def
   .sequential(mixQLPlatformOozie / Universal / packageBin, mixQLPlatformOozie / Universal / packageZipTarball).value
 
+val projectsTest = inProjects(
+  mixQLPlatformDemo,
+  mixQLPlatformOozie,
+  mixQLOozie,
+  mixQLRepl,
+//  mixQLCoreSCALA3,
+  mixQLEngineSqliteLocal,
+  mixQLEngineStubLocal,
+  mixQLEngineSqliteScala212,
+  mixQLEngineSqlite,
+  mixQLEngineStubScala212,
+  mixQLEngineStubScala213,
+  mixQLEngineStub,
+  mixQLCluster,
+  mixQLEngineSCALA3
+)
+
 Test / test := Def.sequential(
 //  test in Test,
-  test.all(ScopeFilter(inProjects(mixQLPlatformDemo), inConfigurations(Test)))
+  test.all(ScopeFilter(projectsTest, inConfigurations(Test)))
 ).value
 
 Test / parallelExecution := false
 
 lazy val format = taskKey[Unit]("format src, test, sbt")
 
-val projects = inProjects(
+val projectsFormat = inProjects(
   mixQLPlatformDemo,
   mixQLPlatformOozie,
   mixQLOozie,
@@ -257,8 +274,8 @@ val projects = inProjects(
 )
 
 format := Def.sequential(
-  scalafmtAll.all(ScopeFilter(projects, inConfigurations(Test, Compile))),
-  scalafmtSbt.all(ScopeFilter(projects, inConfigurations(Compile)))
+  scalafmtAll.all(ScopeFilter(projectsFormat, inConfigurations(Test, Compile))),
+  scalafmtSbt.all(ScopeFilter(projectsFormat, inConfigurations(Compile)))
   //  scalafmtAll.value
   //  (Compile / scalafmtSbt).value
 ).value

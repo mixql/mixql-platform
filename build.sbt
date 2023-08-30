@@ -94,18 +94,9 @@ lazy val mixQLCluster = project.in(file("mixql-cluster")).dependsOn(mixQLEngineS
 lazy val mixQLEngineStub = project.in(file("engines/mixql-engine-stub")).dependsOn(mixQLEngineSCALA3)
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
 
-lazy val mixQLEngineStubScala213 = project.in(file("engines/mixql-engine-stub-scala-2-13"))
-  .dependsOn(mixQLEngineSCALA213).enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
-
-lazy val mixQLEngineStubScala212 = project.in(file("engines/mixql-engine-stub-scala-2-12"))
-  .dependsOn(mixQLEngineSCALA212).enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
-
 lazy val mixQLEngineSqlite = project.in(file("engines/mixql-engine-sqlite"))
   .dependsOn(mixQLEngineSCALA3 % "compile->compile;compile->test;test->test;")
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
-
-lazy val mixQLEngineSqliteScala212 = project.in(file("engines/mixql-engine-sqlite-scala-2-12"))
-  .dependsOn(mixQLEngineSCALA212).enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
 
 lazy val stageEnginesDemo = taskKey[Seq[(File, String)]]("stage engines and get jars for mixqlPlatformDemo")
 
@@ -130,16 +121,7 @@ lazy val mixQLPlatformDemo = project.in(file("mixql-platform-demo"))
     var cache: Seq[(File, String)] = Seq()
     (mixQLEngineStub / Universal / stage).value
     (mixQLEngineSqlite / Universal / stage).value
-    (mixQLEngineSqliteScala212 / Universal / stage).value
-    (mixQLEngineStubScala213 / Universal / stage).value
-    (mixQLEngineStubScala212 / Universal / stage).value
-    val baseDirs = Seq(
-      (mixQLEngineStub / baseDirectory).value,
-      (mixQLEngineSqlite / baseDirectory).value,
-      (mixQLEngineSqliteScala212 / baseDirectory).value,
-      (mixQLEngineStubScala213 / baseDirectory).value,
-      (mixQLEngineStubScala212 / baseDirectory).value
-    )
+    val baseDirs = Seq((mixQLEngineStub / baseDirectory).value, (mixQLEngineSqlite / baseDirectory).value)
 
     baseDirs.foreach(baseDir => {
       cache =
@@ -238,10 +220,7 @@ val projectsTest = inProjects(
 //  mixQLCoreSCALA3,
   mixQLEngineSqliteLocal,
   mixQLEngineStubLocal,
-  mixQLEngineSqliteScala212,
   mixQLEngineSqlite,
-  mixQLEngineStubScala212,
-  mixQLEngineStubScala213,
   mixQLEngineStub,
   mixQLCluster,
   mixQLEngineSCALA3
@@ -264,10 +243,7 @@ val projectsFormat = inProjects(
   mixQLCoreSCALA3,
   mixQLEngineSqliteLocal,
   mixQLEngineStubLocal,
-  mixQLEngineSqliteScala212,
   mixQLEngineSqlite,
-  mixQLEngineStubScala212,
-  mixQLEngineStubScala213,
   mixQLEngineStub,
   mixQLCluster,
   mixQLEngineSCALA3

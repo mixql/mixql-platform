@@ -1,23 +1,11 @@
 package org.mixql.engine.core
 
 import com.github.nscala_time.time.Imports.{DateTime, richReadableInstant, richReadableInterval}
-import org.mixql.engine.core.Module.workerPoller
 import org.mixql.engine.core.logger.ModuleLogger
 import org.zeromq.{SocketType, ZMQ}
 import org.mixql.remote.messages.gtype.NULL
 import org.mixql.remote.messages.module.{Execute, ExecuteFunction, GetDefinedFunctions, ParamChanged, ShutDown}
-import org.mixql.remote.messages.module.worker.{
-  IWorkerSendToPlatform,
-  IWorkerSender,
-  InvokedFunctionResult,
-  PlatformVar,
-  PlatformVarWasSet,
-  PlatformVars,
-  PlatformVarsNames,
-  PlatformVarsWereSet,
-  SendMsgToPlatform,
-  WorkerFinished
-}
+import org.mixql.remote.messages.module.worker.{IWorkerSendToPlatform, IWorkerSender, SendMsgToPlatform, WorkerFinished}
 import org.mixql.remote.RemoteMessageConverter
 import org.mixql.remote.messages.Message
 
@@ -28,99 +16,12 @@ import scala.language.postfixOps
 import scala.util.Random
 import org.mixql.remote.messages
 
-object Module {
+class Module(executor: IModuleExecutor, identity: String, host: String, port: Int)(implicit logger: ModuleLogger) {
+
   var ctx: ZMQ.Context = null
   implicit var server: ZMQ.Socket = null
   var poller: ZMQ.Poller = null
   var workerPoller: ZMQ.Poller = null
-
-  def sendMsgToServerBroker(msg: Array[Byte], clientAddress: Array[Byte], logger: ModuleLogger): Boolean = {
-    // Sending multipart message
-    import logger._
-    logDebug(s"sendMsgToServerBroker: sending empty frame")
-    server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
-    logDebug(s"sendMsgToServerBroker: sending clientaddress")
-    server.send(clientAddress, ZMQ.SNDMORE) // First send address frame
-    logDebug(s"sendMsgToServerBroker: sending empty frame")
-    server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
-    logDebug(s"sendMsgToServerBroker: sending message")
-    server.send(msg)
-  }
-
-  def sendMsgToServerBroker(msg: String, logger: ModuleLogger): Boolean = {
-    import logger._
-    logDebug(s"sendMsgToServerBroker: convert msg of type String to Array of bytes")
-    logDebug(s"sending empty frame")
-    server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
-    logDebug(s"Send msg to server ")
-    server.send(msg.getBytes())
-  }
-
-  def sendMsgToServerBroker(msg: Message, clientAddress: Array[Byte], logger: ModuleLogger): Boolean = {
-    import logger._
-    logDebug(s"sendMsgToServerBroker: convert msg of type Protobuf to Array of bytes")
-    sendMsgToServerBroker(RemoteMessageConverter.toArray(msg), clientAddress, logger)
-  }
-
-  def readMsgFromServerBroker(logger: ModuleLogger): (Array[Byte], Option[Array[Byte]], Option[String]) = {
-    import logger._
-    // FOR PROTOCOL SEE BOOK OReilly ZeroMQ Messaging for any applications 2013 ~page 100
-    // From server broker messenger we get msg with such body:
-    // identity frame
-    // empty frame --> delimiter
-    // data ->
-    if (server.recv(0) == null)
-      throw new BrakeException() // empty frame
-    logDebug(s"readMsgFromServerBroker: received empty frame")
-
-    val clientAdrress = server.recv(0) // Identity of client object on server
-    // or pong-heartbeat from broker
-    if (clientAdrress == null)
-      throw new BrakeException()
-
-    var msg: Option[Array[Byte]] = None
-
-    var pongHeartMessage: Option[String] = Some(new String(clientAdrress))
-    if (pongHeartMessage.get != "PONG-HEARTBEAT") {
-      pongHeartMessage = None
-
-      logDebug(s"readMsgFromServerBroker: got client address: " + new String(clientAdrress))
-
-      if (server.recv(0) == null)
-        throw new BrakeException() // empty frame
-      logDebug(s"readMsgFromServerBroker: received empty frame")
-
-      logDebug(s"have received message from server ${new String(clientAdrress)}")
-      msg = Some(server.recv(0))
-    }
-
-    (clientAdrress, msg, pongHeartMessage)
-  }
-
-  // key -> workers unique name
-  // int -> poll in index of pair to communicate with this worker
-  val workersMap: mutable.Map[String, ZMQ.Socket] = mutable.Map()
-  val r: Random.type = scala.util.Random
-
-  def generateUnusedWorkersName(): String = {
-    val numPattern = "[0-9]+".r
-    val ids = workersMap.keys.map(name => numPattern.findFirstIn(name).get.toInt)
-
-    var foundUniqueId = false
-    var id = -1;
-    while (!foundUniqueId) {
-      id = r.nextInt().abs
-      ids.find(p => p == id) match {
-        case Some(_) =>
-        case None    => foundUniqueId = true
-      }
-    }
-    s"worker$id"
-  }
-
-}
-
-class Module(executor: IModuleExecutor, identity: String, host: String, port: Int)(implicit logger: ModuleLogger) {
 
   val pollerTimeout: Long = 1000
   val workerPollerTimeout: Long = 1500
@@ -130,7 +31,6 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
   var brokerClientAdress: Array[Byte] = Array()
 
   import logger._
-  import Module._
 
   def startServer(): Unit = {
     logInfo(s"Starting main client")
@@ -427,6 +327,90 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
     }
   }
 
+  def sendMsgToServerBroker(msg: Array[Byte], clientAddress: Array[Byte], logger: ModuleLogger): Boolean = {
+    // Sending multipart message
+    import logger._
+    logDebug(s"sendMsgToServerBroker: sending empty frame")
+    server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
+    logDebug(s"sendMsgToServerBroker: sending clientaddress")
+    server.send(clientAddress, ZMQ.SNDMORE) // First send address frame
+    logDebug(s"sendMsgToServerBroker: sending empty frame")
+    server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
+    logDebug(s"sendMsgToServerBroker: sending message")
+    server.send(msg)
+  }
+
+  def sendMsgToServerBroker(msg: String, logger: ModuleLogger): Boolean = {
+    import logger._
+    logDebug(s"sendMsgToServerBroker: convert msg of type String to Array of bytes")
+    logDebug(s"sending empty frame")
+    server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
+    logDebug(s"Send msg to server ")
+    server.send(msg.getBytes())
+  }
+
+  def sendMsgToServerBroker(msg: Message, clientAddress: Array[Byte], logger: ModuleLogger): Boolean = {
+    import logger._
+    logDebug(s"sendMsgToServerBroker: convert msg of type Protobuf to Array of bytes")
+    sendMsgToServerBroker(RemoteMessageConverter.toArray(msg), clientAddress, logger)
+  }
+
+  def readMsgFromServerBroker(logger: ModuleLogger): (Array[Byte], Option[Array[Byte]], Option[String]) = {
+    import logger._
+    // FOR PROTOCOL SEE BOOK OReilly ZeroMQ Messaging for any applications 2013 ~page 100
+    // From server broker messenger we get msg with such body:
+    // identity frame
+    // empty frame --> delimiter
+    // data ->
+    if (server.recv(0) == null)
+      throw new BrakeException() // empty frame
+    logDebug(s"readMsgFromServerBroker: received empty frame")
+
+    val clientAdrress = server.recv(0) // Identity of client object on server
+    // or pong-heartbeat from broker
+    if (clientAdrress == null)
+      throw new BrakeException()
+
+    var msg: Option[Array[Byte]] = None
+
+    var pongHeartMessage: Option[String] = Some(new String(clientAdrress))
+    if (pongHeartMessage.get != "PONG-HEARTBEAT") {
+      pongHeartMessage = None
+
+      logDebug(s"readMsgFromServerBroker: got client address: " + new String(clientAdrress))
+
+      if (server.recv(0) == null)
+        throw new BrakeException() // empty frame
+      logDebug(s"readMsgFromServerBroker: received empty frame")
+
+      logDebug(s"have received message from server ${new String(clientAdrress)}")
+      msg = Some(server.recv(0))
+    }
+
+    (clientAdrress, msg, pongHeartMessage)
+  }
+
+  // key -> workers unique name
+  // int -> poll in index of pair to communicate with this worker
+  val workersMap: mutable.Map[String, ZMQ.Socket] = mutable.Map()
+  val r: Random.type = scala.util.Random
+
+  def generateUnusedWorkersName(): String = {
+    val numPattern = "[0-9]+".r
+    val ids = workersMap.keys.map(name => numPattern.findFirstIn(name).get.toInt)
+
+    var foundUniqueId = false
+    var id = -1;
+    while (!foundUniqueId) {
+      id = r.nextInt().abs
+      ids.find(p => p == id) match {
+        case Some(_) =>
+        case None    => foundUniqueId = true
+      }
+    }
+    s"worker$id"
+  }
+
   def close(): Unit = {
     import scala.util.Try
     Try(if (server != null) {
@@ -455,12 +439,12 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
         logInfo(s"finally close context")
         //        implicit val ec: scala.concurrent.ExecutionContext =
         //          scala.concurrent.ExecutionContext.global
-        Await.result(
-          Future {
-            ctx.close()
-          },
-          scala.concurrent.duration.Duration(5000, "millis")
-        )
+//        Await.result(
+//          Future {
+        ctx.close()
+//          },
+//          scala.concurrent.duration.Duration(5000, "millis")
+//        )
       }
     } catch {
       case _: Throwable => logError(s"tiemout of closing context exceeded:(")

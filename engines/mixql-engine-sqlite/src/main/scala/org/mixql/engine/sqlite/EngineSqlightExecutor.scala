@@ -8,9 +8,9 @@ import org.mixql.remote.messages.gtype.Bool
 import org.mixql.remote.messages.module.{DefinedFunctions, Execute, ExecuteFunction, ParamChanged}
 import org.mixql.remote.messages.{Message, gtype}
 
-object EngineSqlightExecutor extends IModuleExecutor with java.lang.AutoCloseable:
+object EngineSqlightExecutor extends IModuleExecutor:
 
-  var context: SQLightJDBC = null
+//  var context: SQLightJDBC = null
 
   def functions: Map[String, Any] =
     Map(
@@ -25,14 +25,18 @@ object EngineSqlightExecutor extends IModuleExecutor with java.lang.AutoCloseabl
                                    logger: ModuleLogger,
                                    platformContext: PlatformContext): Message = {
     import logger._
-    if context == null then context = SQLightJDBC(identity, platformContext)
-    logInfo(s"Received Execute msg from server statement: ${msg.statement}")
-    logDebug(s"Executing command ${msg.statement}")
-    //        Thread.sleep(1000)
-    val res = context.execute(msg.statement)
-    logInfo(s"Successfully executed command ${msg.statement}")
-    logDebug(s"Sending reply on Execute msg " + res.getClass.getName)
-    res
+    val context = new SQLightJDBC(identity, platformContext)
+    try {
+      logInfo(s"Received Execute msg from server statement: ${msg.statement}")
+      logDebug(s"Executing command ${msg.statement}")
+      //        Thread.sleep(1000)
+      val res = context.execute(msg.statement)
+      logInfo(s"Successfully executed command ${msg.statement}")
+      logDebug(s"Sending reply on Execute msg " + res.getClass.getName)
+      res
+    } finally {
+      context.close()
+    }
   }
 
   override def reactOnParamChangedAsync(msg: ParamChanged,
@@ -49,17 +53,21 @@ object EngineSqlightExecutor extends IModuleExecutor with java.lang.AutoCloseabl
                                            clientAddress: String,
                                            logger: ModuleLogger,
                                            platformContext: PlatformContext): Message = {
-    if context == null then context = SQLightJDBC(identity, platformContext)
-    import logger._
-    logDebug(s"Started executing function ${msg.name}")
-    logInfo(
-      s"Executing function ${msg.name} with params " +
-        msg.params.mkString("[", ",", "]")
-    )
-    val res = org.mixql.engine.core.FunctionInvoker
-      .invoke(functions, msg.name, List[Object](context, platformContext), msg.params.toList)
-    logInfo(s": Successfully executed function ${msg.name} ")
-    res
+    val context = new SQLightJDBC(identity, platformContext)
+    try {
+      import logger._
+      logDebug(s"Started executing function ${msg.name}")
+      logInfo(
+        s"Executing function ${msg.name} with params " +
+          msg.params.mkString("[", ",", "]")
+      )
+      val res = org.mixql.engine.core.FunctionInvoker
+        .invoke(functions, msg.name, List[Object](context, platformContext), msg.params.toList)
+      logInfo(s": Successfully executed function ${msg.name} ")
+      res
+    } finally {
+      context.close()
+    }
   }
 
   override def reactOnGetDefinedFunctions(identity: String,
@@ -74,4 +82,4 @@ object EngineSqlightExecutor extends IModuleExecutor with java.lang.AutoCloseabl
 
   override def reactOnShutDown(identity: String, clientAddress: String, logger: ModuleLogger): Unit = {}
 
-  override def close(): Unit = if context != null then context.close()
+//  override def close(): Unit = if context != null then context.close()

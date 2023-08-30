@@ -34,5 +34,5 @@ class MixqlEngineSqliteTest(dbPathParameter: Option[String] = None) extends AnyF
 
   after {
     context.close()
-    SQLightJDBC.c = null
+    context = null
   }

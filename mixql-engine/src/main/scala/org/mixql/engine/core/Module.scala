@@ -1,6 +1,7 @@
 package org.mixql.engine.core
 
 import com.github.nscala_time.time.Imports.{DateTime, richReadableInstant, richReadableInterval}
+import org.mixql.engine.core.Module.workerPoller
 import org.mixql.engine.core.logger.ModuleLogger
 import org.zeromq.{SocketType, ZMQ}
 import org.mixql.remote.messages.gtype.NULL
@@ -121,7 +122,9 @@ object Module {
 
 class Module(executor: IModuleExecutor, identity: String, host: String, port: Int)(implicit logger: ModuleLogger) {
 
-  val heartBeatInterval: Long = 3000
+  val pollerTimeout: Long = 1000
+  val workerPollerTimeout: Long = 1500
+  val heartBeatInterval: Long = 6500
   var processStart: DateTime = null
   var liveness: Int = 3
   var brokerClientAdress: Array[Byte] = Array()
@@ -161,10 +164,10 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
       sendMsgToServerBroker("READY", logger)
 
       while (true) {
-        val rc = poller.poll(heartBeatInterval)
+        val rc = poller.poll(pollerTimeout)
         var rcWorkers = -1;
         if (workerPoller.getSize != 0)
-          rcWorkers = workerPoller.poll(heartBeatInterval)
+          rcWorkers = workerPoller.poll(workerPollerTimeout)
         //        if (rc == 1) throw BrakeException()
         if (poller.pollin(serverPollInIndex)) {
           logDebug("Setting processStart for timer, as message was received")

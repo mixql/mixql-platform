@@ -113,17 +113,17 @@ trait MixQLClusterTest extends FunSuite {
       override def afterEach(context: AfterEach): Unit = {
         // Always gets called, even if test failed.
         logInfo("afterEach: triggering afterEach")
-        logInfo("afterEach: sending shutdowns to clients")
+//        logInfo("afterEach: sending shutdowns to clients")
         import scala.util.Try
-        ctx.engines.values.foreach(e =>
-          if (e.isInstanceOf[ClientModule]) {
-            Try({
-              val cl: ClientModule = e.asInstanceOf[ClientModule]
-              logDebug(s"mixql core context: sending shutdwon to remote engine " + cl.name)
-              cl.ShutDown()
-            })
-          }
-        )
+//        ctx.engines.values.foreach(e =>
+//          if (e.isInstanceOf[ClientModule]) {
+//            Try({
+//              val cl: ClientModule = e.asInstanceOf[ClientModule]
+//              logDebug(s"mixql core context: sending shutdwon to remote engine " + cl.name)
+//              cl.ShutDown()
+//            })
+//          }
+//        )
         logInfo("afterEach: close context")
         Try(ctx.close())
         logInfo("afterEach: close broker")

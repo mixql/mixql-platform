@@ -284,7 +284,7 @@ class ClientModule(clientName: String,
       logInfo(s"Server: ClientModule: sending Shutdown to remote engine " + moduleName)
       ShutDown()
       logDebug("Give time module's socket to shutdown and shutdown message to reach module")
-      sleep(5000)
+      sleep(2000)
     }
     logDebug(s"Server: ClientModule: $clientName: Executing close")
     Try(if (client != null) {

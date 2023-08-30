@@ -175,15 +175,15 @@ object MixQlEnginePlatformDemo:
     } catch {
       case e: Throwable => logError(e.getMessage)
     } finally {
-      context.engines.values.foreach(e =>
-        if (e.isInstanceOf[ClientModule]) {
-          Try({
-            val cl: ClientModule = e.asInstanceOf[ClientModule]
-            logDebug(s"sending shutdown to remote engine " + cl.name)
-            cl.ShutDown()
-          })
-        }
-      )
+//      context.engines.values.foreach(e =>
+//        if (e.isInstanceOf[ClientModule]) {
+//          Try({
+//            val cl: ClientModule = e.asInstanceOf[ClientModule]
+//            logDebug(s"sending shutdown to remote engine " + cl.name)
+//            cl.ShutDown()
+//          })
+//        }
+//      )
       Try(context.close())
       Try({ if BrokerModule.wasStarted then BrokerModule.close() })
     }

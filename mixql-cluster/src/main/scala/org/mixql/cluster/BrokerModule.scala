@@ -6,22 +6,8 @@ import org.zeromq.{SocketType, ZMQ}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-object BrokerModule {
-  var ctx: ZMQ.Context = null
-  var frontend: ZMQ.Socket = null
-  var backend: ZMQ.Socket = null
-  var poller: ZMQ.Poller = null
-  var threadBroker: Thread = null
-
-  // Key is identity, Value is list of messages
-  val enginesStashedMsgs: mutable.Map[String, ListBuffer[StashedClientMessage]] = mutable.Map()
-  val engines: mutable.Set[String] = mutable.Set()
-  val NOFLAGS = 0
-}
-
 class BrokerModule(portFrontend: Int, portBackend: Int, host: String) extends java.lang.AutoCloseable {
-
-  import BrokerModule.*
+  var threadBroker: Thread = null
 
   def getPortFrontend = portFrontend
 
@@ -38,22 +24,27 @@ class BrokerModule(portFrontend: Int, portBackend: Int, host: String) extends ja
 
   override def close() = {
     if (threadBroker != null && threadBroker.isAlive() && !threadBroker.isInterrupted)
-      logDebug("Broker: Executing close")
-      logDebug("Broker: send interrupt to thread")
+      logInfo("Broker: Executing close")
+      logInfo("Broker: send interrupt to thread")
       threadBroker.interrupt()
-    //      println("Waiting while broker thread is alive")
-    //      try {
-    //        threadBroker.join();
-    //      }
-    //      catch
-    //        case _: InterruptedException => System.out.printf("%s has been interrupted", threadBroker.getName())
-    //      println("server: Broker was shutdown")
+      logInfo("Waiting while broker thread is alive")
+      try {
+        threadBroker.join();
+      } catch case _: InterruptedException => System.out.printf("%s has been interrupted", threadBroker.getName())
+      logInfo("server: Broker was shutdown")
   }
 }
 
 class BrokerMainRunnable(name: String, host: String, portFrontend: String, portBackend: String) extends Thread(name) {
+  var ctx: ZMQ.Context = null
+  var frontend: ZMQ.Socket = null
+  var backend: ZMQ.Socket = null
+  var poller: ZMQ.Poller = null
 
-  import BrokerModule.*
+  // Key is identity, Value is list of messages
+  val enginesStashedMsgs: mutable.Map[String, ListBuffer[StashedClientMessage]] = mutable.Map()
+  val engines: mutable.Set[String] = mutable.Set()
+  val NOFLAGS = 0
 
   def init(): (Int, Int) = {
     logInfo("Initialising broker")

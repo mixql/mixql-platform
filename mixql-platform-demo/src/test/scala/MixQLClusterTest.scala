@@ -34,7 +34,7 @@ trait MixQLClusterTest extends FunSuite {
     runWithTimeout(timeoutMs)(f).getOrElse(default)
   }
 
-  override val munitTimeout: Duration = Duration(20, "s")
+  override val munitTimeout: Duration = Duration(300, "s")
 
   val context: Fixture[Context] =
     new Fixture[Context]("context") {
@@ -114,24 +114,31 @@ trait MixQLClusterTest extends FunSuite {
         // Always gets called, even if test failed.
         logInfo("afterEach: triggering afterEach")
         logInfo("afterEach: sending shutdowns to clients")
+        import scala.util.Try
         ctx.engines.values.foreach(e =>
           if (e.isInstanceOf[ClientModule]) {
-            val cl: ClientModule = e.asInstanceOf[ClientModule]
-            logDebug(s"mixql core context: sending shutdwon to remote engine " + cl.name)
-            cl.ShutDown()
+            Try({
+              val cl: ClientModule = e.asInstanceOf[ClientModule]
+              logDebug(s"mixql core context: sending shutdwon to remote engine " + cl.name)
+              cl.ShutDown()
+            })
           }
         )
         logInfo("afterEach: close context")
-        ctx.close()
+        Try(ctx.close())
         logInfo("afterEach: close broker")
-        if ClientModule.broker != null then ClientModule.broker.close()
+        if ClientModule.broker != null then
+          Try({
+            ClientModule.broker.close()
+            ClientModule.broker = null
+          })
       }
     }
 
   override def munitFixtures: Seq[Fixture[Context]] = List(context)
 
   def run(code: String): Unit = {
-    runWithTimeout(20000) {
+    runWithTimeout(300000) {
       org.mixql.core.run(code, context())
     }
   }

@@ -283,14 +283,15 @@ class ClientModule(clientName: String,
 
   override def close() = {
     logDebug(s"Server: ClientModule: $clientName: Executing close")
-    if (client != null) {
-      logDebug(s"Server: ClientModule: $clientName: close client socket")
+    Try(if (client != null) {
+      logInfo(s"Server: ClientModule: $clientName: close client socket")
       client.close()
-    }
-    if (ctx != null) {
-      logDebug(s"Server: ClientModule: $clientName: close context")
+    })
+
+    Try(if (ctx != null) {
+      logInfo(s"Server: ClientModule: $clientName: close context")
       ctx.close()
-    }
+    })
 
     //    if (clientRemoteProcess.isAlive()) clientRemoteProcess.exitValue()
     //    println(s"server: ClientModule: $clientName: Remote client was shutdown")

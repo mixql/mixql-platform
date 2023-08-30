@@ -425,26 +425,27 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
   }
 
   def close(): Unit = {
-    if (server != null) {
+    import scala.util.Try
+    Try(if (server != null) {
       logInfo(s"finally close server")
       server.close()
-    }
+    })
 
     if (workersMap.nonEmpty) {
       workersMap.foreach(worker => {
-        worker._2.close()
+        Try(worker._2.close())
       })
     }
 
-    if (poller != null) {
+    Try(if (poller != null) {
       logInfo(s"finally close poller")
       poller.close()
-    }
+    })
 
-    if (workerPoller != null) {
+    Try(if (workerPoller != null) {
       logInfo(s"finally close workerPoller")
       workerPoller.close()
-    }
+    })
 
     try {
       if (ctx != null) {

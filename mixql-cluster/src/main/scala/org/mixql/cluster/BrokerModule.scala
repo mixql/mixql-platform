@@ -6,32 +6,59 @@ import org.zeromq.{SocketType, ZMQ}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class BrokerModule(portFrontend: Int, portBackend: Int, host: String) extends java.lang.AutoCloseable {
-  var threadBroker: Thread = null
+object BrokerModule extends java.lang.AutoCloseable {
+  private var threadBroker: Thread = null
 
-  def getPortFrontend = portFrontend
+  private var startedBroker: Boolean = false
 
-  def getPortBackend = portBackend
+  def wasStarted: Boolean = startedBroker
 
-  def getHost = host
+  private var _portFrontend: Option[Int] = None
+  private var _portBackend: Option[Int] = None
+  private var _host: Option[String] = None
 
-  def start() = {
-    if threadBroker == null then
-      logInfo("Starting broker thread")
-      threadBroker = new BrokerMainRunnable("BrokerMainThread", host, portFrontend.toString, portBackend.toString)
-      threadBroker.start()
+  def getPortFrontend: Option[Int] = _portFrontend
+
+  def getPortBackend: Option[Int] = _portBackend
+
+  def getHost: Option[String] = _host
+
+  def start(portFrontend: Int, portBackend: Int, host: String) = {
+    this.synchronized {
+      if !startedBroker then
+        if threadBroker == null then
+          _portFrontend = Some(portFrontend)
+          _portBackend = Some(portBackend)
+          _host = Some(host)
+
+          logInfo("Starting broker thread")
+          threadBroker = {
+            new BrokerMainRunnable("BrokerMainThread", host, portFrontend.toString, portBackend.toString)
+          }
+          threadBroker.start()
+          startedBroker = true
+        else new Exception(logError("Broker: threadBroker exists. Call close before start"))
+      else new Exception(logError("Broker: was started previously. Call close before start"))
+    }
   }
 
   override def close() = {
-    if (threadBroker != null && threadBroker.isAlive() && !threadBroker.isInterrupted)
-      logInfo("Broker: Executing close")
-      logInfo("Broker: send interrupt to thread")
-      threadBroker.interrupt()
-      logInfo("Waiting while broker thread is alive")
-      try {
-        threadBroker.join();
-      } catch case _: InterruptedException => System.out.printf("%s has been interrupted", threadBroker.getName())
-      logInfo("server: Broker was shutdown")
+    this.synchronized {
+      if (threadBroker != null && threadBroker.isAlive() && !threadBroker.isInterrupted)
+        _portFrontend = None
+        _portBackend = None
+        _host = None
+        logInfo("Broker: Executing close")
+        logInfo("Broker: send interrupt to thread")
+        threadBroker.interrupt()
+        logInfo("Waiting while broker thread is alive")
+        try {
+          threadBroker.join();
+        } catch case _: InterruptedException => System.out.printf("%s has been interrupted", threadBroker.getName())
+        logInfo("server: Broker was shutdown")
+        threadBroker = null
+        startedBroker = false
+    }
   }
 }
 

@@ -177,13 +177,15 @@ object MixQlEnginePlatformDemo:
     } finally {
       context.engines.values.foreach(e =>
         if (e.isInstanceOf[ClientModule]) {
-          val cl: ClientModule = e.asInstanceOf[ClientModule]
-          logDebug(s"sending shutdown to remote engine " + cl.name)
-          cl.ShutDown()
+          Try({
+            val cl: ClientModule = e.asInstanceOf[ClientModule]
+            logDebug(s"sending shutdown to remote engine " + cl.name)
+            cl.ShutDown()
+          })
         }
       )
-      context.close()
-      if ClientModule.broker != null then ClientModule.broker.close()
+      Try(context.close())
+      Try({ if BrokerModule.wasStarted then BrokerModule.close() })
     }
 
   private def isWebRepl(): Boolean = {

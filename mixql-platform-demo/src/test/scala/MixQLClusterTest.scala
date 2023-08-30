@@ -127,11 +127,7 @@ trait MixQLClusterTest extends FunSuite {
         logInfo("afterEach: close context")
         Try(ctx.close())
         logInfo("afterEach: close broker")
-        if ClientModule.broker != null then
-          Try({
-            ClientModule.broker.close()
-            ClientModule.broker = null
-          })
+        Try({ if BrokerModule.wasStarted then BrokerModule.close() })
       }
     }
 

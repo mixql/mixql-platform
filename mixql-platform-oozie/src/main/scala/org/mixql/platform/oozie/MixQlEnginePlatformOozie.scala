@@ -6,7 +6,7 @@ import org.mixql.core.run
 import org.rogach.scallop.ScallopConf
 
 import java.io.File
-import org.mixql.cluster.ClientModule
+import org.mixql.cluster.{BrokerModule, ClientModule}
 import org.mixql.core.engine.Engine
 import org.mixql.core.context.{Context, gtype}
 import org.mixql.engine.sqlite.local.EngineSqlightLocal
@@ -110,13 +110,17 @@ object MixQlEnginePlatformOozie:
     } finally {
       context.engines.values.foreach(e =>
         if (e.isInstanceOf[ClientModule]) {
-          val cl: ClientModule = e.asInstanceOf[ClientModule]
-          logDebug(s"sending shutdwon to remote engine " + cl.name)
-          cl.ShutDown()
+          Try({
+            val cl: ClientModule = e.asInstanceOf[ClientModule]
+            logDebug(s"sending shutdown to remote engine " + cl.name)
+            cl.ShutDown()
+          })
         }
       )
-      context.close()
-      if ClientModule.broker != null then ClientModule.broker.close()
+      Try(context.close())
+      Try({
+        if BrokerModule.wasStarted then BrokerModule.close()
+      })
     }
 
 case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments):

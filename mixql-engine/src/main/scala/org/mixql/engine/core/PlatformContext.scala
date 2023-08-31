@@ -103,6 +103,10 @@ class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientAddress
     }
   }
 
+  def setVars(vars: mutable.Map[String, Type]): Unit = {
+    setVars(collection.immutable.Map(vars.toSeq: _*))
+  }
+
   def setVars(vars: Map[String, Type]): Unit = {
     this.synchronized {
       import collection.JavaConverters._

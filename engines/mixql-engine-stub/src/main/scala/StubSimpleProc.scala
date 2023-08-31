@@ -72,6 +72,45 @@ object StubSimpleProc {
       }
     }
 
+  val stub_simple_proc_context_test_setting_getting_vars: PlatformContext => String =
+    new ((PlatformContext) => String) {
+
+      override def apply(ctx: PlatformContext): String = {
+        val filteredNames = ctx.getVarsNames().filter(p => p.startsWith("a."))
+        val namesMap: mutable.Map[String, String] = mutable.Map()
+
+        val firstVarName = filteredNames.head
+        println("firstVarName is " + firstVarName)
+        val firstVar = ctx.getVar(firstVarName).asInstanceOf[string]
+        println("firstVarName before change" + firstVar.getValue)
+
+        ctx.setVar(firstVarName, new string(firstVar.getValue + "_changed", firstVar.getQuote))
+
+        val firstVarChanged = ctx.getVar(firstVarName).asInstanceOf[string]
+
+        assert(firstVarChanged.getValue == firstVar.getValue + "_changed")
+
+        val last4VarsNames = filteredNames.drop(filteredNames.length - 4)
+        val last4Vars = ctx.getVars(last4VarsNames)
+        ctx.setVars(
+          last4Vars.map(t =>
+            t._1 ->
+              new string(t._2.asInstanceOf[string].getValue + "_changed", t._2.asInstanceOf[string].getQuote)
+          )
+        )
+        val last4VarsChanged = ctx.getVars(last4VarsNames)
+        last4VarsChanged.foreach(t =>
+          assert({
+            val changedVarName = t._1
+            val changedVar = t._2.asInstanceOf[string]
+            val originVar = last4Vars.apply(changedVarName).asInstanceOf[string]
+            changedVar.getValue == originVar.getValue + "_changed"
+          })
+        )
+        "SUCCESS"
+      }
+    }
+
   // closure
   val execute_stub_func_using_platform_in_stub_func =
     new ((PlatformContext, String, Int) => String) {

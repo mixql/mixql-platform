@@ -229,8 +229,14 @@ class JsonUtils {
     }
 
     public static JSONObject buildSetPlatformVar(String type, String senderID, String name,
-                                                 JSONObject msg) {
-        return buildPlatformVar(type, senderID, name, msg);
+                                                 JSONObject msg, String clientAddress) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("type", type);
+        jsonObject.put("sender", senderID);
+        jsonObject.put("msg", msg);
+        jsonObject.put("name", name);
+        jsonObject.put("clientAddress", clientAddress);
+        return jsonObject;
     }
 
     public static JSONObject buildSetPlatformVars(String type, String senderID, String clientAddress,

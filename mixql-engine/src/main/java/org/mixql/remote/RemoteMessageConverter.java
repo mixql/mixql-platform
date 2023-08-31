@@ -76,6 +76,8 @@ public class RemoteMessageConverter {
                 );
             case "org.mixql.remote.messages.gtype.NULL":
                 return new NULL();
+            case "org.mixql.remote.messages.gtype.NONE":
+                return new NONE();
             case "org.mixql.remote.messages.gtype.Bool":
                 return new Bool(
                         Boolean.parseBoolean((String) anyMsgJsonObject.get("value"))
@@ -276,6 +278,10 @@ public class RemoteMessageConverter {
 
         if (msg instanceof NULL) {
             return JsonUtils.buildNULL(msg.type());
+        }
+
+        if (msg instanceof NONE) {
+            return JsonUtils.buildNONE(msg.type());
         }
 
         if (msg instanceof Bool) {

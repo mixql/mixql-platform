@@ -71,4 +71,14 @@ class TestStubEngineSimpleFuncs extends MixQLClusterTest {
         |let engine "stub-local";
         |""".stripMargin)
   }
+
+  test("execute execute_stub_func_long_sleep function") {
+    run("""
+        |let engine "stub";
+        |
+        |let res = execute_stub_func_long_sleep();
+        |print("SUCCESS:" || $res);
+        |
+        |""".stripMargin)
+  }
 }

@@ -2,6 +2,7 @@ package org.mixql.engine.demo
 
 import org.mixql.core.context.gtype.{Type, gInt, string}
 import org.mixql.engine.core.PlatformContext
+
 import collection.mutable
 
 object StubSimpleProc {
@@ -118,6 +119,15 @@ object StubSimpleProc {
       override def apply(ctx: PlatformContext, a: String, b: Int): String = {
         val funcArgs = List(new string(a), new gInt(b))
         s"CLOSURE:${ctx.invokeFunction("stub_simple_proc_context_params", funcArgs).asInstanceOf[string]}"
+      }
+    }
+
+  val execute_stub_func_long_sleep =
+    new ((StubContext) => String) {
+
+      override def apply(ctx: StubContext): String = {
+        Thread.sleep(120000)
+        "SUCCESS"
       }
     }
 

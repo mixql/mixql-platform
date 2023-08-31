@@ -1,6 +1,7 @@
 package org.mixql.engine.core
 
 import com.github.nscala_time.time.Imports.{DateTime, richReadableInstant, richReadableInterval}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.mixql.engine.core.logger.ModuleLogger
 import org.zeromq.{SocketType, ZMQ}
 import org.mixql.remote.messages.gtype.NULL
@@ -13,21 +14,28 @@ import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
-import scala.util.Random
+import scala.util.{Random, Try}
 import org.mixql.remote.messages
 
 class Module(executor: IModuleExecutor, identity: String, host: String, port: Int)(implicit logger: ModuleLogger) {
-
+  val config: Config = ConfigFactory.load()
   var ctx: ZMQ.Context = null
   implicit var server: ZMQ.Socket = null
   var poller: ZMQ.Poller = null
   var workerPoller: ZMQ.Poller = null
 
-  val pollerTimeout: Long = 1000
-  val workerPollerTimeout: Long = 1500
-  val heartBeatInterval: Long = 6500
-  var processStart: DateTime = null
-  var liveness: Int = 3
+  val pollerTimeout: Long = Try(config.getLong("org.mixql.engine.module.pollerTimeout")).getOrElse(1000)
+
+  val workerPollerTimeout: Long = Try(config.getLong("org.mixql.engine.module.workerPollerTimeout")).getOrElse({
+    1500
+  })
+
+  private val heartBeatInterval: Long = {
+    Try(config.getLong("org.mixql.engine.module.heartBeatInterval")).getOrElse(16500)
+  }
+  private var processStart: DateTime = null
+  private val livenessInit: Int = Try(config.getInt("org.mixql.engine.module.liveness")).getOrElse(3)
+  private var liveness: Int = livenessInit
   var brokerClientAdress: Array[Byte] = Array()
 
   import logger._
@@ -84,19 +92,22 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
               reactOnReceivedMsgForEngine(remoteMessage, msg.get, clientAddressStr, clientAddress)
           }
           processStart = DateTime.now()
-          liveness = 3
+          liveness = livenessInit
         } else {
           val elapsed = (processStart to DateTime.now()).millis
           logDebug(s"elapsed: " + elapsed)
-          liveness = liveness - 1
-          if (liveness == 0) {
-            logError(s"heartbeat failure, can't reach server's broker. Shutting down")
-            throw new BrakeException()
-          }
+
           if (elapsed >= heartBeatInterval) {
             processStart = DateTime.now()
             logDebug(s"heartbeat work. Sending heart beat. Liveness: " + liveness)
             sendMsgToServerBroker("PING-HEARTBEAT", logger)
+            liveness = liveness - 1
+            logDebug(s"heartbeat work. After sending heart beat. Liveness: " + liveness)
+          }
+
+          if (liveness < 0) {
+            logError(s"heartbeat failure, can't reach server's broker. Shutting down")
+            throw new BrakeException()
           }
         }
 

@@ -96,7 +96,21 @@ class ClientModule(clientName: String,
     logInfo(s"Server: ClientModule: $clientName: ask defined functions from remote engine")
 
     sendMsg(messages.module.GetDefinedFunctions())
-    val functionsList = recvMsg().asInstanceOf[messages.module.DefinedFunctions].arr.toList
+    val functionsList =
+      recvMsg() match {
+        case m: messages.module.DefinedFunctions => m.arr.toList
+        case ex: messages.module.Error =>
+          val errorMessage = s"Server: ClientModule: $clientName: getDefinedFunctions error: \n" + ex.msg
+          logError(errorMessage)
+          throw new Exception(errorMessage)
+        case m: messages.Message =>
+          val errorMessage =
+            s"Server: ClientModule: $clientName: getDefinedFunctions error: \n" +
+              "Unknown message " + m.`type`() + " received"
+          logError(errorMessage)
+          throw new Exception(errorMessage)
+      }
+
     if functionsList.isEmpty then Nil
     else functionsList
   }

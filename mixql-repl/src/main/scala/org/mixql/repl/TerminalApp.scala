@@ -8,7 +8,7 @@ import org.mixql.core.context.Context
 import org.beryx.textio.web.RunnerData
 import org.mixql.core.run
 
-class TerminalApp(context: Context) extends BiConsumer[TextIO, RunnerData] {
+class TerminalApp(context: Context, prompt: String = "mixql>") extends BiConsumer[TextIO, RunnerData] {
 
   override def accept(_textIO: TextIO, runnerData: RunnerData): Unit = {
     try {
@@ -102,7 +102,7 @@ class TerminalApp(context: Context) extends BiConsumer[TextIO, RunnerData] {
   }
 
   private def readMixqlStmt()(implicit textIO: TextIO) = {
-    var stmt = textIO.newStringInputReader.read("mixql>")
+    var stmt = textIO.newStringInputReader.read(prompt)
     if (TerminalOps.MultiLineMode) {
       while (TerminalOps.MultiLineMode)
         TerminalOps.MultiLineString = TerminalOps.MultiLineString + textIO.newStringInputReader.read() + "\n"

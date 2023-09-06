@@ -77,6 +77,8 @@ public class RemoteMessageConverter {
                 );
             case "org.mixql.remote.messages.gtype.NULL":
                 return new NULL();
+            case "org.mixql.remote.messages.gtype.NONE":
+                return new NONE();
             case "org.mixql.remote.messages.gtype.Bool":
                 return new Bool(
                         Boolean.parseBoolean((String) anyMsgJsonObject.get("value"))
@@ -135,11 +137,14 @@ public class RemoteMessageConverter {
                         _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("msg"))
                 );
             case "org.mixql.remote.messages.module.worker.PlatformVars":
+                Message[] messageArray = parseMessagesArray((JSONArray) anyMsgJsonObject
+                        .get("vars")
+                );
+
+                Param[] paramsArray = Arrays.copyOf(messageArray, messageArray.length, Param[].class);
                 return new PlatformVars(
                         (String) anyMsgJsonObject.get("sender"),
-                        (Param[]) parseMessagesArray((JSONArray) anyMsgJsonObject
-                                .get("vars")
-                        )
+                        paramsArray
                 );
             case "org.mixql.remote.messages.module.worker.PlatformVarsNames":
                 return new PlatformVarsNames(
@@ -176,7 +181,7 @@ public class RemoteMessageConverter {
                 Map<String, Message> varsMap = new HashMap<>();
                 for (int i = 0; i < varsJsonObject.size(); i++) {
                     varsMap.put(
-                            (String) anyMsgJsonObject.get("key"),
+                            (String) ((JSONObject) varsJsonObject.get(i)).get("key"),
                             _unpackAnyMsg(
                                     (JSONObject) ((JSONObject) varsJsonObject.get(i)).get("value")
                             )
@@ -283,6 +288,10 @@ public class RemoteMessageConverter {
             return JsonUtils.buildNULL(msg.type());
         }
 
+        if (msg instanceof NONE) {
+            return JsonUtils.buildNONE(msg.type());
+        }
+
         if (msg instanceof Bool) {
             return JsonUtils.buildBool(msg.type(), ((Bool) msg).value);
         }
@@ -371,7 +380,8 @@ public class RemoteMessageConverter {
             return JsonUtils.buildSetPlatformVar(msgTmp.type(),
                     msgTmp.sender(),
                     msgTmp.name,
-                    _toJsonObject(msgTmp.msg)
+                    _toJsonObject(msgTmp.msg),
+                    new String(msgTmp.clientAddress())
             );
         }
 

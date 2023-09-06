@@ -2,9 +2,7 @@ import org.mixql.platform.demo.utils.FilesOperations
 
 class TestSimpleQueries extends MixQLClusterTest {
 
-  behavior of "correctly exeute simple commands"
-
-  it should ("work correctly with variables") in {
+  test("work correctly with variables") {
     run("""
         |let a='dfdff';
         |let c="dfdff";
@@ -32,9 +30,11 @@ class TestSimpleQueries extends MixQLClusterTest {
         |""".stripMargin)
   }
 
-  it should ("work correctly with variables 2 test") in {
+  test("work correctly with variables 2 test") {
     run("""
         |let a="fgfg";
+        |let b="fgfg";
+        |let c="fgfg";
         |
         |use database ${$a || ""}; -- нет кавычек
         |use database $a; -- нет кавычек
@@ -46,13 +46,13 @@ class TestSimpleQueries extends MixQLClusterTest {
         |""".stripMargin)
   }
 
-  it should ("get current engine during executing") in {
+  test("get current engine during executing") {
     run("""
         |print($mixql.execution.engine);
         |""".stripMargin)
   }
 
-  it should ("make for several variables in array in array") in {
+  test("make for several variables in array in array") {
     run("""
         |let res = 0;
         |let c = [[1, 2, 4], [3, 4, 8], [5, 6, 9]];

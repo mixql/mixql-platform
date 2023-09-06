@@ -12,6 +12,7 @@ import org.mixql.net.PortOperations
 import org.mixql.core.context.{Context, gtype}
 import org.mixql.engine.stub.local.EngineStubLocal
 import org.mixql.engine.sqlite.local.EngineSqlightLocal
+import org.mixql.platform.demo.engines.executors.{MixQlEngineSqliteExecutor, MixQlEngineStubExecutor}
 import org.mixql.platform.demo.procedures.SimpleFuncs
 
 import scala.collection.mutable
@@ -22,6 +23,7 @@ import org.mixql.repl.{TerminalApp, TerminalOps, WebTextIoExecutor}
 import scala.util.Try
 
 object MixQlEnginePlatformDemo:
+
   def main(args: Array[String]): Unit =
     logDebug("Mixql engine demo platform: parsing args")
     val (host, portFrontend, portBackend, homePath, sqlScriptFiles) = parseArgs(args.toList)
@@ -41,44 +43,12 @@ object MixQlEnginePlatformDemo:
         "mixql-engine-stub",
         // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
         // in base path
-        Some("mixql-engine-stub-test"),
         None,
+        Some(MixQlEngineStubExecutor),
         host,
         portFrontend,
         portBackend,
-        binPath
-      ),
-      "stub-scala-2-12" -> new ClientModule(
-        // Name of client, is used for identification in broker,
-        // must be unique
-        "mixql-engine-stub-scala-2-12-demo-platform",
-        // Name of remote engine, is used for identification in broker,
-        // must be unique
-        "mixql-engine-stub-scala-2-12",
-        // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
-        // in base path
-        Some("mixql-engine-stub-scala-2-12"),
-        None,
-        host,
-        portFrontend,
-        portBackend,
-        binPath
-      ),
-      "stub-scala-2-13" -> new ClientModule(
-        // Name of client, is used for identification in broker,
-        // must be unique
-        "mixql-engine-stub-scala-2-13-demo-platform",
-        // Name of remote engine, is used for identification in broker,
-        // must be unique
-        "mixql-engine-stub-scala-2-13",
-        // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
-        // in base path
-        Some("mixql-engine-stub-scala-2-13"),
-        None,
-        host,
-        portFrontend,
-        portBackend,
-        binPath
+        None
       ),
       "sqlite" -> new ClientModule(
         // Name of client, is used for identification in broker,
@@ -89,28 +59,12 @@ object MixQlEnginePlatformDemo:
         "mixql-engine-sqlite",
         // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
         // in base path
-        Some("mixql-engine-sqlite"),
         None,
+        Some(MixQlEngineSqliteExecutor),
         host,
         portFrontend,
         portBackend,
-        binPath
-      ),
-      "sqlite-scala-2-12" -> new ClientModule(
-        // Name of client, is used for identification in broker,
-        // must be unique
-        "mixql-engine-sqlite-demo-platform-scala-2-12",
-        // Name of remote engine, is used for identification in broker,
-        // must be unique
-        "mixql-engine-sqlite-scala-2-12",
-        // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
-        // in base path
-        Some("mixql-engine-sqlite-scala-2-12"),
-        None,
-        host,
-        portFrontend,
-        portBackend,
-        binPath
+        None
       ),
       "stub-local" -> EngineStubLocal,
       "sqlite-local" -> EngineSqlightLocal()
@@ -130,15 +84,14 @@ object MixQlEnginePlatformDemo:
     )
 
     logDebug(s"Mixql engine demo platform: init Cluster context")
-    val context =
-      new Context(
-        engines,
-        Try({
-          config.getString("org.mixql.platform.demo.engines.default")
-        }).getOrElse("stub"),
-        functionsInit = functions,
-        variablesInit = variables
-      )
+    val context = Context(
+      engines,
+      Try({
+        config.getString("org.mixql.platform.demo.engines.default")
+      }).getOrElse("stub"),
+      functionsInit = functions,
+      variablesInit = variables
+    )
 
     try {
       var replMode = false
@@ -174,15 +127,17 @@ object MixQlEnginePlatformDemo:
     } catch {
       case e: Throwable => logError(e.getMessage)
     } finally {
-      context.engines.values.foreach(e =>
-        if (e.isInstanceOf[ClientModule]) {
-          val cl: ClientModule = e.asInstanceOf[ClientModule]
-          logDebug(s"sending shutdown to remote engine " + cl.name)
-          cl.ShutDown()
-        }
-      )
-      context.close()
-      if ClientModule.broker != null then ClientModule.broker.close()
+//      context.engines.values.foreach(e =>
+//        if (e.isInstanceOf[ClientModule]) {
+//          Try({
+//            val cl: ClientModule = e.asInstanceOf[ClientModule]
+//            logDebug(s"sending shutdown to remote engine " + cl.name)
+//            cl.ShutDown()
+//          })
+//        }
+//      )
+      Try(context.close())
+      Try({ if BrokerModule.wasStarted then BrokerModule.close() })
     }
 
   private def isWebRepl(): Boolean = {
@@ -237,6 +192,7 @@ case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments):
     descr = "frontend port of platform's broker, client modules will connect to it",
     required = false
   ) // , default = Some(0))
+
   val portBackend = opt[Int](
     descr = "backend port of platform's broker, remote engines will connect to it",
     required = false

@@ -34,6 +34,10 @@ class JsonUtils {
         return buildShutDown(type);
     }
 
+    public static JSONObject buildNONE(String type) {
+        return buildShutDown(type);
+    }
+
     public static JSONObject buildExecute(String type, String statement) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
@@ -172,7 +176,7 @@ class JsonUtils {
     }
 
     public static JSONObject buildInvokedFunctionResult(String type, String senderID, String name,
-                                              JSONObject result) {
+                                                        JSONObject result) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("sender", senderID);
@@ -232,8 +236,14 @@ class JsonUtils {
     }
 
     public static JSONObject buildSetPlatformVar(String type, String senderID, String name,
-                                                 JSONObject msg) {
-        return buildPlatformVar(type, senderID, name, msg);
+                                                 JSONObject msg, String clientAddress) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("type", type);
+        jsonObject.put("sender", senderID);
+        jsonObject.put("msg", msg);
+        jsonObject.put("name", name);
+        jsonObject.put("clientAddress", clientAddress);
+        return jsonObject;
     }
 
     public static JSONObject buildSetPlatformVars(String type, String senderID, String clientAddress,

@@ -3,7 +3,7 @@ ThisBuild / scalaVersion := "3.2.1"
 inThisBuild(
   List(
     organization := "org.mixql",
-    version := "0.6.3.1", // change version for all projects
+    version := "0.7.3", // change version for all projects
     organizationName := "MixQL",
     organizationHomepage := Some(url("https://mixql.org/")),
     developers := List(
@@ -78,7 +78,7 @@ lazy val mixQLEngine = projectMatrix.in(file("mixql-engine")).dependsOn(mixQLCor
   Seq(
     "com.typesafe"               % "config"      % "1.4.2",
     "org.scalameta"             %% "munit"       % "0.7.29" % Test,
-    "org.zeromq"                 % "jeromq"      % "0.5.2",
+    "org.zeromq"                 % "jeromq"      % "0.5.3",
     "com.github.nscala-time"    %% "nscala-time" % "2.32.0",
     "com.googlecode.json-simple" % "json-simple" % "1.1.1"
   )
@@ -94,24 +94,16 @@ lazy val mixQLCluster = project.in(file("mixql-cluster")).dependsOn(mixQLEngineS
 lazy val mixQLEngineStub = project.in(file("engines/mixql-engine-stub")).dependsOn(mixQLEngineSCALA3)
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
 
-lazy val mixQLEngineStubScala213 = project.in(file("engines/mixql-engine-stub-scala-2-13"))
-  .dependsOn(mixQLEngineSCALA213).enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
-
-lazy val mixQLEngineStubScala212 = project.in(file("engines/mixql-engine-stub-scala-2-12"))
-  .dependsOn(mixQLEngineSCALA212).enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
-
 lazy val mixQLEngineSqlite = project.in(file("engines/mixql-engine-sqlite"))
   .dependsOn(mixQLEngineSCALA3 % "compile->compile;compile->test;test->test;")
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
-
-lazy val mixQLEngineSqliteScala212 = project.in(file("engines/mixql-engine-sqlite-scala-2-12"))
-  .dependsOn(mixQLEngineSCALA212).enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin)
 
 lazy val stageEnginesDemo = taskKey[Seq[(File, String)]]("stage engines and get jars for mixqlPlatformDemo")
 
 lazy val stageEnginesOozie = taskKey[Seq[(File, String)]]("stage engines and get jars for mixqlPlatformOozie")
 
-lazy val mixQLEngineStubLocal = project.in(file("engines/mixql-engine-stub-local")).dependsOn(mixQLEngineSCALA3)
+lazy val mixQLEngineStubLocal = project.in(file("engines/mixql-engine-stub-local"))
+  .dependsOn(mixQLEngineSCALA3 % "compile->compile;compile->test;test->test;")
 
 lazy val mixQLEngineSqliteLocal = project.in(file("engines/mixql-engine-sqlite-local"))
   .dependsOn(mixQLEngineSCALA3) //, mixQLCoreSCALA3 % "compile->compile;compile->test")
@@ -130,16 +122,7 @@ lazy val mixQLPlatformDemo = project.in(file("mixql-platform-demo"))
     var cache: Seq[(File, String)] = Seq()
     (mixQLEngineStub / Universal / stage).value
     (mixQLEngineSqlite / Universal / stage).value
-    (mixQLEngineSqliteScala212 / Universal / stage).value
-    (mixQLEngineStubScala213 / Universal / stage).value
-    (mixQLEngineStubScala212 / Universal / stage).value
-    val baseDirs = Seq(
-      (mixQLEngineStub / baseDirectory).value,
-      (mixQLEngineSqlite / baseDirectory).value,
-      (mixQLEngineSqliteScala212 / baseDirectory).value,
-      (mixQLEngineStubScala213 / baseDirectory).value,
-      (mixQLEngineStubScala212 / baseDirectory).value
-    )
+    val baseDirs = Seq((mixQLEngineStub / baseDirectory).value, (mixQLEngineSqlite / baseDirectory).value)
 
     baseDirs.foreach(baseDir => {
       cache =
@@ -211,6 +194,7 @@ lazy val mixQLPlatformOozie = project.in(file("mixql-platform-oozie"))
 //
 
 lazy val buildAllMixQLCore = taskKey[Unit]("Build all mixql core projects")
+
 buildAllMixQLCore := {
   //  (mixQLCluster / Compile / packageBin).value
   //  (mixQLProtobuf / Compile / packageBin).value
@@ -220,15 +204,57 @@ buildAllMixQLCore := {
 }
 
 lazy val archiveMixQLPlatformDemo = taskKey[Unit]("Create dist archive of platform-demo")
+
 archiveMixQLPlatformDemo := Def
   .sequential(mixQLPlatformDemo / Universal / packageBin, mixQLPlatformDemo / Universal / packageZipTarball).value
 
 lazy val archiveMixQLPlatformOozie = taskKey[Unit]("Create dist archive of platform-oozie")
+
 archiveMixQLPlatformOozie := Def
   .sequential(mixQLPlatformOozie / Universal / packageBin, mixQLPlatformOozie / Universal / packageZipTarball).value
 
-//lazy val format = taskKey[Unit]("format src, test, sbt")
-//format := {
-//  scalafmtAll.value
-//  (Compile / scalafmtSbt).value
-//}
+val projectsTest = inProjects(
+  mixQLPlatformDemo,
+  mixQLPlatformOozie,
+  mixQLOozie,
+  mixQLRepl,
+//  mixQLCoreSCALA3,
+  mixQLEngineSqliteLocal,
+  mixQLEngineStubLocal,
+  mixQLEngineSqlite,
+  mixQLEngineStub,
+  mixQLCluster,
+  mixQLEngineSCALA3
+)
+
+Test / test := Def.sequential(
+//  test in Test,
+  test.all(ScopeFilter(projectsTest, inConfigurations(Test)))
+).value
+
+ThisBuild / Test / parallelExecution := false
+ThisBuild / Test / fork := true
+ThisBuild / libraryDependencies ++= Seq("org.xerial" % "sqlite-jdbc" % "3.40.0.0" % Test)
+
+lazy val format = taskKey[Unit]("format src, test, sbt")
+
+val projectsFormat = inProjects(
+  mixQLPlatformDemo,
+  mixQLPlatformOozie,
+  mixQLOozie,
+  mixQLRepl,
+  mixQLCoreSCALA3,
+  mixQLEngineSqliteLocal,
+  mixQLEngineStubLocal,
+  mixQLEngineSqlite,
+  mixQLEngineStub,
+  mixQLCluster,
+  mixQLEngineSCALA3
+)
+
+format := Def.sequential(
+  scalafmtAll.all(ScopeFilter(projectsFormat, inConfigurations(Test, Compile))),
+  scalafmtSbt.all(ScopeFilter(projectsFormat, inConfigurations(Compile)))
+  //  scalafmtAll.value
+  //  (Compile / scalafmtSbt).value
+).value

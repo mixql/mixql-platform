@@ -1,7 +1,6 @@
 package org.mixql.cluster
 
 import com.typesafe.config.ConfigFactory
-import org.mixql.cluster.ClientModule.broker
 import org.mixql.cluster.logger.{logDebug, logError, logInfo, logWarn}
 import org.mixql.core.engine.Engine
 import org.mixql.core.context.gtype.{Type, unpack}
@@ -39,12 +38,12 @@ import org.mixql.remote.messages.module.worker.{
 import org.mixql.remote.messages.module.{ParamChanged, ShutDown}
 import scalapb.options.ScalaPbOptions.OptionsScope
 
+import java.lang.Thread.sleep
 import scala.annotation.tailrec
 
 case class StashedParam(name: String, value: gtype.Type)
 
 object ClientModule {
-  var broker: BrokerModule = null
   val config = ConfigFactory.load()
 }
 
@@ -79,7 +78,10 @@ class ClientModule(clientName: String,
     reactOnRequest(recvMsg(), ctx)
   }
 
-  override def executeFuncImpl(name: String, ctx: EngineContext, params: Type*): Type = {
+  override def executeFuncImpl(name: String, ctx: EngineContext, kwargs: Map[String, Object], params: Type*): Type = {
+    if (kwargs.nonEmpty)
+      throw new UnsupportedOperationException("named arguments are not supported in functions in remote engine " + name)
+
     logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by executeFunc request")
     sendMsg(messages.module.ExecuteFunction(name, params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray))
     reactOnRequest(recvMsg(), ctx)
@@ -95,14 +97,23 @@ class ClientModule(clientName: String,
     logInfo(s"Server: ClientModule: $clientName: ask defined functions from remote engine")
 
     sendMsg(messages.module.GetDefinedFunctions())
-    val functionsList = recvMsg().asInstanceOf[messages.module.DefinedFunctions].arr.toList
+    val functionsList =
+      recvMsg() match {
+        case m: messages.module.DefinedFunctions => m.arr.toList
+        case ex: messages.module.Error =>
+          val errorMessage = s"Server: ClientModule: $clientName: getDefinedFunctions error: \n" + ex.msg
+          logError(errorMessage)
+          throw new Exception(errorMessage)
+        case m: messages.Message =>
+          val errorMessage =
+            s"Server: ClientModule: $clientName: getDefinedFunctions error: \n" +
+              "Unknown message " + m.`type`() + " received"
+          logError(errorMessage)
+          throw new Exception(errorMessage)
+      }
+
     if functionsList.isEmpty then Nil
     else functionsList
-  }
-
-  override def paramChangedImpl(name: String, ctx: EngineContext): Unit = {
-    if (engineStarted)
-      sendMsg(new messages.module.ParamChanged(name, GtypeConverter.toGeneratedMsg(ctx.getVar(name))))
   }
 
   @tailrec
@@ -171,56 +182,58 @@ class ClientModule(clientName: String,
   }
 
   private def sendMsg(msg: messages.Message): Unit = {
-    import ClientModule.broker
-    if !moduleStarted then
-      if broker == null then startBroker()
-      startModuleClient()
-      ctx = ZMQ.context(1)
-      client = ctx.socket(SocketType.REQ)
-      // set id for client
-      client.setIdentity(clientName.getBytes)
-      logInfo(
-        "server: Clientmodule " + clientName + " connected to " +
-          s"tcp://${broker.getHost}:${broker.getPortFrontend} " + client
-            .connect(s"tcp://${broker.getHost}:${broker.getPortFrontend}")
-      )
-      moduleStarted = true
-      logInfo(s" Clientmodule $clientName: notify broker about started engine " + moduleName)
-      _sendMsg(new EngineStarted(moduleName))
-    end if
-
-    _sendMsg(msg)
+    this.synchronized {
+      if !moduleStarted then
+        if !BrokerModule.wasStarted then startBroker()
+        startModuleClient()
+        ctx = ZMQ.context(1)
+        client = ctx.socket(SocketType.REQ)
+        // set id for client
+        client.setIdentity(clientName.getBytes)
+        logInfo(
+          "server: Clientmodule " + clientName + " connected to " +
+            s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPortFrontend.get} " + client
+              .connect(s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPortFrontend.get}")
+        )
+        moduleStarted = true
+        logInfo(s" Clientmodule $clientName: notify broker about started engine " + moduleName)
+        _sendMsg(new EngineStarted(moduleName))
+      end if
+      _sendMsg(msg)
+    }
   }
 
   private def recvMsg(): messages.Message = {
-    RemoteMessageConverter.unpackAnyMsgFromArray(client.recv(0))
+    this.synchronized {
+      RemoteMessageConverter.unpackAnyMsgFromArray(client.recv(0))
+    }
   }
 
   private def startBroker() = {
-    import ClientModule.broker
     import ClientModule.config
 
-    val portFrontend: Int = portFrontendArgs.getOrElse(
-      Try(config.getInt("org.mixql.cluster.broker.portFrontend")).getOrElse(PortOperations.isPortAvailable(0))
-    )
+    val portFrontend: Int = portFrontendArgs.getOrElse(Try({
+      config.getInt("org.mixql.cluster.broker.portFrontend")
+    }).getOrElse(PortOperations.isPortAvailable(0)))
 
-    val portBackend: Int = portBackendArgs.getOrElse(
-      Try(config.getInt("org.mixql.cluster.broker.portBackend")).getOrElse(PortOperations.isPortAvailable(0))
-    )
+    val portBackend: Int = portBackendArgs.getOrElse(Try({
+      config.getInt("org.mixql.cluster.broker.portBackend")
+    }).getOrElse(PortOperations.isPortAvailable(0)))
 
-    val host: String = hostArgs.getOrElse(Try(config.getString("org.mixql.cluster.broker.host")).getOrElse("0.0.0.0"))
+    val host: String = hostArgs.getOrElse({
+      Try(config.getString("org.mixql.cluster.broker.host")).getOrElse("0.0.0.0")
+    })
 
     logInfo(
       s"Mixql engine demo platform: Starting broker messager with" +
         s" frontend port $portFrontend and backend port $portBackend on host $host"
     )
-    broker = new BrokerModule(portFrontend, portBackend, host)
-    broker.start()
+    BrokerModule.start(portFrontend, portBackend, host)
   }
 
   private def startModuleClient() = {
-    val host = broker.getHost
-    val portBackend = broker.getPortBackend
+    val host = BrokerModule.getHost.get
+    val portBackend = BrokerModule.getPortBackend.get
 
     import ClientModule.config
     val basePath: File = basePathArgs.getOrElse(Try({
@@ -286,15 +299,22 @@ class ClientModule(clientName: String,
   }
 
   override def close() = {
+    if (moduleStarted) {
+      logInfo(s"Server: ClientModule: sending Shutdown to remote engine " + moduleName)
+      ShutDown()
+      logDebug("Give time module's socket to shutdown and shutdown message to reach module")
+      sleep(2000)
+    }
     logDebug(s"Server: ClientModule: $clientName: Executing close")
-    if (client != null) {
-      logDebug(s"Server: ClientModule: $clientName: close client socket")
+    Try(if (client != null) {
+      logInfo(s"Server: ClientModule: $clientName: close client socket")
       client.close()
-    }
-    if (ctx != null) {
-      logDebug(s"Server: ClientModule: $clientName: close context")
+    })
+
+    Try(if (ctx != null) {
+      logInfo(s"Server: ClientModule: $clientName: close context")
       ctx.close()
-    }
+    })
 
     //    if (clientRemoteProcess.isAlive()) clientRemoteProcess.exitValue()
     //    println(s"server: ClientModule: $clientName: Remote client was shutdown")

@@ -1,13 +1,12 @@
 package org.mixql.remote;
 
 import org.mixql.core.context.gtype.*;
+import org.mixql.core.context.gtype.gDouble;
+import org.mixql.core.context.gtype.gInt;
 import org.mixql.core.context.gtype.map;
 import org.mixql.remote.messages.*;
+import org.mixql.remote.messages.gtype.*;
 import org.mixql.remote.messages.module.Error;
-import org.mixql.remote.messages.gtype.Bool;
-import org.mixql.remote.messages.gtype.NULL;
-import org.mixql.remote.messages.gtype.gArray;
-import org.mixql.remote.messages.gtype.gString;
 
 import java.util.HashMap;
 
@@ -24,6 +23,9 @@ public class GtypeConverter {
     public static Type messageToGtype(Message msg) throws Exception {
         if (msg instanceof NULL)
             return new Null();
+
+        if (msg instanceof NONE)
+            return new none();
 
         if (msg instanceof Bool)
             return new bool(((Bool) msg).value);
@@ -75,6 +77,9 @@ public class GtypeConverter {
     public static Message toGeneratedMsg(Type gValue) throws Exception {
         if (gValue instanceof Null)
             return new NULL();
+
+        if (gValue instanceof none)
+            return new NONE();
 
         if (gValue instanceof bool)
             return new Bool(((bool) gValue).getValue());

@@ -10,11 +10,11 @@ import org.mixql.remote.messages.{Message, gtype}
 
 object EngineDemoExecutor extends IModuleExecutor {
 
-  override def reactOnExecute(msg: Execute,
-                              identity: String,
-                              clientAddress: String,
-                              logger: ModuleLogger,
-                              platformContext: PlatformContext): Message = {
+  override def reactOnExecuteAsync(msg: Execute,
+                                   identity: String,
+                                   clientAddress: String,
+                                   logger: ModuleLogger,
+                                   platformContext: PlatformContext): Message = {
     import logger._
     logDebug(s"Received Execute msg from server statement: ${msg.statement}")
     logInfo(s"Executing command ${msg.statement} for 1sec")
@@ -24,11 +24,11 @@ object EngineDemoExecutor extends IModuleExecutor {
     messages.gtype.NULL()
   }
 
-  override def reactOnParamChanged(msg: ParamChanged,
-                                   identity: String,
-                                   clientAddress: String,
-                                   logger: ModuleLogger,
-                                   platformContext: PlatformContext): Unit = {
+  override def reactOnParamChangedAsync(msg: ParamChanged,
+                                        identity: String,
+                                        clientAddress: String,
+                                        logger: ModuleLogger,
+                                        platformContext: PlatformContext): Unit = {
     import logger._
     logInfo(s"Module $identity :Received notify msg about changed param ${msg.name} from server $clientAddress: ")
   }
@@ -41,28 +41,28 @@ object EngineDemoExecutor extends IModuleExecutor {
       "stub_simple_func_return_arr" -> StubSimpleProc.simple_func_return_arr,
       "stub_simple_func_return_map" -> StubSimpleProc.simple_func_return_map,
       "execute_platform_func_in_stub_func" -> StubSimpleProc.execute_platform_func_in_stub_func,
-      "execute_stub_func_using_platform_in_stub_func" -> StubSimpleProc.execute_stub_func_using_platform_in_stub_func
+      "execute_stub_func_using_platform_in_stub_func" -> StubSimpleProc.execute_stub_func_using_platform_in_stub_func,
+      "stub_simple_proc_context" -> StubSimpleProc.stub_simple_proc_context,
+      "execute_stub_func_long_sleep" -> StubSimpleProc.execute_stub_func_long_sleep,
+      "stub_simple_proc_context_test_setting_getting_vars" -> StubSimpleProc
+        .stub_simple_proc_context_test_setting_getting_vars
     )
 
   val context = StubContext()
 
-  override def reactOnExecuteFunction(msg: ExecuteFunction,
-                                      identity: String,
-                                      clientAddress: String,
-                                      logger: ModuleLogger,
-                                      platformContext: PlatformContext): Message = {
+  override def reactOnExecuteFunctionAsync(msg: ExecuteFunction,
+                                           identity: String,
+                                           clientAddress: String,
+                                           logger: ModuleLogger,
+                                           platformContext: PlatformContext): Message = {
     import logger._
     logInfo(s"Started executing function ${msg.name}")
     logDebug(
       s"Executing function ${msg.name} with params " +
         msg.params.mkString("[", ",", "]")
     )
-    val res =
-      if (msg.name.trim != "execute_platform_func_in_stub_func" && msg.name.trim !=
-            "execute_stub_func_using_platform_in_stub_func")
-        org.mixql.engine.core.FunctionInvoker.invoke(functions, msg.name, context, msg.params.toList)
-      else
-        org.mixql.engine.core.FunctionInvoker.invoke(functions, msg.name, platformContext, msg.params.toList)
+    val res = org.mixql.engine.core.FunctionInvoker
+      .invoke(functions, msg.name, List[Object](platformContext, context), msg.params.toList)
     logInfo(s": Successfully executed function ${msg.name} ")
     res
   }

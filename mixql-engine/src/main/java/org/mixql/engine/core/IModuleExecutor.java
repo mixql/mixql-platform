@@ -9,16 +9,16 @@ import org.mixql.remote.messages.module.ParamChanged;
 
 public interface IModuleExecutor {
 
-    Message reactOnExecute(Execute msg, String identity, String clientAddress, ModuleLogger logger,
-                           PlatformContext platformContext);
+    Message reactOnExecuteAsync(Execute msg, String identity, String clientAddress, ModuleLogger logger,
+                                PlatformContext platformContext);
 
-    void reactOnParamChanged(ParamChanged msg, String identity, String clientAddress, ModuleLogger logger,
-                             PlatformContext platformContext);
+    void reactOnParamChangedAsync(ParamChanged msg, String identity, String clientAddress, ModuleLogger logger,
+                                  PlatformContext platformContext);
 
     void reactOnShutDown(String identity, String clientAddress, ModuleLogger logger);
 
-    Message reactOnExecuteFunction(ExecuteFunction msg, String identity, String clientAddress, ModuleLogger logger,
-                                   PlatformContext platformContext);
+    Message reactOnExecuteFunctionAsync(ExecuteFunction msg, String identity, String clientAddress, ModuleLogger logger,
+                                        PlatformContext platformContext);
 
     DefinedFunctions reactOnGetDefinedFunctions(String identity, String clientAddress, ModuleLogger logger);
 }

@@ -7,13 +7,10 @@ import org.mixql.engine.local.logger.IEngineLogger
 import scala.collection.mutable
 import scala.util.Try
 
-object SQLightJDBC {
-  var c: Connection = null
-}
-
 class SQLightJDBC(identity: String, ctx: EngineContext, dbPathParameter: Option[String] = None)
     extends java.lang.AutoCloseable
     with IEngineLogger:
+  var c: Connection = null
 
   override def name: String = identity
 
@@ -27,61 +24,66 @@ class SQLightJDBC(identity: String, ctx: EngineContext, dbPathParameter: Option[
     val url: String = Try {
       getStringParam(dbPathParameter.get.trim)
     }.getOrElse(Try {
+      if (dbPathParameter.isDefined)
+        logWarn(s"could not read dbPathParameter: " + dbPathParameter.get)
       getStringParam("mixql.org.engine.sqlight.db.path")
     }.getOrElse({
+      logWarn(s"could not read string parameter mixql.org.engine.sqlight.db.path. Use in memory db")
       val path = "jdbc:sqlite::memory:"
-      logInfo(s"use in memory db")
       path
     }))
 
-    SQLightJDBC.c = DriverManager.getConnection(url)
+    c = DriverManager.getConnection(url)
     logInfo(s"opened database successfully")
   }
 
   // returns messages.Type
   // TO-DO Should return iterator?
   def execute(stmt: String): gtype.Type = {
-    if SQLightJDBC.c == null then init()
+    this.synchronized {
+      if c == null then init()
 
-    var jdbcStmt: Statement = null
+      var jdbcStmt: Statement = null
 
-    try {
-      jdbcStmt = SQLightJDBC.c.createStatement()
-      val flag = jdbcStmt.execute(stmt)
-      if flag then
-        // some result was returned
-        var res: ResultSet = null
-        try {
-          res = jdbcStmt.getResultSet
-          // init iterator
-          var remainedRows = res.next()
+      try {
+        jdbcStmt = c.createStatement()
+        val flag = jdbcStmt.execute(stmt)
+        if flag then
+          // some result was returned
+          var res: ResultSet = null
+          try {
+            res = jdbcStmt.getResultSet
+            // init iterator
+            var remainedRows = res.next()
 
-          val resultSetMetaData = res.getMetaData
-          val columnCount = resultSetMetaData.getColumnCount
-          val columnTypes: Seq[gtype.Type] = getColumnTypes(resultSetMetaData, columnCount)
-          val columnNames: Seq[String] =
-            for (i <- 1 to columnCount)
-              yield resultSetMetaData.getColumnName(i)
+            val resultSetMetaData = res.getMetaData
+            val columnCount = resultSetMetaData.getColumnCount
+            val columnTypes: Seq[gtype.Type] = getColumnTypes(resultSetMetaData, columnCount)
+            val columnNames: Seq[String] =
+              for (i <- 1 to columnCount)
+                yield resultSetMetaData.getColumnName(i)
 
-          import org.mixql.engine.sqlite.local.JavaSqlArrayConverter
+            import org.mixql.engine.sqlite.local.JavaSqlArrayConverter
 
-          var arr: Seq[gtype.array] = Seq()
-          while remainedRows
-          do // simulate do while, as it is no longer supported in scala 3
-            val rowValues = getRowFromResultSet(res, columnCount, columnTypes)
-            arr = arr :+ gtype.array(rowValues.toArray)
-            remainedRows = res.next()
-          end while
-          new gtype.array(arr.toArray)
-        } finally {
-          if (res != null)
-            res.close()
-        }
-      else new gtype.Null()
-    } catch {
-      case e: Throwable => throw new Exception(s"[ENGINE $identity] : SQLightJDBC error while execute: " + e.getMessage)
-    } finally {
-      if jdbcStmt != null then jdbcStmt.close()
+            var arr: Seq[gtype.array] = Seq()
+            while remainedRows
+            do // simulate do while, as it is no longer supported in scala 3
+              val rowValues = getRowFromResultSet(res, columnCount, columnTypes)
+              arr = arr :+ gtype.array(rowValues.toArray)
+              remainedRows = res.next()
+            end while
+            new gtype.array(arr.toArray)
+          } finally {
+            if (res != null)
+              res.close()
+          }
+        else new gtype.Null()
+      } catch {
+        case e: Throwable =>
+          throw new Exception(s"[ENGINE $identity] : SQLightJDBC error while execute: " + e.getMessage)
+      } finally {
+        if jdbcStmt != null then jdbcStmt.close()
+      }
     }
   }
 
@@ -156,8 +158,8 @@ class SQLightJDBC(identity: String, ctx: EngineContext, dbPathParameter: Option[
 
   override def close(): Unit =
     logDebug(s"[ENGINE $identity] : executing close")
-    if SQLightJDBC.c != null then
-      try SQLightJDBC.c.close()
+    if c != null then
+      try c.close()
       catch
         case e: Throwable =>
           logDebug(

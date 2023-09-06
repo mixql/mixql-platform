@@ -6,54 +6,72 @@ import org.zeromq.{SocketType, ZMQ}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-object BrokerModule {
+object BrokerModule extends java.lang.AutoCloseable {
+  private var threadBroker: Thread = null
+
+  private var startedBroker: Boolean = false
+
+  def wasStarted: Boolean = startedBroker
+
+  private var _portFrontend: Option[Int] = None
+  private var _portBackend: Option[Int] = None
+  private var _host: Option[String] = None
+
+  def getPortFrontend: Option[Int] = _portFrontend
+
+  def getPortBackend: Option[Int] = _portBackend
+
+  def getHost: Option[String] = _host
+
+  def start(portFrontend: Int, portBackend: Int, host: String) = {
+    this.synchronized {
+      if !startedBroker then
+        if threadBroker == null then
+          _portFrontend = Some(portFrontend)
+          _portBackend = Some(portBackend)
+          _host = Some(host)
+
+          logInfo("Starting broker thread")
+          threadBroker = {
+            new BrokerMainRunnable("BrokerMainThread", host, portFrontend.toString, portBackend.toString)
+          }
+          threadBroker.start()
+          startedBroker = true
+        else new Exception(logError("Broker: threadBroker exists. Call close before start"))
+      else new Exception(logError("Broker: was started previously. Call close before start"))
+    }
+  }
+
+  override def close() = {
+    this.synchronized {
+      if (threadBroker != null && threadBroker.isAlive() && !threadBroker.isInterrupted)
+        _portFrontend = None
+        _portBackend = None
+        _host = None
+        logInfo("Broker: Executing close")
+        logInfo("Broker: send interrupt to thread")
+        threadBroker.interrupt()
+        logInfo("Waiting while broker thread is alive")
+        try {
+          threadBroker.join();
+        } catch case _: InterruptedException => System.out.printf("%s has been interrupted", threadBroker.getName())
+        logInfo("server: Broker was shutdown")
+        threadBroker = null
+        startedBroker = false
+    }
+  }
+}
+
+class BrokerMainRunnable(name: String, host: String, portFrontend: String, portBackend: String) extends Thread(name) {
   var ctx: ZMQ.Context = null
   var frontend: ZMQ.Socket = null
   var backend: ZMQ.Socket = null
   var poller: ZMQ.Poller = null
-  var threadBroker: Thread = null
 
   // Key is identity, Value is list of messages
   val enginesStashedMsgs: mutable.Map[String, ListBuffer[StashedClientMessage]] = mutable.Map()
   val engines: mutable.Set[String] = mutable.Set()
   val NOFLAGS = 0
-}
-
-class BrokerModule(portFrontend: Int, portBackend: Int, host: String) extends java.lang.AutoCloseable {
-
-  import BrokerModule.*
-
-  def getPortFrontend = portFrontend
-
-  def getPortBackend = portBackend
-
-  def getHost = host
-
-  def start() = {
-    if threadBroker == null then
-      logInfo("Starting broker thread")
-      threadBroker = new BrokerMainRunnable("BrokerMainThread", host, portFrontend.toString, portBackend.toString)
-      threadBroker.start()
-  }
-
-  override def close() = {
-    if (threadBroker != null && threadBroker.isAlive() && !threadBroker.isInterrupted)
-      logDebug("Broker: Executing close")
-      logDebug("Broker: send interrupt to thread")
-      threadBroker.interrupt()
-    //      println("Waiting while broker thread is alive")
-    //      try {
-    //        threadBroker.join();
-    //      }
-    //      catch
-    //        case _: InterruptedException => System.out.printf("%s has been interrupted", threadBroker.getName())
-    //      println("server: Broker was shutdown")
-  }
-}
-
-class BrokerMainRunnable(name: String, host: String, portFrontend: String, portBackend: String) extends Thread(name) {
-
-  import BrokerModule.*
 
   def init(): (Int, Int) = {
     logInfo("Initialising broker")

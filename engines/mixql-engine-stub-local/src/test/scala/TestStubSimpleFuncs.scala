@@ -1,12 +1,21 @@
 import org.scalatest.funsuite.AnyFunSuite
 import org.mixql.engine.stub.local.{EngineStubLocal, StubContext}
-import org.mixql.core.context.gtype
+import org.mixql.core.context.{Context, EngineContext, gtype}
+import scala.collection.mutable
 
 class TestStubSimpleFuncs extends AnyFunSuite {
   val engine = EngineStubLocal
 
   test("Invoke stub_simple_proc function") {
-    val res = gtype.unpack(engine.executeFunc("stub_simple_proc", null))
+    val res = gtype.unpack(
+      engine.executeFunc(
+        "stub_simple_proc",
+        null, {
+          val kwargs: Map[String, Object] = Map.empty
+          kwargs
+        }
+      )
+    )
     assert(res == "SUCCESS")
   }
 
@@ -15,7 +24,20 @@ class TestStubSimpleFuncs extends AnyFunSuite {
     val b = 5
 
     val res = {
-      gtype.unpack(engine.executeFunc("stub_simple_proc_params", null, gtype.pack(a), gtype.pack(b)))
+      gtype.unpack(
+        engine.executeFunc(
+          "stub_simple_proc_params",
+          new EngineContext(
+            Context(mutable.Map("stub-local" -> engine), "stub-local", mutable.Map(), mutable.Map()),
+            "stub-local"
+          ), {
+            val kwargs: Map[String, Object] = Map.empty
+            kwargs
+          },
+          gtype.pack(a),
+          gtype.pack(b)
+        )
+      )
     }
     assert(res == s"SUCCESS:$a:${b.toString}")
   }
@@ -28,7 +50,18 @@ class TestStubSimpleFuncs extends AnyFunSuite {
 
     val res = {
       gtype.unpack({
-        engine.executeFunc("stub_simple_proc_context_params", null, gtype.pack(a), gtype.pack(b))
+        engine.executeFunc(
+          "stub_simple_proc_context_params",
+          new EngineContext(
+            Context(mutable.Map("stub-local" -> engine), "stub-local", mutable.Map(), mutable.Map()),
+            "stub-local"
+          ), {
+            val kwargs: Map[String, Object] = Map.empty
+            kwargs
+          },
+          gtype.pack(a),
+          gtype.pack(b)
+        )
       })
     }
     assert(res == s"SUCCESS:${ctx.name}:$a:${b.toString}")

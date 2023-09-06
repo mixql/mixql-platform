@@ -19,12 +19,13 @@ class MixqlEngineSqliteTest(dbPathParameter: Option[String] = None) extends AnyF
     context = SQLightJDBC(
       identity,
       new EngineContext(
-        new org.mixql.core.context.Context(
+        org.mixql.core.context.Context(
           mutable.Map("stub" -> org.mixql.core.test.engines.StubEngine()),
           "stub",
           mutable.Map(),
           engineParams
-        )
+        ),
+        "stub"
       ),
       dbPathParameter
     )
@@ -34,5 +35,5 @@ class MixqlEngineSqliteTest(dbPathParameter: Option[String] = None) extends AnyF
 
   after {
     context.close()
-    SQLightJDBC.c = null
+    context = null
   }

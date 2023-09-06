@@ -31,11 +31,11 @@ public class WebTextIoExecutor {
     private Integer port;
     boolean launchDesktopBrowser;
 
-    public WebTextIoExecutor(boolean launchDesktopBrowser){
+    public WebTextIoExecutor(boolean launchDesktopBrowser) {
         this.launchDesktopBrowser = launchDesktopBrowser;
     }
 
-    public WebTextIoExecutor(){
+    public WebTextIoExecutor() {
         this.launchDesktopBrowser = false;
     }
 
@@ -44,19 +44,26 @@ public class WebTextIoExecutor {
         return this;
     }
 
+    public WebTextIoExecutor withHost(String host) {
+        this.host = host.trim();
+        return this;
+    }
+
+    private String host = "localhost";
+
     public void execute(TextIoApp<?> app) {
         Consumer<String> stopServer = sessionId -> Executors.newSingleThreadScheduledExecutor().schedule(() -> {
             System.exit(0);
         }, 2, TimeUnit.SECONDS);
 
         app.withOnDispose(stopServer)
-            .withOnAbort(stopServer)
-            .withPort(port)
-            .withMaxInactiveSeconds(600)
-            .withStaticFilesLocation("public-html")
-            .init();
+                .withOnAbort(stopServer)
+                .withPort(port)
+                .withMaxInactiveSeconds(600)
+                .withStaticFilesLocation("public-html")
+                .init();
 
-        String url = "http://localhost:" + app.getPort() + "/web-demo.html";
+        String url = "http://" + host + ":" + app.getPort() + "/web-demo.html";
         if (launchDesktopBrowser) {
             boolean browserStarted = false;
             if (Desktop.isDesktopSupported()) {
@@ -70,7 +77,7 @@ public class WebTextIoExecutor {
             if (!browserStarted) {
                 System.out.println("Please open the following link in your browser: " + url);
             }
-        }else{
+        } else {
             System.out.println("Please open the following link in your browser: " + url);
         }
     }

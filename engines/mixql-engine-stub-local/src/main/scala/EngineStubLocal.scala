@@ -27,13 +27,14 @@ object EngineStubLocal extends Engine with IEngineLogger {
       "stub_simple_proc_context_params" -> StubSimpleProc.simple_func_context_params
     )
 
-  override def executeFuncImpl(name: String, ctx: EngineContext, params: Type*): Type = {
+  override def executeFuncImpl(name: String, ctx: EngineContext, kwargs: Map[String, Object], params: Type*): Type = {
     import org.mixql.core.context.gtype
     try
       logInfo(s"Started executing function $name")
       logDebug(s"Params provided for function $name : " + params.toString())
       logDebug(s"Executing function $name with params " + params.toString)
-      val res = FunctionInvoker.invoke(functions, name, StubContext(), params.map(p => gtype.unpack(p)).toList)
+      val res = FunctionInvoker
+        .invoke(functions, name, List[Object](StubContext(), ctx), params.map(p => gtype.unpack(p)).toList, kwargs)
       logInfo(
         s" Successfully executed function $name with params " + params.toString +
           s"\nResult: $res"
@@ -45,14 +46,6 @@ object EngineStubLocal extends Engine with IEngineLogger {
           s"[ENGINE ${this.name}]: error while executing function $name: " +
             e.getMessage
         )
-  }
-
-  override def paramChangedImpl(name: String, ctx: EngineContext): Unit = {
-    try {
-      logDebug(s"Received notification that parameter $name was changed")
-    } catch {
-      case e: Throwable => throw new Exception(s"[ENGINE ${this.name}] error while setting parameter: " + e.getMessage)
-    }
   }
 
   override def getDefinedFunctions(): List[String] = {

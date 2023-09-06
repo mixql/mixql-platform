@@ -126,7 +126,7 @@ object StubSimpleProc {
     new ((StubContext) => String) {
 
       override def apply(ctx: StubContext): String = {
-        Thread.sleep(120000)
+        Thread.sleep(30000)
         "SUCCESS"
       }
     }

@@ -67,14 +67,13 @@ object MixQlEnginePlatformOozie:
       variables.put("mixql.org.engine.sqlight.db.path", gtype.string(oozieParams("mixql.org.engine.sqlight.db.path")))
 
     logDebug(s"Mixql engine oozie platform: init Cluster context")
-    val context =
-      new Context(
-        engines,
-        Try({
-          oozieParams("org.mixql.platform.oozie.engines.default")
-        }).getOrElse("sqlite-local"),
-        variablesInit = variables
-      )
+    val context = Context(
+      engines,
+      Try({
+        oozieParams("org.mixql.platform.oozie.engines.default")
+      }).getOrElse("sqlite-local"),
+      variablesInit = variables
+    )
 
     logDebug(s"Mixql engine oozie platform: prepare sql files")
     val sqlScriptFiles: List[File] = Try {
@@ -104,19 +103,19 @@ object MixQlEnginePlatformOozie:
         webTextIoExecutor.execute(textIoApp)
       end if
 
-      logDebug(context.getScope().head.toString())
+      logDebug(context.getParams().toString())
     } catch {
       case e: Throwable => logError(e.getMessage)
     } finally {
-      context.engines.values.foreach(e =>
-        if (e.isInstanceOf[ClientModule]) {
-          Try({
-            val cl: ClientModule = e.asInstanceOf[ClientModule]
-            logDebug(s"sending shutdown to remote engine " + cl.name)
-            cl.ShutDown()
-          })
-        }
-      )
+//      context.engines.values.foreach(e =>
+//        if (e.isInstanceOf[ClientModule]) {
+//          Try({
+//            val cl: ClientModule = e.asInstanceOf[ClientModule]
+//            logDebug(s"sending shutdown to remote engine " + cl.name)
+//            cl.ShutDown()
+//          })
+//        }
+//      )
       Try(context.close())
       Try({
         if BrokerModule.wasStarted then BrokerModule.close()

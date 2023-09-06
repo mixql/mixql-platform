@@ -1,6 +1,7 @@
 import org.scalatest.funsuite.AnyFunSuite
 import org.mixql.engine.stub.local.{EngineStubLocal, StubContext}
-import org.mixql.core.context.gtype
+import org.mixql.core.context.{Context, EngineContext, gtype}
+import scala.collection.mutable
 
 class TestStubSimpleFuncs extends AnyFunSuite {
   val engine = EngineStubLocal
@@ -26,7 +27,10 @@ class TestStubSimpleFuncs extends AnyFunSuite {
       gtype.unpack(
         engine.executeFunc(
           "stub_simple_proc_params",
-          null, {
+          new EngineContext(
+            Context(mutable.Map("stub-local" -> engine), "stub-local", mutable.Map(), mutable.Map()),
+            "stub-local"
+          ), {
             val kwargs: Map[String, Object] = Map.empty
             kwargs
           },
@@ -48,7 +52,10 @@ class TestStubSimpleFuncs extends AnyFunSuite {
       gtype.unpack({
         engine.executeFunc(
           "stub_simple_proc_context_params",
-          null, {
+          new EngineContext(
+            Context(mutable.Map("stub-local" -> engine), "stub-local", mutable.Map(), mutable.Map()),
+            "stub-local"
+          ), {
             val kwargs: Map[String, Object] = Map.empty
             kwargs
           },

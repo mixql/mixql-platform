@@ -48,14 +48,6 @@ object EngineStubLocal extends Engine with IEngineLogger {
         )
   }
 
-  override def paramChangedImpl(name: String, ctx: EngineContext): Unit = {
-    try {
-      logDebug(s"Received notification that parameter $name was changed")
-    } catch {
-      case e: Throwable => throw new Exception(s"[ENGINE ${this.name}] error while setting parameter: " + e.getMessage)
-    }
-  }
-
   override def getDefinedFunctions(): List[String] = {
     logInfo(s" Was asked to get defined functions")
     functions.keys.toList

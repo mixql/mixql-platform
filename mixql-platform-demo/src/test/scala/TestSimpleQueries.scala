@@ -33,6 +33,8 @@ class TestSimpleQueries extends MixQLClusterTest {
   test("work correctly with variables 2 test") {
     run("""
         |let a="fgfg";
+        |let b="fgfg";
+        |let c="fgfg";
         |
         |use database ${$a || ""}; -- нет кавычек
         |use database $a; -- нет кавычек

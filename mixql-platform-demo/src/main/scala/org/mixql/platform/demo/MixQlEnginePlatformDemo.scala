@@ -12,6 +12,7 @@ import org.mixql.net.PortOperations
 import org.mixql.core.context.{Context, gtype}
 import org.mixql.engine.stub.local.EngineStubLocal
 import org.mixql.engine.sqlite.local.EngineSqlightLocal
+import org.mixql.platform.demo.engines.executors.{MixQlEngineSqliteExecutor, MixQlEngineStubExecutor}
 import org.mixql.platform.demo.procedures.SimpleFuncs
 
 import scala.collection.mutable
@@ -42,12 +43,12 @@ object MixQlEnginePlatformDemo:
         "mixql-engine-stub",
         // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
         // in base path
-        Some("mixql-engine-stub"),
         None,
+        Some(MixQlEngineStubExecutor),
         host,
         portFrontend,
         portBackend,
-        binPath
+        None
       ),
       "sqlite" -> new ClientModule(
         // Name of client, is used for identification in broker,
@@ -58,12 +59,12 @@ object MixQlEnginePlatformDemo:
         "mixql-engine-sqlite",
         // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
         // in base path
-        Some("mixql-engine-sqlite"),
         None,
+        Some(MixQlEngineSqliteExecutor),
         host,
         portFrontend,
         portBackend,
-        binPath
+        None
       ),
       "stub-local" -> EngineStubLocal,
       "sqlite-local" -> EngineSqlightLocal()
@@ -83,15 +84,14 @@ object MixQlEnginePlatformDemo:
     )
 
     logDebug(s"Mixql engine demo platform: init Cluster context")
-    val context =
-      new Context(
-        engines,
-        Try({
-          config.getString("org.mixql.platform.demo.engines.default")
-        }).getOrElse("stub"),
-        functionsInit = functions,
-        variablesInit = variables
-      )
+    val context = Context(
+      engines,
+      Try({
+        config.getString("org.mixql.platform.demo.engines.default")
+      }).getOrElse("stub"),
+      functionsInit = functions,
+      variablesInit = variables
+    )
 
     try {
       var replMode = false

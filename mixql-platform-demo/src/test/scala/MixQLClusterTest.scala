@@ -12,6 +12,7 @@ import org.mixql.core.context.{Context, gtype}
 import org.mixql.core.context.gtype.Type
 import org.mixql.engine.sqlite.local.EngineSqlightLocal
 import org.mixql.engine.stub.local.EngineStubLocal
+import org.mixql.platform.demo.engines.executors.{MixQlEngineSqliteExecutor, MixQlEngineStubExecutor}
 import org.mixql.platform.demo.logger.{logDebug, logInfo}
 import org.mixql.platform.demo.procedures.SimpleFuncs
 import org.mixql.remote.messages.module.ShutDown
@@ -34,7 +35,7 @@ trait MixQLClusterTest extends FunSuite {
     runWithTimeout(timeoutMs)(f).getOrElse(default)
   }
 
-  override val munitTimeout: Duration = Duration(300, "s")
+  override val munitTimeout: Duration = Duration(60, "s")
 
   val context: Fixture[Context] =
     new Fixture[Context]("context") {
@@ -106,7 +107,7 @@ trait MixQLClusterTest extends FunSuite {
 
         ctx = {
           logDebug(s"Mixql engine demo platform: init Cluster context")
-          new Context(engines, "stub-local", functionsInit = functions, variablesInit = variables)
+          Context(engines, "stub-local", functionsInit = functions, variablesInit = variables)
         }
       }
 
@@ -134,7 +135,7 @@ trait MixQLClusterTest extends FunSuite {
   override def munitFixtures: Seq[Fixture[Context]] = List(context)
 
   def run(code: String): Unit = {
-    runWithTimeout(300000) {
+    runWithTimeout(60000) {
       org.mixql.core.run(code, context())
     }
   }

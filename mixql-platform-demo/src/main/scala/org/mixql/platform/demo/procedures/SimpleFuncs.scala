@@ -19,7 +19,7 @@ object SimpleFuncs {
 
       override def apply(ctx: Context, currentScope: Boolean = false): String = {
         logInfo("[print_current_vars] started")
-        logInfo("[print_current_vars] context scope: " + ctx.getScope().toString())
+        logInfo("[print_current_vars] context scope: " + ctx.getParams().toString())
         "SUCCESS"
       }
     }
@@ -29,7 +29,7 @@ object SimpleFuncs {
 
       override def apply(ctx: Context): Array[String] = {
         logInfo("[get_engines_list] started")
-        val engineNames = ctx.engines.keys
+        val engineNames = ctx.engineNames
         logInfo("[get_engines_list] supported engines: " + engineNames.mkString(","))
         engineNames.toArray
       }

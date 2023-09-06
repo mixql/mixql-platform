@@ -5,7 +5,6 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.mixql.core.context.{EngineContext, gtype}
 import org.mixql.engine.core.PlatformContext
 import org.mixql.engine.core.logger.ModuleLogger
-import org.mixql.engine.test.PlatformContextTest
 
 import scala.collection.mutable
 

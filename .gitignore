@@ -40,3 +40,5 @@ mixql-protobuf-core/src/main/java/
 
 #projectmatrix
 .sbt
+
+samples/db/

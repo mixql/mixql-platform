@@ -24,10 +24,12 @@ class SQLightJDBC(identity: String, ctx: EngineContext, dbPathParameter: Option[
     val url: String = Try {
       getStringParam(dbPathParameter.get.trim)
     }.getOrElse(Try {
+      if (dbPathParameter.isDefined)
+        logWarn(s"could not read dbPathParameter: " + dbPathParameter.get)
       getStringParam("mixql.org.engine.sqlight.db.path")
     }.getOrElse({
+      logWarn(s"could not read string parameter mixql.org.engine.sqlight.db.path. Use in memory db")
       val path = "jdbc:sqlite::memory:"
-      logInfo(s"use in memory db")
       path
     }))
 

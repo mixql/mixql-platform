@@ -20,7 +20,8 @@ libraryDependencies ++= Seq(
   "org.apache.commons"    % "commons-compress" % "1.21",
   "commons-io"            % "commons-io"       % "2.11.0",
   "com.typesafe"          % "config"           % "1.4.2",
-  "com.thesamet.scalapb" %% "compilerplugin"   % "0.11.10"
+  "com.thesamet.scalapb" %% "compilerplugin"   % "0.11.10",
+  "org.xerial"            % "sqlite-jdbc"      % "3.40.0.0"
 )
 dependencyOverrides += "org.scala-lang.modules" % "scala-xml_2.12" % "2.1.0"
 

@@ -115,11 +115,6 @@ class ClientModule(clientName: String,
     else functionsList
   }
 
-  override def paramChangedImpl(name: String, ctx: EngineContext): Unit = {
-    if (engineStarted)
-      sendMsg(new messages.module.ParamChanged(name, GtypeConverter.toGeneratedMsg(ctx.getVar(name))))
-  }
-
   @tailrec
   private def reactOnRequest(msg: Message, ctx: EngineContext): Type = {
     msg match

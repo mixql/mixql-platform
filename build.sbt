@@ -102,7 +102,8 @@ lazy val stageEnginesDemo = taskKey[Seq[(File, String)]]("stage engines and get 
 
 lazy val stageEnginesOozie = taskKey[Seq[(File, String)]]("stage engines and get jars for mixqlPlatformOozie")
 
-lazy val mixQLEngineStubLocal = project.in(file("engines/mixql-engine-stub-local")).dependsOn(mixQLEngineSCALA3)
+lazy val mixQLEngineStubLocal = project.in(file("engines/mixql-engine-stub-local"))
+  .dependsOn(mixQLEngineSCALA3 % "compile->compile;compile->test;test->test;")
 
 lazy val mixQLEngineSqliteLocal = project.in(file("engines/mixql-engine-sqlite-local"))
   .dependsOn(mixQLEngineSCALA3) //, mixQLCoreSCALA3 % "compile->compile;compile->test")
@@ -231,7 +232,9 @@ Test / test := Def.sequential(
   test.all(ScopeFilter(projectsTest, inConfigurations(Test)))
 ).value
 
-Test / parallelExecution := false
+ThisBuild / Test / parallelExecution := false
+ThisBuild / Test / fork := true
+ThisBuild / libraryDependencies ++= Seq("org.xerial" % "sqlite-jdbc" % "3.40.0.0" % Test)
 
 lazy val format = taskKey[Unit]("format src, test, sbt")
 

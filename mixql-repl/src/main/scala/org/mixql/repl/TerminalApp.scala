@@ -7,6 +7,7 @@ import java.util.function.BiConsumer
 import org.mixql.core.context.Context
 import org.beryx.textio.web.RunnerData
 import org.mixql.core.run
+import org.mixql.engine.core.BrakeException
 
 class TerminalApp(context: Context, prompt: String = "mixql>") extends BiConsumer[TextIO, RunnerData] {
 
@@ -24,7 +25,9 @@ class TerminalApp(context: Context, prompt: String = "mixql>") extends BiConsume
                 |:exit -> termnate terminal session, platform will exit
                 |:help -> print this message again
                 |:show vars -> prints declared variables
-                |:show functions -> prints available functions
+                |:show vars with params -> prints declared variables overrided by engine params
+                |:show functions -> prints available platform functions
+                |:show functions on engine name_of_engine_here -> prints available functions on specified engine
                 |:show engines -> prints available engines
                 |:show current engine -> prints name of current engine on which command will be executed
                 |:print var name_of_variable_here -> prints value of variable
@@ -32,14 +35,23 @@ class TerminalApp(context: Context, prompt: String = "mixql>") extends BiConsume
             case ":exit" =>
               printExitMessage()
               throw new org.mixql.engine.core.BrakeException()
-            case ":show vars"           => terminal.println(context.getScope().head.toString())
-            case ":show functions"      => terminal.println(context.functions.keys.mkString(", "))
-            case ":show engines"        => terminal.println(context.engines.keys.mkString(", "))
-            case ":show current engine" => terminal.println(context.currentEngine.name)
+            case ":show vars"             => terminal.println(context.getVars().toString())
+            case ":show vars with params" => terminal.println(context.getParams().toString())
+            case ":show functions"        => terminal.println(context.functions.keys.mkString(", "))
+            case ":show engines"          => terminal.println(context.engineNames.mkString(", "))
+            case ":show current engine"   => terminal.println(context.currentEngineAllias)
             case input: String =>
-              if input.startsWith(":print var") then
-                terminal.println(context.getVar(input.split("\\s").apply(2)).toString)
-              else
+              try {
+                if input.startsWith(":print var") then
+                  terminal.println(context.getVar(input.split("\\s").apply(2)).toString)
+                  throw new BrakeException()
+
+                if input.startsWith(":show functions on engine") then
+                  terminal.println({
+                    context.getEngine(input.split("\\s").apply(4)).get.getDefinedFunctions().mkString(", ")
+                  })
+                  throw new BrakeException()
+
                 val res = run(
                   {
                     if (!stmt.endsWith(";"))
@@ -50,6 +62,10 @@ class TerminalApp(context: Context, prompt: String = "mixql>") extends BiConsume
                   context
                 )
                 terminal.println("returned: " + res.toString())
+              } catch {
+                case e: BrakeException =>
+                case e: Throwable      => throw e
+              }
         } catch {
           case e: ReadAbortedException                 => throw new org.mixql.engine.core.BrakeException()
           case e: org.mixql.engine.core.BrakeException => throw e

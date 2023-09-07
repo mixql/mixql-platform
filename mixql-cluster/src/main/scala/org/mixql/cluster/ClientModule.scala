@@ -21,7 +21,6 @@ import org.mixql.remote.messages.client.{
   Execute,
   ExecuteFunction,
   InvokedFunctionResult,
-  Param,
   PlatformVar,
   PlatformVarWasSet,
   PlatformVars,
@@ -30,7 +29,7 @@ import org.mixql.remote.messages.client.{
   ShutDown
 }
 import org.mixql.remote.messages.{Message, module}
-import org.mixql.remote.messages.gtype.IGtypeMessage
+import org.mixql.remote.messages.gtype.{IGtypeMessage, Param}
 import org.mixql.remote.messages.module.worker.{
   GetPlatformVar,
   GetPlatformVars,

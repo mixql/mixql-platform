@@ -1,4 +1,4 @@
-package org.mixql.remote.messages.client;
+package org.mixql.remote.messages.gtype;
 
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;

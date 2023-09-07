@@ -49,7 +49,7 @@ public class RemoteMessageConverter {
                 return new Execute(
                         (String) anyMsgJsonObject.get("statement")
                 );
-            case "org.mixql.remote.messages.client.Param":
+            case "org.mixql.remote.messages.gtype.Param":
                 return new Param(
                         (String) anyMsgJsonObject.get("name"),
                         _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("msg"))

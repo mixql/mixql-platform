@@ -1,18 +1,9 @@
-package org.mixql.remote.messages.module;
+package org.mixql.remote.messages.client;
 
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;
-import org.mixql.remote.messages.gtype.gString;
 
-public class ExecuteFunction implements Message {
-
-    public String name;
-    public Message[] params;
-    public ExecuteFunction(String name, Message[] params){
-        this.name = name;
-        this.params = params;
-    }
-
+public class ShutDown implements Message {
     @Override
     public String toString() {
         try {
@@ -25,5 +16,4 @@ public class ExecuteFunction implements Message {
             return super.toString();
         }
     }
-
 }

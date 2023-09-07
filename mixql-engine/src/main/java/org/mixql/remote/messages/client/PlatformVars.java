@@ -1,9 +1,9 @@
-package org.mixql.remote.messages.module.worker;
+package org.mixql.remote.messages.client;
 
 import org.mixql.remote.RemoteMessageConverter;
 
-public class PlatformVarsNames implements IWorkerSender {
-    public String[] names;
+public class PlatformVars implements IWorkerSender {
+    public Param[] vars;
 
     @Override
     public String sender() {
@@ -11,9 +11,9 @@ public class PlatformVarsNames implements IWorkerSender {
     }
     private String _sender;
 
-    public PlatformVarsNames(String sender, String[] names) {
+    public PlatformVars(String sender, Param[] params) {
         _sender = sender;
-        this.names = names;
+        this.vars = params;
     }
 
     @Override

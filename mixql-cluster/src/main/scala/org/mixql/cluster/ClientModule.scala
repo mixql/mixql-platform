@@ -5,8 +5,7 @@ import org.mixql.cluster.logger.{logDebug, logError, logInfo, logWarn}
 import org.mixql.core.engine.Engine
 import org.mixql.core.context.gtype.{Type, unpack}
 import org.mixql.net.PortOperations
-import org.mixql.remote.{GtypeConverter, RemoteMessageConverter}
-import org.mixql.remote.messages
+import org.mixql.remote.{GtypeConverter, RemoteMessageConverter, messages}
 import org.zeromq.{SocketType, ZMQ}
 
 import java.io.File
@@ -17,7 +16,19 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 import org.mixql.core.context.{EngineContext, gtype}
-import org.mixql.remote.messages.cluster.EngineStarted
+import org.mixql.remote.messages.client.{
+  EngineStarted,
+  Execute,
+  ExecuteFunction,
+  InvokedFunctionResult,
+  Param,
+  PlatformVar,
+  PlatformVarWasSet,
+  PlatformVars,
+  PlatformVarsNames,
+  PlatformVarsWereSet,
+  ShutDown
+}
 import org.mixql.remote.messages.{Message, module}
 import org.mixql.remote.messages.gtype.IGtypeMessage
 import org.mixql.remote.messages.module.worker.{
@@ -26,16 +37,9 @@ import org.mixql.remote.messages.module.worker.{
   GetPlatformVarsNames,
   IWorkerSendToPlatform,
   InvokeFunction,
-  InvokedFunctionResult,
-  PlatformVar,
-  PlatformVarWasSet,
-  PlatformVars,
-  PlatformVarsNames,
-  PlatformVarsWereSet,
   SetPlatformVar,
   SetPlatformVars
 }
-import org.mixql.remote.messages.module.ShutDown
 import scalapb.options.ScalaPbOptions.OptionsScope
 
 import java.lang.Thread.sleep
@@ -74,7 +78,7 @@ class ClientModule(clientName: String,
   override def executeImpl(stmt: String, ctx: EngineContext): Type = {
     logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by execute request")
 
-    sendMsg(messages.module.Execute(stmt))
+    sendMsg(Execute(stmt))
     reactOnRequest(recvMsg(), ctx)
   }
 
@@ -83,7 +87,7 @@ class ClientModule(clientName: String,
       throw new UnsupportedOperationException("named arguments are not supported in functions in remote engine " + name)
 
     logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by executeFunc request")
-    sendMsg(messages.module.ExecuteFunction(name, params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray))
+    sendMsg(ExecuteFunction(name, params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray))
     reactOnRequest(recvMsg(), ctx)
   }
 
@@ -96,11 +100,11 @@ class ClientModule(clientName: String,
     import org.mixql.core.context.gtype
     logInfo(s"Server: ClientModule: $clientName: ask defined functions from remote engine")
 
-    sendMsg(messages.module.GetDefinedFunctions())
+    sendMsg(messages.client.GetDefinedFunctions())
     val functionsList =
       recvMsg() match {
         case m: messages.module.DefinedFunctions => m.arr.toList
-        case ex: messages.module.Error =>
+        case ex: messages.gtype.Error =>
           val errorMessage = s"Server: ClientModule: $clientName: getDefinedFunctions error: \n" + ex.msg
           logError(errorMessage)
           throw new Exception(errorMessage)
@@ -135,7 +139,7 @@ class ClientModule(clientName: String,
             sendMsg(
               new PlatformVars(
                 msg.sender(),
-                valMap.map(t => new messages.module.Param(t._1, GtypeConverter.toGeneratedMsg(t._2))).toArray
+                valMap.map(t => new Param(t._1, GtypeConverter.toGeneratedMsg(t._2))).toArray
               )
             )
             reactOnRequest(recvMsg(), ctx)
@@ -158,7 +162,7 @@ class ClientModule(clientName: String,
 //                sendMsg(new module.Error(e.getMessage()))
 //                reactOnRequest(recvMsg(), ctx)
 //            }
-      case msg: messages.module.Error =>
+      case msg: messages.gtype.Error =>
         logError(
           "Server: ClientModule: $clientName: error while reacting on request" +
             msg.msg
@@ -294,7 +298,7 @@ class ClientModule(clientName: String,
 
   def ShutDown() = {
     if moduleStarted then
-      sendMsg(messages.module.ShutDown())
+      sendMsg(messages.client.ShutDown())
       moduleStarted = false // not to send occasionally more then once
   }
 

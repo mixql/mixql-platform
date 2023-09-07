@@ -1,23 +1,24 @@
-package org.mixql.remote.messages.module.worker;
+package org.mixql.remote.messages.client;
 
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;
 
-public class PlatformVar implements IWorkerSender {
+public class InvokedFunctionResult implements IWorkerSender {
     public String name;
-    public Message msg;
 
-    private String _sender;
+    public String _sender;
+
+    public Message result;
 
     @Override
     public String sender() {
         return _sender;
     }
 
-    public PlatformVar(String sender, String key, Message msg) {
-        _sender = sender;
-        this.name = key;
-        this.msg = msg;
+    public InvokedFunctionResult(String sender, String funcName, Message result) {
+        this._sender = sender;
+        this.name = funcName;
+        this.result = result;
     }
 
     @Override

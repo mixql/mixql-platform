@@ -1,13 +1,15 @@
-package org.mixql.remote.messages.module;
+package org.mixql.remote.messages.client;
 
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;
 
-public class Execute implements Message {
-    public String statement;
+public class Param implements Message {
+    public String name;
+    public Message msg;
 
-    public Execute(String statement){
-        this.statement = statement;
+    public Param(String name, Message msg){
+        this.name = name;
+        this.msg = msg;
     }
 
     @Override
@@ -22,4 +24,5 @@ public class Execute implements Message {
             return super.toString();
         }
     }
+    
 }

@@ -1,12 +1,24 @@
-package org.mixql.remote.messages.module;
+package org.mixql.remote.messages.client;
 
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;
+import org.mixql.remote.messages.client.IWorkerSender;
 
-public class EngineName implements Message {
+public class PlatformVar implements IWorkerSender {
     public String name;
-    public EngineName(String name){
-        this.name = name;
+    public Message msg;
+
+    private String _sender;
+
+    @Override
+    public String sender() {
+        return _sender;
+    }
+
+    public PlatformVar(String sender, String key, Message msg) {
+        _sender = sender;
+        this.name = key;
+        this.msg = msg;
     }
 
     @Override

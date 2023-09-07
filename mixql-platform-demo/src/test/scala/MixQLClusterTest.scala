@@ -15,7 +15,7 @@ import org.mixql.engine.stub.local.EngineStubLocal
 import org.mixql.platform.demo.engines.executors.{MixQlEngineSqliteExecutor, MixQlEngineStubExecutor}
 import org.mixql.platform.demo.logger.{logDebug, logInfo}
 import org.mixql.platform.demo.procedures.SimpleFuncs
-import org.mixql.remote.messages.module.ShutDown
+import org.mixql.remote.messages.client.ShutDown
 import org.scalatest.funsuite.AnyFunSuite
 
 import scala.concurrent.duration.Duration

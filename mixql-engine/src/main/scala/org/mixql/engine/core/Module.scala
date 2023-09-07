@@ -5,17 +5,16 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.mixql.engine.core.logger.ModuleLogger
 import org.zeromq.{SocketType, ZMQ}
 import org.mixql.remote.messages.gtype.NULL
-import org.mixql.remote.messages.module.{Execute, ExecuteFunction, GetDefinedFunctions, ShutDown}
-import org.mixql.remote.messages.module.worker.{IWorkerSendToPlatform, IWorkerSender, SendMsgToPlatform, WorkerFinished}
-import org.mixql.remote.RemoteMessageConverter
-import org.mixql.remote.messages.Message
+import org.mixql.remote.messages.module.worker.{IWorkerSendToPlatform, SendMsgToPlatform, WorkerFinished}
+import org.mixql.remote.{RemoteMessageConverter, messages}
+import org.mixql.remote.messages.{Message, gtype}
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 import scala.util.{Random, Try}
-import org.mixql.remote.messages
+import org.mixql.remote.messages.client.{Execute, ExecuteFunction, GetDefinedFunctions, IWorkerSender, ShutDown}
 
 class Module(executor: IModuleExecutor, identity: String, host: String, port: Int)(implicit logger: ModuleLogger) {
   val config: Config = ConfigFactory.load()
@@ -149,7 +148,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
       case ex: Exception =>
         logError(s"Error: " + ex.getMessage)
         sendMsgToServerBroker(
-          new messages.module.Error(
+          new gtype.Error(
             s"Module $identity to broker ${new String(brokerClientAdress)}: fatal error: " +
               ex.getMessage
           ),
@@ -192,7 +191,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
         } catch {
           case e: Throwable =>
             sendMsgToServerBroker(
-              new messages.module.Error(
+              new gtype.Error(
                 s"Module $identity to ${clientAddressStr}: error while reacting on getting" +
                   " functions list" + e.getMessage
               ),
@@ -200,7 +199,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
               logger
             )
         }
-      case m: messages.module.Error => sendMsgToServerBroker(m, clientAddress, logger)
+      case m: gtype.Error => sendMsgToServerBroker(m, clientAddress, logger)
 //      case msg: PlatformVarWasSet     => sendMessageToWorker(msg, messageRAW)
 //      case msg: PlatformVar           => sendMessageToWorker(msg, messageRAW)
 //      case msg: PlatformVars          => sendMessageToWorker(msg, messageRAW)
@@ -237,7 +236,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
           RemoteMessageConverter.toArray(
             new SendMsgToPlatform(
               clientAddress,
-              new messages.module.Error(
+              new gtype.Error(
                 s"Module $identity to ${clientAddressStr}: error while reacting on execute: " +
                   ex.getMessage
               ),
@@ -264,7 +263,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
           RemoteMessageConverter.toArray(
             new SendMsgToPlatform(
               clientAddress,
-              new messages.module.Error(
+              new gtype.Error(
                 s"Module $identity to ${clientAddressStr}: error while reacting on execute function" +
                   s"${msg.name}: " + e.getMessage
               ),

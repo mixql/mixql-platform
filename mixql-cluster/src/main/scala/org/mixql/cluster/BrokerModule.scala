@@ -213,18 +213,30 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
   }
 
   private def receiveMessageFromFrontend(): (String, String, Array[Byte]) = {
+    ////// Identity frame was added by ROUTER socket////////////////////////
     val clientAddr = frontend.recv()
     val clientAddrStr = String(clientAddr)
     logDebug("Broker frontend: received client's identity " + clientAddrStr)
+    ///////////////////////////////////////////////////////////////////////
+
+    ////// Empty frame was added by REQ socket////////////////////////
     frontend.recv()
     logDebug(s"Broker frontend: received empty frame from $clientAddrStr")
+    /////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////
+    // Main msg, contains engine's address and message, separated by empty frame//
+    //////////////////////////////////////////////////////////////////////////////
     val engineIdentity = frontend.recv()
     val engineIdentityStr = String(engineIdentity)
     logDebug(s"Broker frontend: received engine module identity $engineIdentityStr from $clientAddrStr")
+
     frontend.recv()
     logDebug(s"Broker frontend: received empty frame from $clientAddrStr")
+
     val request = frontend.recv()
     logDebug(s"Broker frontend: received request for engine module $engineIdentityStr from $clientAddrStr")
+    //////////////////////////////////////////////////////////////////////////////
     (clientAddrStr, engineIdentityStr, request)
   }
 

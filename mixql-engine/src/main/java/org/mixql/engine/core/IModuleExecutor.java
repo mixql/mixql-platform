@@ -3,8 +3,8 @@ package org.mixql.engine.core;
 import org.mixql.engine.core.logger.ModuleLogger;
 import org.mixql.remote.messages.*;
 import org.mixql.remote.messages.module.DefinedFunctions;
-import org.mixql.remote.messages.module.Execute;
-import org.mixql.remote.messages.module.ExecuteFunction;
+import org.mixql.remote.messages.client.Execute;
+import org.mixql.remote.messages.client.ExecuteFunction;
 
 public interface IModuleExecutor {
 

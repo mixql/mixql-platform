@@ -1,21 +1,26 @@
-package org.mixql.remote.messages.module.worker;
+package org.mixql.remote.messages.client;
 
 import org.mixql.remote.RemoteMessageConverter;
-import org.mixql.remote.messages.module.Param;
+import org.mixql.remote.messages.client.IWorkerSender;
 
-public class PlatformVars implements IWorkerSender {
-    public Param[] vars;
+import java.util.ArrayList;
+
+public class PlatformVarsWereSet implements IWorkerSender {
+    public ArrayList<String> names;
 
     @Override
     public String sender() {
         return _sender;
     }
-    private String _sender;
 
-    public PlatformVars(String sender, Param[] params) {
+    private String _sender;
+    private byte[] _clientAddress;
+
+    public PlatformVarsWereSet(String sender, ArrayList<String> names) {
         _sender = sender;
-        this.vars = params;
+        this.names = names;
     }
+
 
     @Override
     public String toString() {

@@ -1,9 +1,22 @@
-package org.mixql.remote.messages.module;
+package org.mixql.remote.messages.client;
 
 import org.mixql.remote.RemoteMessageConverter;
-import org.mixql.remote.messages.Message;
+import org.mixql.remote.messages.client.IWorkerSender;
 
-public class GetDefinedFunctions implements Message {
+public class PlatformVarsNames implements IWorkerSender {
+    public String[] names;
+
+    @Override
+    public String sender() {
+        return _sender;
+    }
+    private String _sender;
+
+    public PlatformVarsNames(String sender, String[] names) {
+        _sender = sender;
+        this.names = names;
+    }
+
     @Override
     public String toString() {
         try {

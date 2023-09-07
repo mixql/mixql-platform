@@ -17,7 +17,7 @@ import org.mixql.platform.demo.procedures.SimpleFuncs
 
 import scala.collection.mutable
 import org.mixql.platform.demo.logger.*
-import org.mixql.remote.messages.module.ShutDown
+import org.mixql.remote.messages.client.ShutDown
 import org.mixql.repl.{TerminalApp, TerminalOps, WebTextIoExecutor}
 
 import scala.util.Try

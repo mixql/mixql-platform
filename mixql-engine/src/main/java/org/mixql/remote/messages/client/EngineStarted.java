@@ -1,4 +1,4 @@
-package org.mixql.remote.messages.cluster;
+package org.mixql.remote.messages.client;
 
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;

@@ -1,12 +1,10 @@
 package org.mixql.remote;
 
 import org.mixql.core.context.gtype.*;
-import org.mixql.core.context.gtype.gDouble;
-import org.mixql.core.context.gtype.gInt;
 import org.mixql.core.context.gtype.map;
 import org.mixql.remote.messages.*;
 import org.mixql.remote.messages.gtype.*;
-import org.mixql.remote.messages.module.Error;
+import org.mixql.remote.messages.gtype.Error;
 
 import java.util.HashMap;
 

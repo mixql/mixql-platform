@@ -1,9 +1,9 @@
-package org.mixql.remote.messages.module;
+package org.mixql.remote.messages.client;
 
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;
 
-public class ShutDown implements Message {
+public class GetDefinedFunctions implements Message {
     @Override
     public String toString() {
         try {

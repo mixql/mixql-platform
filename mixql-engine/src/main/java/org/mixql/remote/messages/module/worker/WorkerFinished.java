@@ -1,6 +1,7 @@
 package org.mixql.remote.messages.module.worker;
 
 import org.mixql.remote.RemoteMessageConverter;
+import org.mixql.remote.messages.client.IWorkerSender;
 
 public class WorkerFinished implements IWorkerSender {
     public String Id;

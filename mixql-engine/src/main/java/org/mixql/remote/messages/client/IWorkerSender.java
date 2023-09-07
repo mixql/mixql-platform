@@ -1,4 +1,4 @@
-package org.mixql.remote.messages.module.worker;
+package org.mixql.remote.messages.client;
 
 import org.mixql.remote.messages.Message;
 

@@ -78,7 +78,7 @@ class SQLightJDBC(identity: String, platformCtx: PlatformContext) extends java.l
         } else
           messages.gtype.NULL()
       } catch {
-        case e: Throwable => module.Error(s"Module $identity: SQLightJDBC error while execute: " + e.getMessage)
+        case e: Throwable => gtype.Error(s"Module $identity: SQLightJDBC error while execute: " + e.getMessage)
       } finally {
         if (jdbcStmt != null)
           jdbcStmt.close()

@@ -4,7 +4,7 @@ import scala.collection.mutable
 import org.mixql.engine.core.{IModuleExecutor, PlatformContext}
 import org.mixql.engine.core.logger.ModuleLogger
 import org.mixql.remote.messages.gtype.Bool
-import org.mixql.remote.messages.module.{DefinedFunctions, Execute, ExecuteFunction, ParamChanged}
+import org.mixql.remote.messages.module.{DefinedFunctions, Execute, ExecuteFunction}
 import org.mixql.remote.{GtypeConverter, RemoteMessageConverter, messages}
 import org.mixql.remote.messages.{Message, gtype}
 
@@ -22,15 +22,6 @@ object EngineDemoExecutor extends IModuleExecutor {
     logInfo(s"Successfully executed command ${msg.statement}")
     logDebug(s"Sending reply on Execute msg")
     messages.gtype.NULL()
-  }
-
-  override def reactOnParamChangedAsync(msg: ParamChanged,
-                                        identity: String,
-                                        clientAddress: String,
-                                        logger: ModuleLogger,
-                                        platformContext: PlatformContext): Unit = {
-    import logger._
-    logInfo(s"Module $identity :Received notify msg about changed param ${msg.name} from server $clientAddress: ")
   }
 
   def functions: Map[String, Any] =

@@ -5,15 +5,11 @@ import org.mixql.remote.messages.*;
 import org.mixql.remote.messages.module.DefinedFunctions;
 import org.mixql.remote.messages.module.Execute;
 import org.mixql.remote.messages.module.ExecuteFunction;
-import org.mixql.remote.messages.module.ParamChanged;
 
 public interface IModuleExecutor {
 
     Message reactOnExecuteAsync(Execute msg, String identity, String clientAddress, ModuleLogger logger,
                                 PlatformContext platformContext);
-
-    void reactOnParamChangedAsync(ParamChanged msg, String identity, String clientAddress, ModuleLogger logger,
-                                  PlatformContext platformContext);
 
     void reactOnShutDown(String identity, String clientAddress, ModuleLogger logger);
 

@@ -5,7 +5,7 @@ import org.mixql.engine.core.{BrakeException, IModuleExecutor, PlatformContext}
 import org.mixql.engine.core.logger.ModuleLogger
 import org.mixql.remote.messages
 import org.mixql.remote.messages.gtype.Bool
-import org.mixql.remote.messages.module.{DefinedFunctions, Execute, ExecuteFunction, ParamChanged}
+import org.mixql.remote.messages.module.{DefinedFunctions, Execute, ExecuteFunction}
 import org.mixql.remote.messages.{Message, gtype}
 
 object EngineSqlightExecutor extends IModuleExecutor:
@@ -37,15 +37,6 @@ object EngineSqlightExecutor extends IModuleExecutor:
     } finally {
       context.close()
     }
-  }
-
-  override def reactOnParamChangedAsync(msg: ParamChanged,
-                                        identity: String,
-                                        clientAddress: String,
-                                        logger: ModuleLogger,
-                                        platformContext: PlatformContext): Unit = {
-    import logger._
-    logInfo(s"Module $identity :Received notify msg about changed param ${msg.name} from server $clientAddress: ")
   }
 
   override def reactOnExecuteFunctionAsync(msg: ExecuteFunction,

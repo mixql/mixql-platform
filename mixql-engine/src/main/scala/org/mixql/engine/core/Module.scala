@@ -5,7 +5,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.mixql.engine.core.logger.ModuleLogger
 import org.zeromq.{SocketType, ZMQ}
 import org.mixql.remote.messages.gtype.NULL
-import org.mixql.remote.messages.module.{Execute, ExecuteFunction, GetDefinedFunctions, ParamChanged, ShutDown}
+import org.mixql.remote.messages.module.{Execute, ExecuteFunction, GetDefinedFunctions, ShutDown}
 import org.mixql.remote.messages.module.worker.{IWorkerSendToPlatform, IWorkerSender, SendMsgToPlatform, WorkerFinished}
 import org.mixql.remote.RemoteMessageConverter
 import org.mixql.remote.messages.Message
@@ -168,8 +168,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
                                           clientAddress: Array[Byte]): Unit = {
     import scala.util.{Success, Failure}
     message match {
-      case msg: Execute      => reactOnExecuteMessageAsync(msg, clientAddressStr, clientAddress)
-      case msg: ParamChanged => reactOnParamChangedMessageAsync(msg, clientAddressStr, clientAddress)
+      case msg: Execute => reactOnExecuteMessageAsync(msg, clientAddressStr, clientAddress)
       case _: ShutDown =>
         logInfo(s"Started shutdown")
         try {
@@ -268,32 +267,6 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
               new messages.module.Error(
                 s"Module $identity to ${clientAddressStr}: error while reacting on execute function" +
                   s"${msg.name}: " + e.getMessage
-              ),
-              workerID
-            )
-          )
-        )
-      }
-    )
-  }
-
-  def reactOnParamChangedMessageAsync(msg: ParamChanged, clientAddressStr: String, clientAddress: Array[Byte]) = {
-    reactOnRemoteMessageAsync(
-      clientAddress,
-      (workersID, ctxPlatform) => {
-        logInfo(s"[workers-future-$workersID]: triggering OnParamChanged")
-        executor.reactOnParamChangedAsync(msg, identity, clientAddressStr, logger, ctxPlatform)
-        new NULL()
-      },
-      (_, _, _) => {},
-      (e: Throwable, socket, workerID) => {
-        socket.send(
-          RemoteMessageConverter.toArray(
-            new SendMsgToPlatform(
-              clientAddress,
-              new messages.module.Error(
-                s"Module $identity to ${clientAddressStr}: error while reacting on changed param: " +
-                  e.getMessage
               ),
               workerID
             )

@@ -35,7 +35,7 @@ import org.mixql.remote.messages.module.worker.{
   SetPlatformVar,
   SetPlatformVars
 }
-import org.mixql.remote.messages.module.{ParamChanged, ShutDown}
+import org.mixql.remote.messages.module.ShutDown
 import scalapb.options.ScalaPbOptions.OptionsScope
 
 import java.lang.Thread.sleep

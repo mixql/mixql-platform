@@ -1,20 +1,22 @@
 package org.mixql.remote.messages.client;
 
 import org.mixql.remote.RemoteMessageConverter;
-import org.mixql.remote.messages.client.IWorkerSender;
 
-public class PlatformVarsNames implements IWorkerSender {
+public class PlatformVarsNames implements IWorkerReceiver {
     public String[] names;
 
     @Override
-    public String sender() {
+    public String workerIdentity() {
         return _sender;
     }
     private String _sender;
+    public String moduleIdentity;
 
-    public PlatformVarsNames(String sender, String[] names) {
+
+    public PlatformVarsNames(String moduleIdentity, String sender, String[] names) {
         _sender = sender;
         this.names = names;
+        this.moduleIdentity = moduleIdentity;
     }
 
     @Override
@@ -29,4 +31,9 @@ public class PlatformVarsNames implements IWorkerSender {
             return super.toString();
         }
     }
+    @Override
+    public String moduleIdentity() {
+        return moduleIdentity;
+    }
+
 }

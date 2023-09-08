@@ -1,14 +1,19 @@
-package org.mixql.remote.messages.client;
+package org.mixql.remote.messages.module;
 
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;
 
-public class GetDefinedFunctions implements IModuleReceiver {
+public class ExecuteResult implements IModuleSendToClient {
+    public String stmt;
 
-    public String moduleIdentity;
+    public Message result;
 
-    public GetDefinedFunctions(String moduleIdentity) {
-        this.moduleIdentity = moduleIdentity;
+    private String clientAddress;
+
+    public ExecuteResult(String stmt, Message result, String clientAddress) {
+        this.stmt = stmt;
+        this.result = result;
+        this.clientAddress = clientAddress;
     }
 
     @Override
@@ -25,7 +30,8 @@ public class GetDefinedFunctions implements IModuleReceiver {
     }
 
     @Override
-    public String moduleIdentity() {
-        return moduleIdentity;
+    public String clientIdentity() {
+        return clientAddress;
     }
+
 }

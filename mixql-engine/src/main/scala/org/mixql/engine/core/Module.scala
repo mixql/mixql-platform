@@ -4,19 +4,40 @@ import com.github.nscala_time.time.Imports.{DateTime, richReadableInstant, richR
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mixql.engine.core.logger.ModuleLogger
 import org.zeromq.{SocketType, ZMQ}
-import org.mixql.remote.messages.gtype.NULL
-import org.mixql.remote.messages.module.worker.{IWorkerSendToPlatform, SendMsgToPlatform, WorkerFinished}
-import org.mixql.remote.{RemoteMessageConverter, messages}
-import org.mixql.remote.messages.{Message, gtype}
+import org.mixql.remote.messages.module.worker.{IWorkerSendToClient, SendMsgToPlatform, WorkerFinished}
+import org.mixql.remote.RemoteMessageConverter
+import org.mixql.remote.messages.Message
+import org.mixql.remote.messages.`type`.Error
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scala.language.postfixOps
 import scala.util.{Random, Try}
-import org.mixql.remote.messages.client.{Execute, ExecuteFunction, GetDefinedFunctions, IWorkerSender, ShutDown}
+import org.mixql.remote.messages.client.{
+  Execute,
+  ExecuteFunction,
+  GetDefinedFunctions,
+  IModuleReceiver,
+  IWorkerReceiver,
+  ShutDown
+}
+import org.mixql.remote.messages.module.{
+  ExecuteResult,
+  ExecutedFunctionResult,
+  GetDefinedFunctionsError,
+  IModuleSendToClient
+}
+import org.mixql.remote.messages.module.toBroker.{
+  EngineFailed,
+  EngineIsReady,
+  EnginePingHeartBeat,
+  IBrokerReceiver
+}
+import org.mixql.remote.messages.module.fromBroker.{IBrokerSender, PlatformPongHeartBeat}
 
-class Module(executor: IModuleExecutor, identity: String, host: String, port: Int)(implicit logger: ModuleLogger) {
+class Module(executor: IModuleExecutor, identity: String, host: String, port: Int)(implicit
+  logger: ModuleLogger) {
   val config: Config = ConfigFactory.load()
   var ctx: ZMQ.Context = null
   implicit var server: ZMQ.Socket = null
@@ -25,9 +46,10 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
 
   val pollerTimeout: Long = Try(config.getLong("org.mixql.engine.module.pollerTimeout")).getOrElse(1000)
 
-  val workerPollerTimeout: Long = Try(config.getLong("org.mixql.engine.module.workerPollerTimeout")).getOrElse({
-    1500
-  })
+  val workerPollerTimeout: Long = Try(config.getLong("org.mixql.engine.module.workerPollerTimeout"))
+    .getOrElse({
+      1500
+    })
 
   private val heartBeatInterval: Long = {
     Try(config.getLong("org.mixql.engine.module.heartBeatInterval")).getOrElse(16500)
@@ -35,7 +57,6 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
   private var processStart: DateTime = null
   private val livenessInit: Int = Try(config.getInt("org.mixql.engine.module.liveness")).getOrElse(3)
   private var liveness: Int = livenessInit
-  var brokerClientAdress: Array[Byte] = Array()
 
   import logger._
 
@@ -68,7 +89,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
       val serverPollInIndex = poller.register(server, ZMQ.Poller.POLLIN)
 
       logInfo(s"Sending READY message to server's broker")
-      sendMsgToServerBroker("READY", logger)
+      sendMsgToPlatformBroker(new EngineIsReady(identity), logger)
 
       while (true) {
         val rc = poller.poll(pollerTimeout)
@@ -78,17 +99,13 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
         //        if (rc == 1) throw BrakeException()
         if (poller.pollin(serverPollInIndex)) {
           logDebug("Setting processStart for timer, as message was received")
-          val (clientAdrressTmp, msg, pongHeartBeatMsg) = readMsgFromServerBroker(logger)
-          pongHeartBeatMsg match {
-            case Some(_) => // got pong heart beat message
-              logDebug(s"got pong heart beat message from broker server")
-            case None => // got protobuf message
-              implicit val clientAddress: Array[Byte] = clientAdrressTmp
-              brokerClientAdress = clientAddress
-              implicit val clientAddressStr: String = new String(clientAddress)
-              //              executor.reactOnMessage(msg.get)(server, identity, clientAddress)
-              val remoteMessage = RemoteMessageConverter.unpackAnyMsgFromArray(msg.get)
-              reactOnReceivedMsgForEngine(remoteMessage, msg.get, clientAddressStr, clientAddress)
+//          val (clientAdrressTmp, msg, pongHeartBeatMsg) =
+          RemoteMessageConverter.unpackAnyMsgFromArray(readMsgFromServerBroker(logger)) match {
+            case m: IBrokerSender => // got pong heart beat message
+              logDebug(s"got broker's service message")
+              reactOnReceivedBrokerMsg(m)
+            case m: IModuleReceiver => // got protobuf message
+              reactOnReceivedMsgForEngine(m)
           }
           processStart = DateTime.now()
           liveness = livenessInit
@@ -99,7 +116,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
           if (elapsed >= heartBeatInterval) {
             processStart = DateTime.now()
             logDebug(s"heartbeat work. Sending heart beat. Liveness: " + liveness)
-            sendMsgToServerBroker("PING-HEARTBEAT", logger)
+            sendMsgToPlatformBroker(new EnginePingHeartBeat(identity), logger)
             liveness = liveness - 1
             logDebug(s"heartbeat work. After sending heart beat. Liveness: " + liveness)
           }
@@ -118,26 +135,26 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
               msg match {
                 case m: WorkerFinished =>
                   logInfo(
-                    "Received message WorkerFinished from worker " + m.sender() +
+                    "Received message WorkerFinished from worker " + m.workerIdentity() +
                       " Remove socket from workersMap"
                   )
                   workersMap.remove(m.Id)
-                  logInfo("Unregister worker's " + m.sender() + " socket from workerPoller")
+                  logInfo("Unregister worker's " + m.workerIdentity() + " socket from workerPoller")
                   workerPoller.unregister(workerSocket)
-                  logInfo("Closing worker's " + m.sender() + " socket")
+                  logInfo("Closing worker's " + m.workerIdentity() + " socket")
                   workerSocket.close()
                 case m: SendMsgToPlatform =>
                   logInfo(
-                    "Received message SendMsgToPlatform from worker " + m.sender() +
+                    "Received message SendMsgToPlatform from worker " + m.workerIdentity() +
                       " and send it to platform"
                   )
-                  sendMsgToServerBroker(m.msg, m.clientAddress(), logger)
-                case m: IWorkerSendToPlatform =>
+                  sendMsgToClient(m.msg, logger)
+                case m: IWorkerSendToClient =>
                   logInfo(
-                    "Received message of type IWorkerSendToPlatform from worker " + m.sender() +
+                    "Received message of type IWorkerSendToPlatform from worker " + m.workerIdentity() +
                       s" and proxy it (type: ${m.`type`()}) to platform"
                   )
-                  sendMsgToServerBroker(m, m.clientAddress(), logger)
+                  sendMsgToClient(m, logger)
               }
             }
           }
@@ -147,12 +164,12 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
       case _: BrakeException => logDebug(s"BrakeException")
       case ex: Exception =>
         logError(s"Error: " + ex.getMessage)
-        sendMsgToServerBroker(
-          new gtype.Error(
-            s"Module $identity to broker ${new String(brokerClientAdress)}: fatal error: " +
+        sendMsgToPlatformBroker(
+          new EngineFailed(
+            identity,
+            s"Module $identity to broker: fatal error: " +
               ex.getMessage
           ),
-          brokerClientAdress,
           logger
         )
     } finally {
@@ -161,17 +178,20 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
     logInfo(s"Stopped.")
   }
 
-  private def reactOnReceivedMsgForEngine(message: Message,
-                                          messageRAW: Array[Byte],
-                                          clientAddressStr: String,
-                                          clientAddress: Array[Byte]): Unit = {
+  private def reactOnReceivedBrokerMsg(message: Message): Unit = {
+    message match {
+      case _: PlatformPongHeartBeat => logDebug(s"got pong heart beat message from broker server")
+    }
+  }
+
+  private def reactOnReceivedMsgForEngine(message: IModuleReceiver): Unit = {
     import scala.util.{Success, Failure}
     message match {
-      case msg: Execute => reactOnExecuteMessageAsync(msg, clientAddressStr, clientAddress)
+      case msg: Execute => reactOnExecuteMessageAsync(msg)
       case _: ShutDown =>
         logInfo(s"Started shutdown")
         try {
-          executor.reactOnShutDown(identity, clientAddressStr, logger)
+          executor.reactOnShutDown(identity, message.clientIdentity(), logger)
         } catch {
           case e: Throwable =>
             logWarn(
@@ -180,102 +200,102 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
             )
         }
         throw new BrakeException()
-      case msg: ExecuteFunction => reactOnExecuteFunctionMessageAsync(msg, clientAddressStr, clientAddress)
+      case msg: ExecuteFunction => reactOnExecuteFunctionMessageAsync(msg)
       case _: GetDefinedFunctions =>
         try {
-          sendMsgToServerBroker(
-            executor.reactOnGetDefinedFunctions(identity, clientAddressStr, logger),
-            clientAddress,
+          sendMsgToClient(
+            executor.reactOnGetDefinedFunctions(identity, message.clientIdentity(), logger),
             logger
           )
         } catch {
           case e: Throwable =>
-            sendMsgToServerBroker(
-              new gtype.Error(
-                s"Module $identity to ${clientAddressStr}: error while reacting on getting" +
-                  " functions list" + e.getMessage
+            sendMsgToClient(
+              new GetDefinedFunctionsError(
+                s"Module $identity to ${message.clientIdentity()}: error while reacting on getting" +
+                  " functions list" + e.getMessage,
+                message.clientIdentity()
               ),
-              clientAddress,
               logger
             )
         }
-      case m: gtype.Error => sendMsgToServerBroker(m, clientAddress, logger)
-//      case msg: PlatformVarWasSet     => sendMessageToWorker(msg, messageRAW)
-//      case msg: PlatformVar           => sendMessageToWorker(msg, messageRAW)
-//      case msg: PlatformVars          => sendMessageToWorker(msg, messageRAW)
-//      case msg: PlatformVarsWereSet   => sendMessageToWorker(msg, messageRAW)
-//      case msg: PlatformVarsNames     => sendMessageToWorker(msg, messageRAW)
-//      case msg: InvokedFunctionResult => sendMessageToWorker(msg, messageRAW)
-      case msg: IWorkerSender => sendMessageToWorker(msg, messageRAW)
+      case msg: IWorkerReceiver => sendMessageToWorker(msg)
     }
   }
 
-  def sendMessageToWorker(msg: IWorkerSender, messageRAW: Array[Byte]) = {
-    val workersName = msg.sender()
+  def sendMessageToWorker(msg: IWorkerReceiver) = {
+    val workersName = msg.workerIdentity()
     logInfo(
       s"received message ${msg.`type`()} from platfrom to workers-future-$workersName " +
         "Sending it to worker"
     )
 
     val workerSocket = workersMap(workersName)
-    workerSocket.send(messageRAW)
+    workerSocket.send(msg.toByteArray)
   }
 
-  def reactOnExecuteMessageAsync(msg: Execute, clientAddressStr: String, clientAddress: Array[Byte]) = {
+  def reactOnExecuteMessageAsync(msg: Execute) = {
     reactOnRemoteMessageAsync(
-      clientAddress,
+      msg.clientIdentity(),
       (workersId, ctxPlatform) => {
         logInfo(s"[workers-future-$workersId]: triggering onExecute")
-        executor.reactOnExecuteAsync(msg, identity, clientAddressStr, logger, ctxPlatform)
+        executor.reactOnExecuteAsync(msg, identity, msg.clientIdentity(), logger, ctxPlatform)
       },
       (value, socket, workerID) => {
-        socket.send(RemoteMessageConverter.toArray(new SendMsgToPlatform(clientAddress, value, workerID)))
+        socket.send(
+          new SendMsgToPlatform(new ExecuteResult(msg.statement, value, msg.clientIdentity()), workerID)
+            .toByteArray
+        )
       },
       (ex: Throwable, socket, workerID) => {
         socket.send(
-          RemoteMessageConverter.toArray(
-            new SendMsgToPlatform(
-              clientAddress,
-              new gtype.Error(
-                s"Module $identity to ${clientAddressStr}: error while reacting on execute: " +
+          new SendMsgToPlatform(
+            new ExecuteResult(
+              msg.statement,
+              new Error(
+                s"Module $identity to ${msg.clientIdentity()}: error while reacting on execute: " +
                   ex.getMessage
               ),
-              workerID
-            )
-          )
+              msg.clientIdentity()
+            ),
+            workerID
+          ).toByteArray
         )
       }
     )
   }
 
-  def reactOnExecuteFunctionMessageAsync(msg: ExecuteFunction, clientAddressStr: String, clientAddress: Array[Byte]) = {
+  def reactOnExecuteFunctionMessageAsync(msg: ExecuteFunction) = {
     reactOnRemoteMessageAsync(
-      clientAddress,
+      msg.clientIdentity(),
       (workersID, ctxPlatform) => {
         logInfo(s"[workers-future-$workersID]: triggering onExecuteFunction")
-        executor.reactOnExecuteFunctionAsync(msg, identity, clientAddressStr, logger, ctxPlatform)
+        executor.reactOnExecuteFunctionAsync(msg, identity, msg.clientIdentity(), logger, ctxPlatform)
       },
       (value, socket, workerID) => {
-        socket.send(RemoteMessageConverter.toArray(new SendMsgToPlatform(clientAddress, value, workerID)))
+        socket.send(
+          new SendMsgToPlatform(new ExecutedFunctionResult(msg.name, value, msg.clientIdentity()), workerID)
+            .toByteArray
+        )
       },
       (e: Throwable, socket, workerID) => {
         socket.send(
-          RemoteMessageConverter.toArray(
-            new SendMsgToPlatform(
-              clientAddress,
-              new gtype.Error(
-                s"Module $identity to ${clientAddressStr}: error while reacting on execute function" +
+          new SendMsgToPlatform(
+            new ExecutedFunctionResult(
+              msg.name,
+              new Error(
+                s"Module $identity to ${msg.clientIdentity()}: error while reacting on execute function" +
                   s"${msg.name}: " + e.getMessage
               ),
-              workerID
-            )
-          )
+              msg.clientIdentity()
+            ),
+            workerID
+          ).toByteArray
         )
       }
     )
   }
 
-  def reactOnRemoteMessageAsync(clientAddress: Array[Byte],
+  def reactOnRemoteMessageAsync(clientAddress: String,
                                 executeFunc: (String, PlatformContext) => Message,
                                 onSuccess: (Message, ZMQ.Socket, String) => Unit,
                                 onFailure: (Throwable, ZMQ.Socket, String) => Unit): Unit = {
@@ -298,79 +318,103 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
       case Success(value) => // sendMsgToServerBroker(value, clientAddress, logger)
         onSuccess(value, futurePairSocket, workersName)
         logInfo(s"[workers-future-$workersName]: Sending WorkerFinished to inproc://$workersName")
-        futurePairSocket.send(RemoteMessageConverter.toArray(new WorkerFinished(workersName)))
+        futurePairSocket.send(new WorkerFinished(workersName).toByteArray)
         logInfo(s"[workers-future-$workersName]: Close future's pair socket inproc://$workersName")
         futurePairSocket.close()
       case Failure(ex) => // sendMsgToServerBroker(errorFunc(ex), clientAddress, logger)
         onFailure(ex, futurePairSocket, workersName)
         logInfo(s"[workers-future-$workersName]: Sending WorkerFinished to inproc://$workersName")
-        futurePairSocket.send(RemoteMessageConverter.toArray(new WorkerFinished(workersName)))
+        futurePairSocket.send(new WorkerFinished(workersName).toByteArray)
         logInfo(s"[workers-future-$workersName]: Close future's pair socket inproc://$workersName")
         futurePairSocket.close()
     }
   }
 
-  def sendMsgToServerBroker(msg: Array[Byte], clientAddress: Array[Byte], logger: ModuleLogger): Boolean = {
-    // Sending multipart message
+//  def _sendMsgToServerBroker(msg: Array[Byte], clientAddress: Array[Byte], logger: ModuleLogger): Boolean = {
+//    // Sending multipart message
+//    import logger._
+//    logDebug(s"sendMsgToServerBroker: sending empty frame")
+//    server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
+//    logDebug(s"sendMsgToServerBroker: sending clientaddress")
+//    server.send(clientAddress, ZMQ.SNDMORE) // First send address frame
+//    logDebug(s"sendMsgToServerBroker: sending empty frame")
+//    server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
+//    logDebug(s"sendMsgToServerBroker: sending message")
+//    server.send(msg)
+//  }
+
+//  def _sendMsgToServerBroker(msg: String, logger: ModuleLogger): Boolean = {
+//    import logger._
+//    logDebug(s"sendMsgToServerBroker: convert msg of type String to Array of bytes")
+//    logDebug(s"sending empty frame")
+//    server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
+//    logDebug(s"Send msg to server ")
+//    server.send(msg.getBytes())
+//  }
+
+  def sendMsgToPlatformBroker(msg: IBrokerReceiver, logger: ModuleLogger): Boolean = {
     import logger._
-    logDebug(s"sendMsgToServerBroker: sending empty frame")
+    logDebug(s"sendMsgToPlatformBroker: sending empty frame")
     server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
-    logDebug(s"sendMsgToServerBroker: sending clientaddress")
-    server.send(clientAddress, ZMQ.SNDMORE) // First send address frame
-    logDebug(s"sendMsgToServerBroker: sending empty frame")
-    server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
-    logDebug(s"sendMsgToServerBroker: sending message")
-    server.send(msg)
+    logDebug(s"sendMsgToPlatformBroker: Send msg to server ")
+    server.send(msg.toByteArray())
   }
 
-  def sendMsgToServerBroker(msg: String, logger: ModuleLogger): Boolean = {
+  def sendMsgToClient(msg: IModuleSendToClient, logger: ModuleLogger): Boolean = {
     import logger._
-    logDebug(s"sendMsgToServerBroker: convert msg of type String to Array of bytes")
-    logDebug(s"sending empty frame")
+    logDebug(s"sendMsgToClient: sending empty frame")
     server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
-    logDebug(s"Send msg to server ")
-    server.send(msg.getBytes())
+    logDebug(s"sendMsgToClient: Send msg to server ")
+    server.send(msg.toByteArray())
   }
 
-  def sendMsgToServerBroker(msg: Message, clientAddress: Array[Byte], logger: ModuleLogger): Boolean = {
+  def readMsgFromServerBroker(logger: ModuleLogger): Array[Byte] = {
     import logger._
-    logDebug(s"sendMsgToServerBroker: convert msg of type Protobuf to Array of bytes")
-    sendMsgToServerBroker(RemoteMessageConverter.toArray(msg), clientAddress, logger)
-  }
+    ///////////////////////////////////////////////////////////////////////////////////////
+    // FOR PROTOCOL SEE BOOK OReilly ZeroMQ Messaging for any applications 2013 ~page 100//
+    // From server broker messenger we get msg with such body:                           //
+    // identity frame                                                                    //
+    // empty frame --> delimiter                                                         //
+    // data ->                                                                           //
+    ///////////////////////////////////////////////////////////////////////////////////////
 
-  def readMsgFromServerBroker(logger: ModuleLogger): (Array[Byte], Option[Array[Byte]], Option[String]) = {
-    import logger._
-    // FOR PROTOCOL SEE BOOK OReilly ZeroMQ Messaging for any applications 2013 ~page 100
-    // From server broker messenger we get msg with such body:
-    // identity frame
-    // empty frame --> delimiter
-    // data ->
+    ///////////////////////////////// Identity frame of engine/////////////////////////////
+    if (server.recv(0) == null)
+      throw new BrakeException() // empty frame
+    logDebug(s"readMsgFromServerBroker: received Identity of engine")
+    ///////////////////////////////////////////////////////////////////////////////////////
+
+//    val clientAdrress = server.recv(0) // Identity of client object on server
+//    // or pong-heartbeat from broker
+//    if (clientAdrress == null)
+//      throw new BrakeException()
+//
+//    var msg: Option[Array[Byte]] = None
+//
+//    var pongHeartMessage: Option[String] = Some(new String(clientAdrress))
+//    if (pongHeartMessage.get != "PONG-HEARTBEAT") {
+//      pongHeartMessage = None
+//
+//      logDebug(s"readMsgFromServerBroker: got client address: " + new String(clientAdrress))
+//
+//      if (server.recv(0) == null)
+//        throw new BrakeException() // empty frame
+//      logDebug(s"readMsgFromServerBroker: received empty frame")
+//
+//      logDebug(s"have received message from server ${new String(clientAdrress)}")
+//      msg = Some(server.recv(0))
+//    }
+
+    /////////////////////////// Empty frame//////////////////////////////
     if (server.recv(0) == null)
       throw new BrakeException() // empty frame
     logDebug(s"readMsgFromServerBroker: received empty frame")
+    ////////////////////////////////////////////////////////////////////
 
-    val clientAdrress = server.recv(0) // Identity of client object on server
-    // or pong-heartbeat from broker
-    if (clientAdrress == null)
-      throw new BrakeException()
-
-    var msg: Option[Array[Byte]] = None
-
-    var pongHeartMessage: Option[String] = Some(new String(clientAdrress))
-    if (pongHeartMessage.get != "PONG-HEARTBEAT") {
-      pongHeartMessage = None
-
-      logDebug(s"readMsgFromServerBroker: got client address: " + new String(clientAdrress))
-
-      if (server.recv(0) == null)
-        throw new BrakeException() // empty frame
-      logDebug(s"readMsgFromServerBroker: received empty frame")
-
-      logDebug(s"have received message from server ${new String(clientAdrress)}")
-      msg = Some(server.recv(0))
-    }
-
-    (clientAdrress, msg, pongHeartMessage)
+    ///////////////////////////////// MSG /////////////////////////////////////////////////
+    logDebug(s"have received message from server")
+    server.recv(0)
+    ///////////////////////////////////////////////////////////////////////////////////////
   }
 
   // key -> workers unique name

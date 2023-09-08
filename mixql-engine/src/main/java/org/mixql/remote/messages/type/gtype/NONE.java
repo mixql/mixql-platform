@@ -1,9 +1,9 @@
-package org.mixql.remote.messages.gtype;
+package org.mixql.remote.messages.type.gtype;
 
-public class NULL implements IGtypeMessage {
+public class NONE implements IGtypeMessage {
     @Override
     public String toString() {
         return "{ type: " + type() + "}";
     }
-    
+
 }

@@ -5,10 +5,12 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.mixql.remote.messages.*;
 import org.mixql.remote.messages.client.*;
+import org.mixql.remote.messages.client.toBroker.EngineStarted;
 import org.mixql.remote.messages.module.*;
-import org.mixql.remote.messages.gtype.*;
-import org.mixql.remote.messages.gtype.Error;
+import org.mixql.remote.messages.type.gtype.*;
+import org.mixql.remote.messages.type.Param;
 import org.mixql.remote.messages.module.worker.*;
+import org.mixql.remote.messages.type.Error;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -47,14 +49,15 @@ public class RemoteMessageConverter {
                 return new ShutDown();
             case "org.mixql.remote.messages.client.Execute":
                 return new Execute(
+                        (String) anyMsgJsonObject.get("moduleIdentity"),
                         (String) anyMsgJsonObject.get("statement")
                 );
-            case "org.mixql.remote.messages.gtype.Param":
+            case "org.mixql.remote.messages.type.Param":
                 return new Param(
                         (String) anyMsgJsonObject.get("name"),
                         _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("msg"))
                 );
-            case "org.mixql.remote.messages.gtype.Error":
+            case "org.mixql.remote.messages.type.Error":
                 return new Error(
                         "error while unpacking from json Error: " + anyMsgJsonObject.get("msg")
                 );
@@ -71,32 +74,32 @@ public class RemoteMessageConverter {
                 return new DefinedFunctions(
                         parseStringsArray((JSONArray) anyMsgJsonObject.get("arr"))
                 );
-            case "org.mixql.remote.messages.gtype.NULL":
+            case "org.mixql.remote.messages.type.gtype.NULL":
                 return new NULL();
-            case "org.mixql.remote.messages.gtype.NONE":
+            case "org.mixql.remote.messages.type.gtype.NONE":
                 return new NONE();
-            case "org.mixql.remote.messages.gtype.Bool":
+            case "org.mixql.remote.messages.type.gtype.Bool":
                 return new Bool(
                         Boolean.parseBoolean((String) anyMsgJsonObject.get("value"))
                 );
-            case "org.mixql.remote.messages.gtype.gInt":
+            case "org.mixql.remote.messages.type.gtype.gInt":
                 return new gInt(
                         Integer.parseInt((String) anyMsgJsonObject.get("value"))
                 );
-            case "org.mixql.remote.messages.gtype.gDouble":
+            case "org.mixql.remote.messages.type.gtype.gDouble":
                 return new gDouble(
                         Double.parseDouble((String) anyMsgJsonObject.get("value"))
                 );
-            case "org.mixql.remote.messages.gtype.gString":
+            case "org.mixql.remote.messages.type.gtype.gString":
                 return new gString(
                         (String) anyMsgJsonObject.get("value"),
                         (String) anyMsgJsonObject.get("quote")
                 );
-            case "org.mixql.remote.messages.gtype.gArray":
+            case "org.mixql.remote.messages.type.gtype.gArray":
                 return new gArray(
                         parseMessagesArray((JSONArray) anyMsgJsonObject.get("arr"))
                 );
-            case "org.mixql.remote.messages.gtype.map":
+            case "org.mixql.remote.messages.type.gtype.map":
                 JSONArray mapJsonObject = (JSONArray) anyMsgJsonObject.get("map");
                 Map<Message, Message> m = new HashMap<>();
                 for (int i = 0; i < mapJsonObject.size(); i++) {
@@ -202,7 +205,7 @@ public class RemoteMessageConverter {
                         ((String) anyMsgJsonObject.get("clientAddress")).getBytes()
                 );
             case "org.mixql.remote.messages.client.InvokedFunctionResult":
-                return new InvokedFunctionResult(
+                return new InvokedPlatformFunctionResult(
                         (String) anyMsgJsonObject.get("sender"),
                         (String) anyMsgJsonObject.get("name"),
                         _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("result"))
@@ -250,7 +253,7 @@ public class RemoteMessageConverter {
         }
 
         if (msg instanceof Execute) {
-            return JsonUtils.buildExecute(msg.type(), ((Execute) msg).statement);
+            return JsonUtils.buildExecute(msg.type(), ((Execute) msg).statement, ((Execute) msg).moduleIdentity);
         }
 
         if (msg instanceof Param) {
@@ -313,56 +316,56 @@ public class RemoteMessageConverter {
 
         if (msg instanceof GetPlatformVar) {
             GetPlatformVar msgVar = ((GetPlatformVar) msg);
-            return JsonUtils.buildGetPlatformVar(msg.type(), msgVar.name, msgVar.sender(),
-                    new String(msgVar.clientAddress()));
+            return JsonUtils.buildGetPlatformVar(msg.type(), msgVar.name, msgVar.workerIdentity(),
+                    new String(msgVar.clientIdentity()));
         }
 
         if (msg instanceof GetPlatformVars) {
             GetPlatformVars msgVars = ((GetPlatformVars) msg);
-            return JsonUtils.buildGetPlatformVars(msg.type(), msgVars.names, msgVars.sender(),
-                    new String(msgVars.clientAddress()));
+            return JsonUtils.buildGetPlatformVars(msg.type(), msgVars.names, msgVars.workerIdentity(),
+                    new String(msgVars.clientIdentity()));
         }
 
         if (msg instanceof GetPlatformVarsNames) {
             GetPlatformVarsNames msgTmp = ((GetPlatformVarsNames) msg);
-            return JsonUtils.buildGetPlatformVarsNames(msgTmp.type(), msgTmp.sender(),
-                    new String(msgTmp.clientAddress()));
+            return JsonUtils.buildGetPlatformVarsNames(msgTmp.type(), msgTmp.workerIdentity(),
+                    new String(msgTmp.clientIdentity()));
         }
 
         if (msg instanceof PlatformVar) {
             PlatformVar msgTmp = ((PlatformVar) msg);
-            return JsonUtils.buildPlatformVar(msgTmp.type(), msgTmp.sender(),
+            return JsonUtils.buildPlatformVar(msgTmp.type(), msgTmp.workerIdentity(),
                     msgTmp.name, _toJsonObject(msgTmp.msg));
         }
 
         if (msg instanceof PlatformVars) {
             PlatformVars msgTmp = ((PlatformVars) msg);
-            return JsonUtils.buildPlatformVars(msgTmp.type(), msgTmp.sender(),
+            return JsonUtils.buildPlatformVars(msgTmp.type(), msgTmp.workerIdentity(),
                     _toJsonObjects(msgTmp.vars));
         }
 
         if (msg instanceof PlatformVarsNames) {
             PlatformVarsNames msgTmp = ((PlatformVarsNames) msg);
-            return JsonUtils.buildPlatformVarsNames(msgTmp.type(), msgTmp.names, msgTmp.sender());
+            return JsonUtils.buildPlatformVarsNames(msgTmp.type(), msgTmp.names, msgTmp.workerIdentity());
         }
 
         if (msg instanceof PlatformVarsWereSet) {
             PlatformVarsWereSet msgTmp = ((PlatformVarsWereSet) msg);
             return JsonUtils.buildPlatformVarsWereSet(msgTmp.type(), msgTmp.names.toArray(new String[0]),
-                    msgTmp.sender());
+                    msgTmp.workerIdentity());
         }
 
         if (msg instanceof PlatformVarWasSet) {
             PlatformVarWasSet msgTmp = ((PlatformVarWasSet) msg);
             return JsonUtils.buildPlatformVarWasSet(msgTmp.type(), msgTmp.name,
-                    msgTmp.sender());
+                    msgTmp.workerIdentity());
         }
 
         if (msg instanceof SendMsgToPlatform) {
             SendMsgToPlatform msgTmp = ((SendMsgToPlatform) msg);
             return JsonUtils.buildSendMsgToPlatform(msgTmp.type(),
-                    msgTmp.sender(),
-                    new String(msgTmp.clientAddress()),
+                    msgTmp.workerIdentity(),
+                    new String(msgTmp.clientIdentity()),
                     _toJsonObject(msgTmp.msg)
             );
         }
@@ -370,17 +373,17 @@ public class RemoteMessageConverter {
         if (msg instanceof SetPlatformVar) {
             SetPlatformVar msgTmp = ((SetPlatformVar) msg);
             return JsonUtils.buildSetPlatformVar(msgTmp.type(),
-                    msgTmp.sender(),
+                    msgTmp.workerIdentity(),
                     msgTmp.name,
                     _toJsonObject(msgTmp.msg),
-                    new String(msgTmp.clientAddress())
+                    new String(msgTmp.clientIdentity())
             );
         }
 
         if (msg instanceof WorkerFinished) {
             WorkerFinished msgTmp = ((WorkerFinished) msg);
             return JsonUtils.buildWorkerFinished(msgTmp.type(),
-                    msgTmp.sender()
+                    msgTmp.workerIdentity()
             );
         }
 
@@ -388,8 +391,8 @@ public class RemoteMessageConverter {
             SetPlatformVars msgTmp = ((SetPlatformVars) msg);
 
             return JsonUtils.buildSetPlatformVars(msgTmp.type(),
-                    msgTmp.sender(),
-                    new String(msgTmp.clientAddress()),
+                    msgTmp.workerIdentity(),
+                    new String(msgTmp.clientIdentity()),
                     msgTmp.vars.keySet().toArray(new String[msgTmp.vars.keySet().size()]),
                     _toJsonObjects(
                             msgTmp.vars.values().toArray(
@@ -402,14 +405,14 @@ public class RemoteMessageConverter {
         if (msg instanceof InvokeFunction) {
             InvokeFunction msgTmp = ((InvokeFunction) msg);
             return JsonUtils.buildInvokeFunction(msgTmp.type(),
-                    msgTmp.sender(), msgTmp.name, _toJsonObjects(msgTmp.args), new String(msgTmp.clientAddress())
+                    msgTmp.workerIdentity(), msgTmp.name, _toJsonObjects(msgTmp.args), new String(msgTmp.clientIdentity())
             );
         }
 
-        if (msg instanceof InvokedFunctionResult) {
-            InvokedFunctionResult msgTmp = ((InvokedFunctionResult) msg);
+        if (msg instanceof InvokedPlatformFunctionResult) {
+            InvokedPlatformFunctionResult msgTmp = ((InvokedPlatformFunctionResult) msg);
             return JsonUtils.buildInvokedFunctionResult(msgTmp.type(),
-                    msgTmp.sender(), msgTmp.name, _toJsonObject(msgTmp.result)
+                    msgTmp.workerIdentity(), msgTmp.name, _toJsonObject(msgTmp.result)
             );
         }
 

@@ -3,8 +3,8 @@ package org.mixql.remote;
 import org.mixql.core.context.gtype.*;
 import org.mixql.core.context.gtype.map;
 import org.mixql.remote.messages.*;
-import org.mixql.remote.messages.gtype.*;
-import org.mixql.remote.messages.gtype.Error;
+import org.mixql.remote.messages.type.gtype.*;
+import org.mixql.remote.messages.type.Error;
 
 import java.util.HashMap;
 
@@ -28,11 +28,11 @@ public class GtypeConverter {
         if (msg instanceof Bool)
             return new bool(((Bool) msg).value);
 
-        if (msg instanceof org.mixql.remote.messages.gtype.gInt)
-            return new org.mixql.core.context.gtype.gInt(((org.mixql.remote.messages.gtype.gInt) msg).value);
+        if (msg instanceof org.mixql.remote.messages.type.gtype.gInt)
+            return new org.mixql.core.context.gtype.gInt(((org.mixql.remote.messages.type.gtype.gInt) msg).value);
 
-        if (msg instanceof org.mixql.remote.messages.gtype.gDouble)
-            return new org.mixql.core.context.gtype.gDouble(((org.mixql.remote.messages.gtype.gDouble) msg).value);
+        if (msg instanceof org.mixql.remote.messages.type.gtype.gDouble)
+            return new org.mixql.core.context.gtype.gDouble(((org.mixql.remote.messages.type.gtype.gDouble) msg).value);
 
         if (msg instanceof gString)
             return new string(((gString) msg).value);
@@ -43,9 +43,9 @@ public class GtypeConverter {
         if (msg instanceof Error)
             throw new Exception(((Error) msg).msg);
 
-        if (msg instanceof org.mixql.remote.messages.gtype.map) {
+        if (msg instanceof org.mixql.remote.messages.type.gtype.map) {
             HashMap<Type, Type> m = new HashMap<>();
-            org.mixql.remote.messages.gtype.map msgMap = (org.mixql.remote.messages.gtype.map) msg;
+            org.mixql.remote.messages.type.gtype.map msgMap = (org.mixql.remote.messages.type.gtype.map) msg;
 
             for (Message key : msgMap.getMap().keySet()) {
                 m.put(messageToGtype(key), messageToGtype(msgMap.getMap().get(key)));
@@ -83,12 +83,12 @@ public class GtypeConverter {
             return new Bool(((bool) gValue).getValue());
 
         if (gValue instanceof org.mixql.core.context.gtype.gInt)
-            return new org.mixql.remote.messages.gtype.gInt(
+            return new org.mixql.remote.messages.type.gtype.gInt(
                     ((org.mixql.core.context.gtype.gInt) gValue).getValue()
             );
 
         if (gValue instanceof org.mixql.core.context.gtype.gDouble)
-            return new org.mixql.remote.messages.gtype.gDouble(
+            return new org.mixql.remote.messages.type.gtype.gDouble(
                     ((org.mixql.core.context.gtype.gDouble) gValue).getValue()
             );
 
@@ -110,7 +110,7 @@ public class GtypeConverter {
             for (Type key : gMap.getMap().keySet()) {
                 m.put(toGeneratedMsg(key), toGeneratedMsg(gMap.getMap().get(key)));
             }
-            return new org.mixql.remote.messages.gtype.map(m);
+            return new org.mixql.remote.messages.type.gtype.map(m);
         }
 
         throw new Exception("toGeneratedMsg Error!! Unknown gValue was provided: " + gValue.toString());

@@ -1,14 +1,18 @@
-package org.mixql.remote.messages.client;
+package org.mixql.remote.messages.module.toBroker;
 
 import org.mixql.remote.RemoteMessageConverter;
-import org.mixql.remote.messages.Message;
 
-public class GetDefinedFunctions implements IModuleReceiver {
+public class EnginePingHeartBeat implements IBrokerReceiver {
+    private String engineName;
 
-    public String moduleIdentity;
+    @Override
+    public String engineName() {
+        return engineName;
+    }
 
-    public GetDefinedFunctions(String moduleIdentity) {
-        this.moduleIdentity = moduleIdentity;
+
+    public EnginePingHeartBeat(String engineName) {
+        this.engineName = engineName;
     }
 
     @Override
@@ -22,10 +26,5 @@ public class GetDefinedFunctions implements IModuleReceiver {
             );
             return super.toString();
         }
-    }
-
-    @Override
-    public String moduleIdentity() {
-        return moduleIdentity;
     }
 }

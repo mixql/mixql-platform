@@ -1,13 +1,13 @@
 package org.mixql.remote.messages.module.worker;
 
 import org.mixql.remote.RemoteMessageConverter;
-import org.mixql.remote.messages.client.IWorkerSender;
+import org.mixql.remote.messages.client.IWorkerReceiver;
 
 public class WorkerFinished implements IWorkerSender {
     public String Id;
 
     @Override
-    public String sender() {
+    public String workerIdentity() {
         return Id;
     }
 

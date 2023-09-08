@@ -1,13 +1,17 @@
-package org.mixql.remote.messages.gtype;
+package org.mixql.remote.messages.type;
 
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;
 
 public class Error implements Message {
-    public String msg;
+    private String errorMsg;
 
-    public Error(String msg){
-        this.msg = msg;
+    public Error(String msg) {
+        this.errorMsg = msg;
+    }
+
+    public String getErrorMessage() {
+        return errorMsg;
     }
 
     @Override
@@ -22,5 +26,4 @@ public class Error implements Message {
             return super.toString();
         }
     }
-    
 }

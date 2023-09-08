@@ -3,7 +3,13 @@ package org.mixql.remote.messages.client;
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;
 
-public class ShutDown implements Message {
+public class ShutDown implements IModuleReceiver {
+    public String moduleIdentity;
+
+    public ShutDown(String moduleIdentity) {
+        this.moduleIdentity = moduleIdentity;
+    }
+
     @Override
     public String toString() {
         try {
@@ -15,5 +21,10 @@ public class ShutDown implements Message {
             );
             return super.toString();
         }
+    }
+
+    @Override
+    public String moduleIdentity() {
+        return moduleIdentity;
     }
 }

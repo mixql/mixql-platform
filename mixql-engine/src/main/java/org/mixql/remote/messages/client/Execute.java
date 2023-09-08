@@ -3,11 +3,16 @@ package org.mixql.remote.messages.client;
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;
 
-public class Execute implements Message {
+public class Execute implements IModuleReceiver {
     public String statement;
+    private String moduleIdentity;
 
-    public Execute(String statement){
+    private String clientIdentity;
+
+    public Execute(String moduleIdentity, String clientIdentity, String statement) {
         this.statement = statement;
+        this.moduleIdentity = moduleIdentity;
+        this.clientIdentity = clientIdentity;
     }
 
     @Override
@@ -21,5 +26,15 @@ public class Execute implements Message {
             );
             return super.toString();
         }
+    }
+
+    @Override
+    public String moduleIdentity() {
+        return moduleIdentity;
+    }
+
+    @Override
+    public String clientIdentity() {
+        return this.clientIdentity;
     }
 }

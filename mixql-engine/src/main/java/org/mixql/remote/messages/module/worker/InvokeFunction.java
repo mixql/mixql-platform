@@ -1,31 +1,30 @@
 package org.mixql.remote.messages.module.worker;
 
-import org.mixql.core.context.gtype.Type;
-import org.mixql.remote.GtypeConverter;
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;
+import org.mixql.remote.messages.module.IModuleSendToClient;
 
-public class InvokeFunction implements IWorkerSendToPlatform {
+public class InvokeFunction implements IWorkerSendToClient {
 
     public String name;
 
     private String _sender;
-    private byte[] _clientAddress;
+    private String _clientAddress;
 
     public Message[] args;
 
 
     @Override
-    public byte[] clientAddress() {
+    public String clientIdentity() {
         return _clientAddress;
     }
 
     @Override
-    public String sender() {
+    public String workerIdentity() {
         return _sender;
     }
 
-    public InvokeFunction(String sender, String funcName, Message[] args, byte[] clientAddress) {
+    public InvokeFunction(String sender, String funcName, Message[] args, String clientAddress) {
         _sender = sender;
         name = funcName;
         _clientAddress = clientAddress;

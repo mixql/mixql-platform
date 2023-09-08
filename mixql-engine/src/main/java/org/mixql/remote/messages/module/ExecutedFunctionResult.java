@@ -1,15 +1,18 @@
-package org.mixql.remote.messages.gtype;
+package org.mixql.remote.messages.module;
 
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;
 
-public class Param implements Message {
-    public String name;
+public class ExecutedFunctionResult implements IModuleSendToClient {
+    public String functionName;
     public Message msg;
 
-    public Param(String name, Message msg){
-        this.name = name;
+    private String clientAddress;
+
+    public ExecutedFunctionResult(String functionName, Message msg, String clientAddress) {
+        this.functionName = functionName;
         this.msg = msg;
+        this.clientAddress = clientAddress;
     }
 
     @Override
@@ -24,5 +27,10 @@ public class Param implements Message {
             return super.toString();
         }
     }
-    
+
+    @Override
+    public String clientIdentity() {
+        return clientAddress;
+    }
+
 }

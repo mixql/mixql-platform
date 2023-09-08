@@ -1,13 +1,15 @@
 package org.mixql.remote.messages.module;
 
 import org.mixql.remote.RemoteMessageConverter;
-import org.mixql.remote.messages.Message;
 
-public class DefinedFunctions implements Message {
+public class DefinedFunctions implements IModuleSendToClient {
     public String[] arr;
 
-    public DefinedFunctions(String[] arr) {
+    private byte[] _clientAddress;
+
+    public DefinedFunctions(String[] arr, byte[] clientAddress) {
         this.arr = arr;
+        _clientAddress = clientAddress;
     }
 
     @Override
@@ -21,5 +23,10 @@ public class DefinedFunctions implements Message {
             );
             return super.toString();
         }
+    }
+
+    @Override
+    public byte[] clientIdentity() {
+        return _clientAddress;
     }
 }

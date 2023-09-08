@@ -1,14 +1,14 @@
-package org.mixql.remote.messages.client;
+package org.mixql.remote.messages.module;
 
 import org.mixql.remote.RemoteMessageConverter;
-import org.mixql.remote.messages.Message;
+import org.mixql.remote.messages.type.Error;
 
-public class GetDefinedFunctions implements IModuleReceiver {
+public class GetDefinedFunctionsError extends Error implements IModuleSendToClient {
+    private String _clientAddress;
 
-    public String moduleIdentity;
-
-    public GetDefinedFunctions(String moduleIdentity) {
-        this.moduleIdentity = moduleIdentity;
+    public GetDefinedFunctionsError(String errorMsg, String clientAddress) {
+        super(errorMsg);
+        _clientAddress = clientAddress;
     }
 
     @Override
@@ -25,7 +25,7 @@ public class GetDefinedFunctions implements IModuleReceiver {
     }
 
     @Override
-    public String moduleIdentity() {
-        return moduleIdentity;
+    public String clientIdentity() {
+        return _clientAddress;
     }
 }

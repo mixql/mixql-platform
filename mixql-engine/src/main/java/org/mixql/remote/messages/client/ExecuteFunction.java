@@ -2,15 +2,17 @@ package org.mixql.remote.messages.client;
 
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;
-import org.mixql.remote.messages.gtype.gString;
 
-public class ExecuteFunction implements Message {
+public class ExecuteFunction implements IModuleReceiver {
 
     public String name;
     public Message[] params;
-    public ExecuteFunction(String name, Message[] params){
+    public String moduleIdentity;
+
+    public ExecuteFunction(String moduleIdentity, String name, Message[] params) {
         this.name = name;
         this.params = params;
+        this.moduleIdentity = moduleIdentity;
     }
 
     @Override
@@ -25,5 +27,11 @@ public class ExecuteFunction implements Message {
             return super.toString();
         }
     }
+
+    @Override
+    public String moduleIdentity() {
+        return moduleIdentity;
+    }
+
 
 }

@@ -38,10 +38,11 @@ class JsonUtils {
         return buildShutDown(type);
     }
 
-    public static JSONObject buildExecute(String type, String statement) {
+    public static JSONObject buildExecute(String type, String statement, String moduleIdentity) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("statement", statement);
+        jsonObject.put("moduleIdentity", moduleIdentity);
         return jsonObject;
     }
 

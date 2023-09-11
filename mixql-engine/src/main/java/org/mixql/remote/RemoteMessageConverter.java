@@ -7,6 +7,10 @@ import org.mixql.remote.messages.*;
 import org.mixql.remote.messages.client.*;
 import org.mixql.remote.messages.client.toBroker.EngineStarted;
 import org.mixql.remote.messages.module.*;
+import org.mixql.remote.messages.module.fromBroker.PlatformPongHeartBeat;
+import org.mixql.remote.messages.module.toBroker.EngineFailed;
+import org.mixql.remote.messages.module.toBroker.EngineIsReady;
+import org.mixql.remote.messages.module.toBroker.EnginePingHeartBeat;
 import org.mixql.remote.messages.type.gtype.*;
 import org.mixql.remote.messages.type.Param;
 import org.mixql.remote.messages.module.worker.*;
@@ -249,34 +253,78 @@ public class RemoteMessageConverter {
 
     private static JSONObject _toJsonObject(Message msg) throws Exception {
         if (msg instanceof ShutDown) {
-            return JsonUtils.buildShutDown(msg.type());
+            ShutDown tmpMsg = (ShutDown) msg;
+            return JsonUtils.buildShutDown(msg.type(), tmpMsg.moduleIdentity(), tmpMsg.clientIdentity());
         }
 
         if (msg instanceof Execute) {
-            return JsonUtils.buildExecute(msg.type(), ((Execute) msg).statement, ((Execute) msg).moduleIdentity);
+            return JsonUtils.buildExecute(msg.type(), ((Execute) msg).statement, ((Execute) msg).moduleIdentity());
         }
 
         if (msg instanceof Param) {
             return JsonUtils.buildParam(msg.type(), ((Param) msg).name, _toJsonObject(((Param) msg).msg));
         }
 
-        if (msg instanceof Error) {
-            return JsonUtils.buildError(msg.type(), ((Error) msg).msg);
+        /////////////////////////////////////Error messages//////////////////////////////////////////
+        if (msg instanceof EngineFailed) {
+            return JsonUtils.buildEngineFailed(msg.type(), ((EngineFailed) msg).engineName(),
+                    ((EngineFailed) msg).getErrorMessage());
         }
 
+        if (msg instanceof ExecutedFunctionResultFailed) {
+            return JsonUtils.buildExecutedFunctionResultFailed(msg.type(),
+                    ((ExecutedFunctionResultFailed) msg).clientIdentity(),
+                    ((ExecutedFunctionResultFailed) msg).getErrorMessage());
+        }
+
+        if (msg instanceof ExecuteResultFailed) {
+            return JsonUtils.buildExecuteResultFailed(msg.type(),
+                    ((ExecuteResultFailed) msg).clientIdentity(),
+                    ((ExecuteResultFailed) msg).getErrorMessage());
+        }
+
+        if (msg instanceof GetDefinedFunctionsError) {
+            return JsonUtils.buildGetDefinedFunctionsError(msg.type(),
+                    ((GetDefinedFunctionsError) msg).clientIdentity(),
+                    ((GetDefinedFunctionsError) msg).getErrorMessage());
+        }
+
+        if (msg instanceof Error) {
+            return JsonUtils.buildError(msg.type(), ((Error) msg).getErrorMessage());
+        }
+        /////////////////////////////////////////////////////////////////////////////////////////////
+
         if (msg instanceof ExecuteFunction) {
-            return JsonUtils.buildExecuteFunction(msg.type(), ((ExecuteFunction) msg).name,
-                    _toJsonObjects(((ExecuteFunction) msg).params)
+            ExecuteFunction tmpMsg = (ExecuteFunction) msg;
+            return JsonUtils.buildExecuteFunction(msg.type(), tmpMsg.moduleIdentity, tmpMsg.clientIdentity(),
+                    tmpMsg.name,
+                    _toJsonObjects(tmpMsg.params)
+            );
+        }
+
+        if (msg instanceof ExecutedFunctionResult) {
+            ExecutedFunctionResult tmpMsg = (ExecutedFunctionResult) msg;
+            return JsonUtils.buildExecutedFunctionResult(msg.type(), tmpMsg.functionName, _toJsonObject(tmpMsg.msg),
+                    tmpMsg.clientIdentity()
+            );
+        }
+
+        if (msg instanceof ExecuteResult) {
+            ExecuteResult tmpMsg = (ExecuteResult) msg;
+            return JsonUtils.buildExecuteResult(msg.type(), tmpMsg.stmt, _toJsonObject(tmpMsg.result),
+                    tmpMsg.clientIdentity()
             );
         }
 
         if (msg instanceof GetDefinedFunctions) {
-            return JsonUtils.buildGetDefinedFunctions(msg.type());
+            GetDefinedFunctions tmpMsg = (GetDefinedFunctions) msg;
+            return JsonUtils.buildGetDefinedFunctions(msg.type(), tmpMsg.moduleIdentity(), tmpMsg.clientIdentity());
         }
 
 
         if (msg instanceof DefinedFunctions) {
-            return JsonUtils.buildDefinedFunction(msg.type(), ((DefinedFunctions) msg).arr);
+            return JsonUtils.buildDefinedFunction(msg.type(), ((DefinedFunctions) msg).arr,
+                    ((DefinedFunctions) msg).clientIdentity());
         }
 
         if (msg instanceof NULL) {
@@ -334,39 +382,42 @@ public class RemoteMessageConverter {
 
         if (msg instanceof PlatformVar) {
             PlatformVar msgTmp = ((PlatformVar) msg);
-            return JsonUtils.buildPlatformVar(msgTmp.type(), msgTmp.workerIdentity(),
+            return JsonUtils.buildPlatformVar(msgTmp.type(), msgTmp.moduleIdentity(),
+                    msgTmp.clientIdentity(), msgTmp.workerIdentity(),
                     msgTmp.name, _toJsonObject(msgTmp.msg));
         }
 
         if (msg instanceof PlatformVars) {
             PlatformVars msgTmp = ((PlatformVars) msg);
-            return JsonUtils.buildPlatformVars(msgTmp.type(), msgTmp.workerIdentity(),
+            return JsonUtils.buildPlatformVars(msgTmp.type(), msgTmp.moduleIdentity(),
+                    msgTmp.clientIdentity(), msgTmp.workerIdentity(),
                     _toJsonObjects(msgTmp.vars));
         }
 
         if (msg instanceof PlatformVarsNames) {
             PlatformVarsNames msgTmp = ((PlatformVarsNames) msg);
-            return JsonUtils.buildPlatformVarsNames(msgTmp.type(), msgTmp.names, msgTmp.workerIdentity());
+            return JsonUtils.buildPlatformVarsNames(msgTmp.type(), msgTmp.moduleIdentity(),
+                    msgTmp.clientIdentity(), msgTmp.names, msgTmp.workerIdentity());
         }
 
         if (msg instanceof PlatformVarsWereSet) {
             PlatformVarsWereSet msgTmp = ((PlatformVarsWereSet) msg);
-            return JsonUtils.buildPlatformVarsWereSet(msgTmp.type(), msgTmp.names.toArray(new String[0]),
+            return JsonUtils.buildPlatformVarsWereSet(msgTmp.type(), msgTmp.moduleIdentity(),
+                    msgTmp.clientIdentity(), msgTmp.names.toArray(new String[0]),
                     msgTmp.workerIdentity());
         }
 
         if (msg instanceof PlatformVarWasSet) {
             PlatformVarWasSet msgTmp = ((PlatformVarWasSet) msg);
-            return JsonUtils.buildPlatformVarWasSet(msgTmp.type(), msgTmp.name,
+            return JsonUtils.buildPlatformVarWasSet(msgTmp.type(), msgTmp.moduleIdentity(),
+                    msgTmp.clientIdentity(), msgTmp.name,
                     msgTmp.workerIdentity());
         }
 
         if (msg instanceof SendMsgToPlatform) {
             SendMsgToPlatform msgTmp = ((SendMsgToPlatform) msg);
             return JsonUtils.buildSendMsgToPlatform(msgTmp.type(),
-                    msgTmp.workerIdentity(),
-                    new String(msgTmp.clientIdentity()),
-                    _toJsonObject(msgTmp.msg)
+                    _toJsonObject(msgTmp.msg), msgTmp.workerIdentity()
             );
         }
 
@@ -411,7 +462,8 @@ public class RemoteMessageConverter {
 
         if (msg instanceof InvokedPlatformFunctionResult) {
             InvokedPlatformFunctionResult msgTmp = ((InvokedPlatformFunctionResult) msg);
-            return JsonUtils.buildInvokedFunctionResult(msgTmp.type(),
+            return JsonUtils.buildInvokedFunctionResult(msgTmp.type(), msgTmp.moduleIdentity(),
+                    msgTmp.clientIdentity(),
                     msgTmp.workerIdentity(), msgTmp.name, _toJsonObject(msgTmp.result)
             );
         }
@@ -419,6 +471,21 @@ public class RemoteMessageConverter {
         if (msg instanceof EngineStarted) {
             EngineStarted msgTmp = ((EngineStarted) msg);
             return JsonUtils.buildEngineStarted(msgTmp.type(), msgTmp.engineName);
+        }
+
+        if (msg instanceof PlatformPongHeartBeat) {
+            PlatformPongHeartBeat msgTmp = ((PlatformPongHeartBeat) msg);
+            return JsonUtils.buildPlatformPongHeartBeat(msgTmp.type());
+        }
+
+        if (msg instanceof EngineIsReady) {
+            EngineIsReady msgTmp = ((EngineIsReady) msg);
+            return JsonUtils.buildEngineIsReady(msgTmp.type(), msgTmp.engineName());
+        }
+
+        if (msg instanceof EnginePingHeartBeat) {
+            EnginePingHeartBeat msgTmp = ((EnginePingHeartBeat) msg);
+            return JsonUtils.buildEnginePingHeartBeat(msgTmp.type(), msgTmp.engineName());
         }
 
         throw new Exception("_toJsonObject Error. Unknown type of message " + msg);

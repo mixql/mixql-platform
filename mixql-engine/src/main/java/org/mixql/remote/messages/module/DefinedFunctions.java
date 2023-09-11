@@ -5,9 +5,9 @@ import org.mixql.remote.RemoteMessageConverter;
 public class DefinedFunctions implements IModuleSendToClient {
     public String[] arr;
 
-    private byte[] _clientAddress;
+    private String _clientAddress;
 
-    public DefinedFunctions(String[] arr, byte[] clientAddress) {
+    public DefinedFunctions(String[] arr, String clientAddress) {
         this.arr = arr;
         _clientAddress = clientAddress;
     }
@@ -26,7 +26,7 @@ public class DefinedFunctions implements IModuleSendToClient {
     }
 
     @Override
-    public byte[] clientIdentity() {
+    public String clientIdentity() {
         return _clientAddress;
     }
 }

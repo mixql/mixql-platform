@@ -196,75 +196,75 @@ class JsonUtils {
         return mapJsonObject;
     }
 
-    public static JSONObject buildGetPlatformVar(String type, String varName, String senderID, String clientIdentity) {
+    public static JSONObject buildGetPlatformVar(String type, String varName, String workerID, String clientIdentity) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("name", varName);
-        jsonObject.put("sender", senderID);
+        jsonObject.put("worker", workerID);
         jsonObject.put("clientIdentity", clientIdentity);
         return jsonObject;
     }
 
-    public static JSONObject buildGetPlatformVarsNames(String type, String senderID, String clientIdentity) {
+    public static JSONObject buildGetPlatformVarsNames(String type, String workerID, String clientIdentity) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
-        jsonObject.put("sender", senderID);
+        jsonObject.put("worker", workerID);
         jsonObject.put("clientIdentity", clientIdentity);
         return jsonObject;
     }
 
-    public static JSONObject buildGetPlatformVars(String type, String[] varNames, String senderID, String clientIdentity) {
+    public static JSONObject buildGetPlatformVars(String type, String[] varNames, String workerID, String clientIdentity) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
 
         jsonObject.put("names", buildStringArray(varNames));
-        jsonObject.put("sender", senderID);
+        jsonObject.put("worker", workerID);
         jsonObject.put("clientIdentity", clientIdentity);
         return jsonObject;
     }
 
     public static JSONObject buildPlatformVar(String type, String moduleIdentity, String clientIdentity,
-                                              String senderID, String name,
+                                              String workerID, String name,
                                               JSONObject msg) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("moduleIdentity", moduleIdentity);
         jsonObject.put("clientIdentity", clientIdentity);
-        jsonObject.put("sender", senderID);
+        jsonObject.put("worker", workerID);
         jsonObject.put("msg", msg);
         jsonObject.put("name", name);
         return jsonObject;
     }
 
     public static JSONObject buildInvokedFunctionResult(String type, String moduleIdentity, String clientIdentity,
-                                                        String senderID, String name,
+                                                        String workerID, String name,
                                                         JSONObject result) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("moduleIdentity", moduleIdentity);
         jsonObject.put("clientIdentity", clientIdentity);
-        jsonObject.put("sender", senderID);
+        jsonObject.put("worker", workerID);
         jsonObject.put("result", result);
         jsonObject.put("name", name);
         return jsonObject;
     }
 
     public static JSONObject buildPlatformVars(String type, String moduleIdentity, String clientIdentity,
-                                               String senderID, JSONObject[] vars) {
+                                               String workerID, JSONObject[] vars) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("moduleIdentity", moduleIdentity);
         jsonObject.put("clientIdentity", clientIdentity);
-        jsonObject.put("sender", senderID);
+        jsonObject.put("worker", workerID);
         jsonObject.put("vars", buildJsonObjectsArray(vars));
         return jsonObject;
     }
 
-    public static JSONObject buildInvokeFunction(String type, String senderID, String name, JSONObject[] args,
+    public static JSONObject buildInvokeFunction(String type, String workerID, String name, JSONObject[] args,
                                                  String clientIdentity) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
-        jsonObject.put("sender", senderID);
+        jsonObject.put("worker", workerID);
         jsonObject.put("name", name);
         jsonObject.put("args", buildJsonObjectsArray(args));
         jsonObject.put("clientIdentity", clientIdentity);
@@ -272,56 +272,56 @@ class JsonUtils {
     }
 
     public static JSONObject buildPlatformVarsNames(String type, String moduleIdentity, String clientIdentity,
-                                                    String[] names, String senderID) {
+                                                    String[] names, String workerID) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("moduleIdentity", moduleIdentity);
         jsonObject.put("clientIdentity", clientIdentity);
         jsonObject.put("names", buildStringArray(names));
-        jsonObject.put("sender", senderID);
+        jsonObject.put("worker", workerID);
         return jsonObject;
     }
 
     public static JSONObject buildPlatformVarsWereSet(String type, String moduleIdentity, String clientIdentity,
-                                                      String[] names, String senderID) {
-        return buildPlatformVarsNames(type, moduleIdentity, clientIdentity, names, senderID);
+                                                      String[] names, String workerID) {
+        return buildPlatformVarsNames(type, moduleIdentity, clientIdentity, names, workerID);
     }
 
     public static JSONObject buildPlatformVarWasSet(String type, String moduleIdentity, String clientIdentity,
-                                                    String name, String senderID) {
+                                                    String name, String workerID) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("moduleIdentity", moduleIdentity);
         jsonObject.put("clientIdentity", clientIdentity);
-        jsonObject.put("sender", senderID);
+        jsonObject.put("worker", workerID);
         jsonObject.put("name", name);
         return jsonObject;
     }
 
-    public static JSONObject buildSendMsgToPlatform(String type, JSONObject msg, String senderID) {
+    public static JSONObject buildSendMsgToPlatform(String type, JSONObject msg, String workerID) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
-        jsonObject.put("sender", senderID);
+        jsonObject.put("worker", workerID);
         jsonObject.put("msg", msg);
         return jsonObject;
     }
 
-    public static JSONObject buildSetPlatformVar(String type, String senderID, String name,
+    public static JSONObject buildSetPlatformVar(String type, String workerID, String name,
                                                  JSONObject msg, String clientIdentity) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
-        jsonObject.put("sender", senderID);
+        jsonObject.put("worker", workerID);
         jsonObject.put("msg", msg);
         jsonObject.put("name", name);
         jsonObject.put("clientIdentity", clientIdentity);
         return jsonObject;
     }
 
-    public static JSONObject buildSetPlatformVars(String type, String senderID, String clientIdentity,
+    public static JSONObject buildSetPlatformVars(String type, String workerID, String clientIdentity,
                                                   String[] keys, JSONObject[] values) {
         JSONObject mapJsonObject = new JSONObject();
         mapJsonObject.put("type", type);
-        mapJsonObject.put("sender", senderID);
+        mapJsonObject.put("worker", workerID);
         mapJsonObject.put("clientIdentity", clientIdentity);
 
         JSONArray jsonArrObject = new JSONArray();
@@ -335,10 +335,10 @@ class JsonUtils {
         return mapJsonObject;
     }
 
-    public static JSONObject buildWorkerFinished(String type, String senderID) {
+    public static JSONObject buildWorkerFinished(String type, String workerID) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
-        jsonObject.put("sender", senderID);
+        jsonObject.put("worker", workerID);
         return jsonObject;
     }
 

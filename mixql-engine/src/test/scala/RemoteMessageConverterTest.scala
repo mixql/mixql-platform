@@ -6,7 +6,7 @@ import org.mixql.remote.messages.`type`.gtype.{Bool, gArray, gDouble, gString, m
 import org.mixql.remote.messages.client.InvokedPlatformFunctionResult
 import org.mixql.remote.messages.module.toBroker.EnginePingHeartBeat
 
-class RemoteMessageConverterToJson extends munit.FunSuite {
+class RemoteMessageConverterTest extends munit.FunSuite {
 
   def isJson(Json: String): Boolean = {
     try {

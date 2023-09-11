@@ -35,7 +35,7 @@ public class GtypeConverter {
             return new org.mixql.core.context.gtype.gDouble(((org.mixql.remote.messages.type.gtype.gDouble) msg).value);
 
         if (msg instanceof gString)
-            return new string(((gString) msg).value);
+            return new string(((gString) msg).value, ((gString) msg).quote);
 
         if (msg instanceof gArray)
             return new array(messagesToGtypes(((gArray) msg).arr));

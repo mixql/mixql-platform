@@ -50,10 +50,14 @@ public class RemoteMessageConverter {
     private static Message _unpackAnyMsg(JSONObject anyMsgJsonObject) throws Exception {
         switch ((String) anyMsgJsonObject.get("type")) {
             case "org.mixql.remote.messages.client.ShutDown":
-                return new ShutDown();
+                return new ShutDown(
+                        (String) anyMsgJsonObject.get("moduleIdentity"),
+                        (String) anyMsgJsonObject.get("clientIdentity")
+                );
             case "org.mixql.remote.messages.client.Execute":
                 return new Execute(
                         (String) anyMsgJsonObject.get("moduleIdentity"),
+                        (String) anyMsgJsonObject.get("clientIdentity"),
                         (String) anyMsgJsonObject.get("statement")
                 );
             case "org.mixql.remote.messages.type.Param":
@@ -63,20 +67,26 @@ public class RemoteMessageConverter {
                 );
             case "org.mixql.remote.messages.type.Error":
                 return new Error(
-                        "error while unpacking from json Error: " + anyMsgJsonObject.get("msg")
+                        "error while unpacking from json Error: " + anyMsgJsonObject.get("errorMsg")
                 );
             case "org.mixql.remote.messages.client.ExecuteFunction":
                 return new ExecuteFunction(
+                        (String) anyMsgJsonObject.get("moduleIdentity"),
+                        (String) anyMsgJsonObject.get("clientIdentity"),
                         (String) anyMsgJsonObject.get("name"),
                         parseMessagesArray((JSONArray) anyMsgJsonObject
                                 .get("params")
                         )
                 );
             case "org.mixql.remote.messages.client.GetDefinedFunctions":
-                return new GetDefinedFunctions();
+                return new GetDefinedFunctions(
+                        (String) anyMsgJsonObject.get("moduleIdentity"),
+                        (String) anyMsgJsonObject.get("clientIdentity")
+                );
             case "org.mixql.remote.messages.module.DefinedFunctions":
                 return new DefinedFunctions(
-                        parseStringsArray((JSONArray) anyMsgJsonObject.get("arr"))
+                        parseStringsArray((JSONArray) anyMsgJsonObject.get("arr")),
+                        (String) anyMsgJsonObject.get("clientIdentity")
                 );
             case "org.mixql.remote.messages.type.gtype.NULL":
                 return new NULL();
@@ -118,24 +128,26 @@ public class RemoteMessageConverter {
                 return new map(m);
             case "org.mixql.remote.messages.module.worker.GetPlatformVar":
                 return new GetPlatformVar(
-                        (String) anyMsgJsonObject.get("sender"),
+                        (String) anyMsgJsonObject.get("worker"),
                         (String) anyMsgJsonObject.get("name"),
-                        ((String) anyMsgJsonObject.get("clientAddress")).getBytes()
+                        (String) anyMsgJsonObject.get("clientIdentity")
                 );
             case "org.mixql.remote.messages.module.worker.GetPlatformVars":
                 return new GetPlatformVars(
-                        (String) anyMsgJsonObject.get("sender"),
+                        (String) anyMsgJsonObject.get("worker"),
                         parseStringsArray((JSONArray) anyMsgJsonObject.get("names")),
-                        ((String) anyMsgJsonObject.get("clientAddress")).getBytes()
+                        (String) anyMsgJsonObject.get("clientIdentity")
                 );
             case "org.mixql.remote.messages.module.worker.GetPlatformVarsNames":
                 return new GetPlatformVarsNames(
-                        (String) anyMsgJsonObject.get("sender"),
-                        ((String) anyMsgJsonObject.get("clientAddress")).getBytes()
+                        (String) anyMsgJsonObject.get("worker"),
+                        (String) anyMsgJsonObject.get("clientIdentity")
                 );
             case "org.mixql.remote.messages.client.PlatformVar":
                 return new PlatformVar(
-                        (String) anyMsgJsonObject.get("sender"),
+                        (String) anyMsgJsonObject.get("moduleIdentity"),
+                        (String) anyMsgJsonObject.get("clientIdentity"),
+                        (String) anyMsgJsonObject.get("worker"),
                         (String) anyMsgJsonObject.get("name"),
                         _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("msg"))
                 );
@@ -146,38 +158,45 @@ public class RemoteMessageConverter {
 
                 Param[] paramsArray = Arrays.copyOf(messageArray, messageArray.length, Param[].class);
                 return new PlatformVars(
-                        (String) anyMsgJsonObject.get("sender"),
+                        (String) anyMsgJsonObject.get("moduleIdentity"),
+                        (String) anyMsgJsonObject.get("clientIdentity"),
+                        (String) anyMsgJsonObject.get("worker"),
                         paramsArray
                 );
             case "org.mixql.remote.messages.client.PlatformVarsNames":
                 return new PlatformVarsNames(
-                        (String) anyMsgJsonObject.get("sender"),
+                        (String) anyMsgJsonObject.get("moduleIdentity"),
+                        (String) anyMsgJsonObject.get("clientIdentity"),
+                        (String) anyMsgJsonObject.get("worker"),
                         parseStringsArray((JSONArray) anyMsgJsonObject.get("names"))
                 );
             case "org.mixql.remote.messages.client.PlatformVarsWereSet":
                 return new PlatformVarsWereSet(
-                        (String) anyMsgJsonObject.get("sender"),
+                        (String) anyMsgJsonObject.get("moduleIdentity"),
+                        (String) anyMsgJsonObject.get("clientIdentity"),
+                        (String) anyMsgJsonObject.get("worker"),
                         new ArrayList<String>(
                                 Arrays.asList(parseStringsArray((JSONArray) anyMsgJsonObject.get("names")))
                         )
                 );
             case "org.mixql.remote.messages.client.PlatformVarWasSet":
                 return new PlatformVarWasSet(
-                        (String) anyMsgJsonObject.get("sender"),
+                        (String) anyMsgJsonObject.get("moduleIdentity"),
+                        (String) anyMsgJsonObject.get("clientIdentity"),
+                        (String) anyMsgJsonObject.get("worker"),
                         (String) anyMsgJsonObject.get("name")
                 );
             case "org.mixql.remote.messages.module.worker.SendMsgToPlatform":
                 return new SendMsgToPlatform(
-                        ((String) anyMsgJsonObject.get("clientAddress")).getBytes(),
-                        _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("msg")),
-                        (String) anyMsgJsonObject.get("sender")
+                        (IModuleSendToClient) _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("msg")),
+                        (String) anyMsgJsonObject.get("worker")
                 );
             case "org.mixql.remote.messages.module.worker.SetPlatformVar":
                 return new SetPlatformVar(
-                        (String) anyMsgJsonObject.get("sender"),
+                        (String) anyMsgJsonObject.get("worker"),
                         (String) anyMsgJsonObject.get("name"),
                         _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("msg")),
-                        ((String) anyMsgJsonObject.get("clientAddress")).getBytes()
+                        (String) anyMsgJsonObject.get("clientIdentity")
                 );
             case "org.mixql.remote.messages.module.worker.SetPlatformVars":
                 JSONArray varsJsonObject = (JSONArray) anyMsgJsonObject.get("vars");
@@ -191,32 +210,76 @@ public class RemoteMessageConverter {
                     );
                 }
                 return new SetPlatformVars(
-                        (String) anyMsgJsonObject.get("sender"),
+                        (String) anyMsgJsonObject.get("worker"),
                         varsMap,
-                        ((String) anyMsgJsonObject.get("clientAddress")).getBytes()
+                        (String) anyMsgJsonObject.get("clientIdentity")
                 );
             case "org.mixql.remote.messages.module.worker.WorkerFinished":
                 return new WorkerFinished(
-                        (String) anyMsgJsonObject.get("sender")
+                        (String) anyMsgJsonObject.get("worker")
                 );
             case "org.mixql.remote.messages.module.worker.InvokeFunction":
                 return new InvokeFunction(
-                        (String) anyMsgJsonObject.get("sender"),
+                        (String) anyMsgJsonObject.get("worker"),
                         (String) anyMsgJsonObject.get("name"),
                         parseMessagesArray((JSONArray) anyMsgJsonObject
                                 .get("args")
                         ),
-                        ((String) anyMsgJsonObject.get("clientAddress")).getBytes()
+                        (String) anyMsgJsonObject.get("clientIdentity")
                 );
-            case "org.mixql.remote.messages.client.InvokedFunctionResult":
+            case "org.mixql.remote.messages.client.InvokedPlatformFunctionResult":
                 return new InvokedPlatformFunctionResult(
-                        (String) anyMsgJsonObject.get("sender"),
+                        (String) anyMsgJsonObject.get("moduleIdentity"),
+                        (String) anyMsgJsonObject.get("clientIdentity"),
+                        (String) anyMsgJsonObject.get("worker"),
                         (String) anyMsgJsonObject.get("name"),
                         _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("result"))
                 );
             case "org.mixql.remote.messages.cluster.EngineStarted":
                 return new EngineStarted(
                         (String) anyMsgJsonObject.get("engineName")
+                );
+            case "org.mixql.remote.messages.module.fromBroker.PlatformPongHeartBeat":
+                return new PlatformPongHeartBeat();
+            case "org.mixql.remote.messages.module.toBroker.EngineFailed":
+                return new EngineFailed(
+                        (String) anyMsgJsonObject.get("engineName"),
+                        (String) anyMsgJsonObject.get("errorMsg")
+                );
+            case "org.mixql.remote.messages.module.toBroker.EngineIsReady":
+                return new EngineIsReady(
+                        (String) anyMsgJsonObject.get("engineName")
+                );
+            case "org.mixql.remote.messages.module.toBroker.EnginePingHeartBeat":
+                return new EnginePingHeartBeat(
+                        (String) anyMsgJsonObject.get("engineName")
+                );
+            case "org.mixql.remote.messages.module.ExecutedFunctionResult":
+                return new ExecutedFunctionResult(
+                        (String) anyMsgJsonObject.get("functionName"),
+                        _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("msg")),
+                        (String) anyMsgJsonObject.get("clientIdentity")
+                );
+            case "org.mixql.remote.messages.module.ExecutedFunctionResultFailed":
+                return new ExecutedFunctionResultFailed(
+                        (String) anyMsgJsonObject.get("errorMsg"),
+                        (String) anyMsgJsonObject.get("clientIdentity")
+                );
+            case "org.mixql.remote.messages.module.ExecuteResult":
+                return new ExecuteResult(
+                        (String) anyMsgJsonObject.get("stmt"),
+                        _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("result")),
+                        (String) anyMsgJsonObject.get("clientIdentity")
+                );
+            case "org.mixql.remote.messages.module.ExecuteResultFailed":
+                return new ExecuteResultFailed(
+                        (String) anyMsgJsonObject.get("errorMsg"),
+                        (String) anyMsgJsonObject.get("clientIdentity")
+                );
+            case "org.mixql.remote.messages.module.GetDefinedFunctionsError":
+                return new GetDefinedFunctionsError(
+                        (String) anyMsgJsonObject.get("errorMsg"),
+                        (String) anyMsgJsonObject.get("clientIdentity")
                 );
         }
         throw new Exception("_unpackAnyMsg: unknown anyMsgJsonObject" + anyMsgJsonObject);

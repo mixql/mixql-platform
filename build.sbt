@@ -79,11 +79,11 @@ lazy val mixQLEngine = projectMatrix.in(file("mixql-engine")).dependsOn(mixQLCor
   .settings(libraryDependencies ++= {
     Seq(
       "com.typesafe"               % "config"      % "1.4.2",
-      "org.scalameta"             %% "munit"       % "0.7.29" % Test,
+      "org.scalameta"             %% "munit"       % "0.7.29"   % Test,
       "org.zeromq"                 % "jeromq"      % "0.5.3",
       "com.github.nscala-time"    %% "nscala-time" % "2.32.0",
       "com.googlecode.json-simple" % "json-simple" % "1.1.1",
-      "com.google.code.gson"       % "gson"        % "2.10.1" % Test
+      "org.json"                   % "json"        % "20230227" % Test
     )
   }).jvmPlatform(Seq(Scala3, Scala213, Scala212))
 

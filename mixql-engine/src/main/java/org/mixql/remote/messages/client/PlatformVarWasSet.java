@@ -12,11 +12,13 @@ public class PlatformVarWasSet implements IWorkerReceiver {
 
     private String _sender;
     public String moduleIdentity;
+    private String clientIdentity;
 
-    public PlatformVarWasSet(String moduleIdentity, String sender, String name) {
+    public PlatformVarWasSet(String moduleIdentity, String clientIdentity, String sender, String name) {
         _sender = sender;
         this.name = name;
         this.moduleIdentity = moduleIdentity;
+        this.clientIdentity = clientIdentity;
     }
 
 
@@ -36,5 +38,10 @@ public class PlatformVarWasSet implements IWorkerReceiver {
     @Override
     public String moduleIdentity() {
         return moduleIdentity;
+    }
+
+    @Override
+    public String clientIdentity() {
+        return this.clientIdentity;
     }
 }

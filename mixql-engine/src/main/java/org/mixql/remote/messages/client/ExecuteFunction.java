@@ -8,11 +8,18 @@ public class ExecuteFunction implements IModuleReceiver {
     public String name;
     public Message[] params;
     public String moduleIdentity;
+    private String clientIdentity;
 
-    public ExecuteFunction(String moduleIdentity, String name, Message[] params) {
+    @Override
+    public String clientIdentity() {
+        return this.clientIdentity;
+    }
+
+    public ExecuteFunction(String moduleIdentity, String clientIdentity, String name, Message[] params) {
         this.name = name;
         this.params = params;
         this.moduleIdentity = moduleIdentity;
+        this.clientIdentity = clientIdentity;
     }
 
     @Override

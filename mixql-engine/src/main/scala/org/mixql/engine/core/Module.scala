@@ -24,7 +24,9 @@ import org.mixql.remote.messages.client.{
 }
 import org.mixql.remote.messages.module.{
   ExecuteResult,
+  ExecuteResultFailed,
   ExecutedFunctionResult,
+  ExecutedFunctionResultFailed,
   GetDefinedFunctionsError,
   IModuleSendToClient
 }
@@ -249,12 +251,9 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
       (ex: Throwable, socket, workerID) => {
         socket.send(
           new SendMsgToPlatform(
-            new ExecuteResult(
-              msg.statement,
-              new Error(
-                s"Module $identity to ${msg.clientIdentity()}: error while reacting on execute: " +
-                  ex.getMessage
-              ),
+            new ExecuteResultFailed(
+              s"Module $identity to ${msg.clientIdentity()}: error while reacting on execute: " +
+                ex.getMessage,
               msg.clientIdentity()
             ),
             workerID
@@ -280,12 +279,9 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
       (e: Throwable, socket, workerID) => {
         socket.send(
           new SendMsgToPlatform(
-            new ExecutedFunctionResult(
-              msg.name,
-              new Error(
-                s"Module $identity to ${msg.clientIdentity()}: error while reacting on execute function" +
-                  s"${msg.name}: " + e.getMessage
-              ),
+            new ExecutedFunctionResultFailed(
+              s"Module $identity to ${msg.clientIdentity()}: error while reacting on execute function" +
+                s"${msg.name}: " + e.getMessage,
               msg.clientIdentity()
             ),
             workerID

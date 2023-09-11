@@ -1,15 +1,14 @@
-package org.mixql.remote.messages.client;
+package org.mixql.remote.messages.module;
 
 import org.mixql.remote.RemoteMessageConverter;
-import org.mixql.remote.messages.Message;
+import org.mixql.remote.messages.type.Error;
 
-public class ShutDown implements IModuleReceiver {
-    public String moduleIdentity;
-    private String clientIdentity;
+public class ExecutedFunctionResultFailed extends Error implements IModuleSendToClient {
+    private String _clientAddress;
 
-    public ShutDown(String moduleIdentity, String clientIdentity) {
-        this.moduleIdentity = moduleIdentity;
-        this.clientIdentity = clientIdentity;
+    public ExecutedFunctionResultFailed(String errorMsg, String clientAddress) {
+        super(errorMsg);
+        _clientAddress = clientAddress;
     }
 
     @Override
@@ -26,12 +25,7 @@ public class ShutDown implements IModuleReceiver {
     }
 
     @Override
-    public String moduleIdentity() {
-        return moduleIdentity;
-    }
-
-    @Override
     public String clientIdentity() {
-        return this.clientIdentity;
+        return _clientAddress;
     }
 }

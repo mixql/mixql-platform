@@ -12,16 +12,25 @@ public class InvokedPlatformFunctionResult implements IWorkerReceiver {
 
     public String moduleIdentity;
 
+    private String clientIdentity;
+
+    @Override
+    public String clientIdentity() {
+        return this.clientIdentity;
+    }
+
     @Override
     public String workerIdentity() {
         return _sender;
     }
 
-    public InvokedPlatformFunctionResult(String moduleIdentity, String sender, String funcName, Message result) {
+    public InvokedPlatformFunctionResult(String moduleIdentity, String clientIdentity, String sender,
+                                         String funcName, Message result) {
         this._sender = sender;
         this.name = funcName;
         this.result = result;
         this.moduleIdentity = moduleIdentity;
+        this.clientIdentity = clientIdentity;
     }
 
     @Override

@@ -6,9 +6,16 @@ import org.mixql.remote.messages.Message;
 public class GetDefinedFunctions implements IModuleReceiver {
 
     public String moduleIdentity;
+    private String clientIdentity;
 
-    public GetDefinedFunctions(String moduleIdentity) {
+    @Override
+    public String clientIdentity() {
+        return this.clientIdentity;
+    }
+
+    public GetDefinedFunctions(String moduleIdentity, String clientIdentity) {
         this.moduleIdentity = moduleIdentity;
+        this.clientIdentity = clientIdentity;
     }
 
     @Override

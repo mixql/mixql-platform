@@ -16,11 +16,19 @@ public class PlatformVar implements IWorkerReceiver {
         return _sender;
     }
 
-    public PlatformVar(String moduleIdentity, String sender, String key, Message msg) {
+    private String clientIdentity;
+
+    @Override
+    public String clientIdentity() {
+        return this.clientIdentity;
+    }
+
+    public PlatformVar(String moduleIdentity, String clientIdentity, String sender, String key, Message msg) {
         _sender = sender;
         this.name = key;
         this.msg = msg;
         this.moduleIdentity = moduleIdentity;
+        this.clientIdentity = clientIdentity;
     }
 
     @Override

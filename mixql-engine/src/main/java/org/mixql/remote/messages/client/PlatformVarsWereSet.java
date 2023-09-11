@@ -14,12 +14,14 @@ public class PlatformVarsWereSet implements IWorkerReceiver {
 
     private String _sender;
     public String moduleIdentity;
+    private String clientIdentity;
 
 
-    public PlatformVarsWereSet(String moduleIdentity, String sender, ArrayList<String> names) {
+    public PlatformVarsWereSet(String moduleIdentity, String clientIdentity, String sender, ArrayList<String> names) {
         _sender = sender;
         this.names = names;
         this.moduleIdentity = moduleIdentity;
+        this.clientIdentity = clientIdentity;
     }
 
 
@@ -39,5 +41,10 @@ public class PlatformVarsWereSet implements IWorkerReceiver {
     @Override
     public String moduleIdentity() {
         return moduleIdentity;
+    }
+
+    @Override
+    public String clientIdentity() {
+        return this.clientIdentity;
     }
 }

@@ -12,11 +12,19 @@ public class PlatformVarsNames implements IWorkerReceiver {
     private String _sender;
     public String moduleIdentity;
 
+    private String clientIdentity;
 
-    public PlatformVarsNames(String moduleIdentity, String sender, String[] names) {
+    @Override
+    public String clientIdentity() {
+        return this.clientIdentity;
+    }
+
+
+    public PlatformVarsNames(String moduleIdentity, String clientIdentity, String sender, String[] names) {
         _sender = sender;
         this.names = names;
         this.moduleIdentity = moduleIdentity;
+        this.clientIdentity = clientIdentity;
     }
 
     @Override

@@ -14,10 +14,18 @@ public class PlatformVars implements IWorkerReceiver {
 
     private String _sender;
 
-    public PlatformVars(String moduleIdentity, String sender, Param[] params) {
+    private String clientIdentity;
+
+    @Override
+    public String clientIdentity() {
+        return this.clientIdentity;
+    }
+
+    public PlatformVars(String moduleIdentity, String clientIdentity, String sender, Param[] params) {
         _sender = sender;
         this.vars = params;
         this.moduleIdentity = moduleIdentity;
+        this.clientIdentity = clientIdentity;
     }
 
     @Override

@@ -41,7 +41,7 @@ public class GtypeConverter {
             return new array(messagesToGtypes(((gArray) msg).arr));
 
         if (msg instanceof Error)
-            throw new Exception(((Error) msg).msg);
+            throw new Exception(((Error) msg).getErrorMessage());
 
         if (msg instanceof org.mixql.remote.messages.type.gtype.map) {
             HashMap<Type, Type> m = new HashMap<>();

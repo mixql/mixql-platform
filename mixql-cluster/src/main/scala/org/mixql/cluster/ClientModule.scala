@@ -31,7 +31,12 @@ import org.mixql.remote.messages.client.{
   PlatformVarsWereSet,
   ShutDown
 }
-import org.mixql.remote.messages.module.IModuleSendToClient
+import org.mixql.remote.messages.module.{
+  ExecuteResult,
+  ExecutedFunctionResult,
+  ExecutedFunctionResultFailed,
+  IModuleSendToClient
+}
 import org.mixql.remote.messages.{Message, module}
 import org.mixql.remote.messages.module.worker.{
   GetPlatformVar,
@@ -56,8 +61,8 @@ object ClientModule {
 //which is {basePath}/{startScriptName}. P.S executor will be ignored
 //if executor is not none and startScriptName is none then execute it in scala future
 //if executor is none and startScript is none then just connect
-class ClientModule(clientName: String,
-                   moduleName: String,
+class ClientModule(clientIdentity: String,
+                   moduleIdentity: String,
                    startScriptName: Option[String],
                    executor: Option[IExecutor],
                    hostArgs: Option[String],
@@ -74,12 +79,12 @@ class ClientModule(clientName: String,
   var clientFuture: Future[Unit] = null
   var moduleStarted: Boolean = false
 
-  override def name: String = clientName
+  override def name: String = clientIdentity
 
   override def executeImpl(stmt: String, ctx: EngineContext): Type = {
-    logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by execute request")
+    logInfo(s"[ClientModule-$clientIdentity]: module $moduleIdentity was triggered by execute request")
 
-    sendMsg(Execute(moduleName, stmt))
+    sendMsg(Execute(moduleIdentity, clientIdentity, stmt))
     reactOnRequest(recvMsg(), ctx)
   }
 
@@ -92,31 +97,40 @@ class ClientModule(clientName: String,
         "named arguments are not supported in functions in remote engine " + name
       )
 
-    logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by executeFunc request")
-    sendMsg(ExecuteFunction(name, params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray))
+    logInfo(s"[ClientModule-$clientIdentity]: module $moduleIdentity was triggered by executeFunc request")
+    sendMsg(
+      ExecuteFunction(
+        moduleIdentity,
+        clientIdentity,
+        name,
+        params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray
+      )
+    )
     reactOnRequest(recvMsg(), ctx)
   }
 
   override def getDefinedFunctions(): List[String] = {
     if (!engineStarted) {
-      logInfo(s"[ClientModule-$clientName]: module $moduleName was triggered by getDefinedFunctions request")
+      logInfo(
+        s"[ClientModule-$clientIdentity]: module $moduleIdentity was triggered by getDefinedFunctions request"
+      )
     }
     engineStarted = true
 
     import org.mixql.core.context.gtype
-    logInfo(s"Server: ClientModule: $clientName: ask defined functions from remote engine")
+    logInfo(s"Server: ClientModule: $clientIdentity: ask defined functions from remote engine")
 
-    sendMsg(messages.client.GetDefinedFunctions())
+    sendMsg(messages.client.GetDefinedFunctions(moduleIdentity, clientIdentity))
     val functionsList =
       recvMsg() match {
         case m: messages.module.DefinedFunctions => m.arr.toList
-        case ex: messages.gtype.Error =>
-          val errorMessage = s"Server: ClientModule: $clientName: getDefinedFunctions error: \n" + ex.msg
+        case ex: org.mixql.remote.messages.`type`.Error =>
+          val errorMessage = s"Server: ClientModule: $clientIdentity: getDefinedFunctions error: \n" + ex.msg
           logError(errorMessage)
           throw new Exception(errorMessage)
         case m: messages.Message =>
           val errorMessage =
-            s"Server: ClientModule: $clientName: getDefinedFunctions error: \n" +
+            s"Server: ClientModule: $clientIdentity: getDefinedFunctions error: \n" +
               "Unknown message " + m.`type`() + " received"
           logError(errorMessage)
           throw new Exception(errorMessage)
@@ -134,16 +148,26 @@ class ClientModule(clientName: String,
         m match
           case msg: GetPlatformVar =>
             val v = ctx.getVar(msg.name)
-            sendMsg(new PlatformVar(msg.workerIdentity(), msg.name, GtypeConverter.toGeneratedMsg(v)))
+            sendMsg(
+              new PlatformVar(
+                moduleIdentity,
+                clientIdentity,
+                msg.workerIdentity(),
+                msg.name,
+                GtypeConverter.toGeneratedMsg(v)
+              )
+            )
             reactOnRequest(recvMsg(), ctx)
           case msg: SetPlatformVar =>
             ctx.setVar(msg.name, GtypeConverter.messageToGtype(msg.msg))
-            sendMsg(new PlatformVarWasSet(msg.workerIdentity(), msg.name))
+            sendMsg(new PlatformVarWasSet(moduleIdentity, clientIdentity, msg.workerIdentity(), msg.name))
             reactOnRequest(recvMsg(), ctx)
           case msg: GetPlatformVars =>
             val valMap = ctx.getVars(msg.names.toList)
             sendMsg(
               new PlatformVars(
+                moduleIdentity,
+                clientIdentity,
                 msg.workerIdentity(),
                 valMap.map(t => new Param(t._1, GtypeConverter.toGeneratedMsg(t._2))).toArray
               )
@@ -154,13 +178,22 @@ class ClientModule(clientName: String,
             ctx.setVars(msg.vars.asScala.map(t => t._1 -> GtypeConverter.messageToGtype(t._2)))
             sendMsg(
               new PlatformVarsWereSet(
+                moduleIdentity,
+                clientIdentity,
                 msg.workerIdentity(),
                 new java.util.ArrayList[String](msg.vars.keySet())
               )
             )
             reactOnRequest(recvMsg(), ctx)
           case msg: GetPlatformVarsNames =>
-            sendMsg(new PlatformVarsNames(msg.workerIdentity(), ctx.getVarsNames().toArray))
+            sendMsg(
+              new PlatformVarsNames(
+                moduleIdentity,
+                clientIdentity,
+                msg.workerIdentity(),
+                ctx.getVarsNames().toArray
+              )
+            )
             reactOnRequest(recvMsg(), ctx)
           case msg: InvokeFunction =>
 //            try {
@@ -170,6 +203,8 @@ class ClientModule(clientName: String,
             )
             sendMsg(
               new InvokedPlatformFunctionResult(
+                moduleIdentity,
+                clientIdentity,
                 msg.workerIdentity(),
                 msg.name,
                 GtypeConverter.toGeneratedMsg(res)
@@ -181,25 +216,53 @@ class ClientModule(clientName: String,
 //                sendMsg(new module.Error(e.getMessage()))
 //                reactOnRequest(recvMsg(), ctx)
 //            }
-      case msg: messages.gtype.Error =>
+          case msg: ExecutedFunctionResult =>
+            if (msg.msg.isInstanceOf[org.mixql.remote.messages.`type`.Error]) {
+              logError(
+                "Server: ClientModule: Error while executing function " + msg.functionName + "error: " +
+                  msg.msg.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage
+              )
+              throw new Exception(
+                msg.msg.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage
+              )
+            }
+            GtypeConverter.messageToGtype(msg.msg)
+          case msg: org.mixql.remote.messages.`type`.Error =>
+            logError(
+              "Server: ClientModule: $clientIdentity:" + msg
+                .asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage
+            )
+            throw new Exception(msg.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage)
+          case msg: ExecuteResult =>
+            if (msg.result.isInstanceOf[org.mixql.remote.messages.`type`.Error]) {
+              logError(
+                "Server: ClientModule: Error while executing statement " + msg.stmt + "error: " +
+                  msg.result.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage
+              )
+              throw new Exception(
+                msg.result.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage
+              )
+            }
+            GtypeConverter.messageToGtype(msg.result)
+      case msg: org.mixql.remote.messages.`type`.Error =>
         logError(
-          "Server: ClientModule: $clientName: error while reacting on request" +
+          "Server: ClientModule: $clientIdentity: error while reacting on request" +
             msg.msg
         )
-        throw new Exception(msg.msg)
+        throw new Exception(msg.getErrorMessage)
   }
 
   private def _sendMsg(msg: messages.Message): Unit = {
 //    logDebug(
-//      "server: Clientmodule " + clientName + " sending identity of remote module " + moduleName + " " +
-//        client.send(moduleName.getBytes, ZMQ.SNDMORE)
+//      "server: Clientmodule " + clientIdentity + " sending identity of remote module " + moduleIdentity + " " +
+//        client.send(moduleIdentity.getBytes, ZMQ.SNDMORE)
 //    )
 //    logDebug(
-//      "server: Clientmodule " + clientName + " sending empty frame to remote module " + moduleName + " " +
+//      "server: Clientmodule " + clientIdentity + " sending empty frame to remote module " + moduleIdentity + " " +
 //        client.send("".getBytes, ZMQ.SNDMORE)
 //    )
     logDebug(
-      "server: Clientmodule " + clientName + " sending protobuf message to remote module " + moduleName + " " +
+      "server: Clientmodule " + clientIdentity + " sending protobuf message to remote module " + moduleIdentity + " " +
         client.send(msg.toByteArray, 0)
     )
   }
@@ -212,15 +275,15 @@ class ClientModule(clientName: String,
         ctx = ZMQ.context(1)
         client = ctx.socket(SocketType.REQ)
         // set id for client
-        client.setIdentity(clientName.getBytes)
+        client.setIdentity(clientIdentity.getBytes)
         logInfo(
-          "server: Clientmodule " + clientName + " connected to " +
+          "server: Clientmodule " + clientIdentity + " connected to " +
             s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPortFrontend.get} " + client
               .connect(s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPortFrontend.get}")
         )
         moduleStarted = true
-        logInfo(s" Clientmodule $clientName: notify broker about started engine " + moduleName)
-        _sendMsg(new EngineStarted(moduleName))
+        logInfo(s" Clientmodule $clientIdentity: notify broker about started engine " + moduleIdentity)
+        _sendMsg(new EngineStarted(moduleIdentity))
       end if
       _sendMsg(msg)
     }
@@ -291,16 +354,17 @@ class ClientModule(clientName: String,
     startScriptName match
       case Some(scriptName) =>
         logInfo(
-          s"server: ClientModule: $clientName trying to start remote module $moduleName at " + host +
+          s"server: ClientModule: $clientIdentity trying to start remote module $moduleIdentity at " + host +
             " and port at " + portBackend + " in " + basePath.getAbsolutePath + " by executing script " +
             scriptName + " in directory " + basePath.getAbsolutePath
         )
         clientRemoteProcess = CmdOperations.runCmdNoWait(
           Some(
-            s"$scriptName.bat --port $portBackend --host $host --identity $moduleName ${startScriptExtraOpts.getOrElse("")}"
+            s"$scriptName.bat --port $portBackend --host $host --identity $moduleIdentity ${startScriptExtraOpts
+                .getOrElse("")}"
           ),
           Some(
-            s"$scriptName --port $portBackend --host $host --identity $moduleName ${startScriptExtraOpts.getOrElse("")}"
+            s"$scriptName --port $portBackend --host $host --identity $moduleIdentity ${startScriptExtraOpts.getOrElse("")}"
           ),
           basePath
         )
@@ -308,40 +372,40 @@ class ClientModule(clientName: String,
         executor match
           case Some(engine) =>
             logInfo(
-              s"server: ClientModule: $clientName trying to  start module $moduleName at " + host +
+              s"server: ClientModule: $clientIdentity trying to  start module $moduleIdentity at " + host +
                 " and port at " + portBackend + " in " + basePath
                   .getAbsolutePath + " by executing in scala future"
             )
-            clientFuture = engine.start(moduleName, host, portBackend.toString)
+            clientFuture = engine.start(moduleIdentity, host, portBackend.toString)
           case None =>
   }
 
   def ShutDown() = {
     if moduleStarted then
-      sendMsg(messages.client.ShutDown())
+      sendMsg(messages.client.ShutDown(moduleIdentity, clientIdentity))
       moduleStarted = false // not to send occasionally more then once
   }
 
   override def close() = {
     if (moduleStarted) {
-      logInfo(s"Server: ClientModule: sending Shutdown to remote engine " + moduleName)
+      logInfo(s"Server: ClientModule: sending Shutdown to remote engine " + moduleIdentity)
       ShutDown()
       logDebug("Give time module's socket to shutdown and shutdown message to reach module")
       sleep(2000)
     }
-    logDebug(s"Server: ClientModule: $clientName: Executing close")
+    logDebug(s"Server: ClientModule: $clientIdentity: Executing close")
     Try(if (client != null) {
-      logInfo(s"Server: ClientModule: $clientName: close client socket")
+      logInfo(s"Server: ClientModule: $clientIdentity: close client socket")
       client.close()
     })
 
     Try(if (ctx != null) {
-      logInfo(s"Server: ClientModule: $clientName: close context")
+      logInfo(s"Server: ClientModule: $clientIdentity: close context")
       ctx.close()
     })
 
     //    if (clientRemoteProcess.isAlive()) clientRemoteProcess.exitValue()
-    //    println(s"server: ClientModule: $clientName: Remote client was shutdown")
+    //    println(s"server: ClientModule: $clientIdentity: Remote client was shutdown")
 
   }
 }

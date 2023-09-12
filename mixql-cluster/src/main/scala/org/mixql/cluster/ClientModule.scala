@@ -125,7 +125,8 @@ class ClientModule(clientIdentity: String,
       recvMsg() match {
         case m: messages.module.DefinedFunctions => m.arr.toList
         case ex: org.mixql.remote.messages.`type`.Error =>
-          val errorMessage = s"Server: ClientModule: $clientIdentity: getDefinedFunctions error: \n" + ex.msg
+          val errorMessage =
+            s"Server: ClientModule: $clientIdentity: getDefinedFunctions error: \n" + ex.getErrorMessage
           logError(errorMessage)
           throw new Exception(errorMessage)
         case m: messages.Message =>
@@ -247,7 +248,7 @@ class ClientModule(clientIdentity: String,
       case msg: org.mixql.remote.messages.`type`.Error =>
         logError(
           "Server: ClientModule: $clientIdentity: error while reacting on request" +
-            msg.msg
+            msg.getErrorMessage
         )
         throw new Exception(msg.getErrorMessage)
   }

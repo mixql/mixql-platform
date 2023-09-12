@@ -7,7 +7,7 @@ import org.mixql.remote.messages.`type`.gtype.Bool
 import org.mixql.remote.messages.client.{Execute, ExecuteFunction}
 import org.mixql.remote.messages.module.DefinedFunctions
 import org.mixql.remote.{GtypeConverter, RemoteMessageConverter, messages}
-import org.mixql.remote.messages.{Message, gtype}
+import org.mixql.remote.messages.Message
 
 object EngineDemoExecutor extends IModuleExecutor {
 
@@ -22,7 +22,7 @@ object EngineDemoExecutor extends IModuleExecutor {
     Thread.sleep(1000)
     logInfo(s"Successfully executed command ${msg.statement}")
     logDebug(s"Sending reply on Execute msg")
-    messages.gtype.NULL()
+    messages.`type`.gtype.NULL()
   }
 
   def functions: Map[String, Any] =
@@ -33,7 +33,8 @@ object EngineDemoExecutor extends IModuleExecutor {
       "stub_simple_func_return_arr" -> StubSimpleProc.simple_func_return_arr,
       "stub_simple_func_return_map" -> StubSimpleProc.simple_func_return_map,
       "execute_platform_func_in_stub_func" -> StubSimpleProc.execute_platform_func_in_stub_func,
-      "execute_stub_func_using_platform_in_stub_func" -> StubSimpleProc.execute_stub_func_using_platform_in_stub_func,
+      "execute_stub_func_using_platform_in_stub_func" -> StubSimpleProc
+        .execute_stub_func_using_platform_in_stub_func,
       "stub_simple_proc_context" -> StubSimpleProc.stub_simple_proc_context,
       "execute_stub_func_long_sleep" -> StubSimpleProc.execute_stub_func_long_sleep,
       "stub_simple_proc_context_test_setting_getting_vars" -> StubSimpleProc
@@ -64,7 +65,7 @@ object EngineDemoExecutor extends IModuleExecutor {
                                           logger: ModuleLogger): DefinedFunctions = {
     import logger._
     logInfo(s"Received request to get defined functions from server")
-    DefinedFunctions(functions.keys.toArray)
+    DefinedFunctions(functions.keys.toArray, clientAddress)
   }
 
   override def reactOnShutDown(identity: String, clientAddress: String, logger: ModuleLogger): Unit = {}

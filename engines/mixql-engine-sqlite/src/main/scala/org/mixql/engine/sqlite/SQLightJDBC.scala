@@ -6,10 +6,11 @@ import java.sql.*
 import scala.collection.mutable
 import org.mixql.engine.core.logger.ModuleLogger
 import org.mixql.remote.{GtypeConverter, RemoteMessageConverter, messages}
-import org.mixql.remote.messages.{gtype, module}
+import org.mixql.remote.messages.module
 import org.mixql.engine.core.PlatformContext
+import org.mixql.remote.messages.`type`.Error
 import org.mixql.remote.messages.`type`.gtype
-import org.mixql.remote.messages.`type`.gtype.{Bool, gArray, gDouble, gInt, gString}
+import org.mixql.remote.messages.`type`.gtype.{Bool, gArray, gDouble, gInt, gString, NULL}
 
 class SQLightJDBC(identity: String, platformCtx: PlatformContext) extends java.lang.AutoCloseable {
 
@@ -77,9 +78,11 @@ class SQLightJDBC(identity: String, platformCtx: PlatformContext) extends java.l
               res.close()
           }
         } else
-          messages.gtype.NULL()
+          NULL()
       } catch {
-        case e: Throwable => gtype.Error(s"Module $identity: SQLightJDBC error while execute: " + e.getMessage)
+        case e: Throwable =>
+          org.mixql.remote.messages.`type`
+            .Error(s"Module $identity: SQLightJDBC error while execute: " + e.getMessage)
       } finally {
         if (jdbcStmt != null)
           jdbcStmt.close()
@@ -122,7 +125,8 @@ class SQLightJDBC(identity: String, platformCtx: PlatformContext) extends java.l
         gtype.gArray(JavaSqlArrayConverter.toDoubleArray(javaSqlArray).map { value =>
           new gDouble(value)
         }.toArray)
-      case _: Any => throw new Exception(s"Module $identity: SQLightJDBC error while execute: unknown type of array")
+      case _: Any =>
+        throw new Exception(s"Module $identity: SQLightJDBC error while execute: unknown type of array")
     }
   }
 

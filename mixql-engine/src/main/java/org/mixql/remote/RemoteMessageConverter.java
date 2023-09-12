@@ -235,7 +235,7 @@ public class RemoteMessageConverter {
                         (String) anyMsgJsonObject.get("name"),
                         _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("result"))
                 );
-            case "org.mixql.remote.messages.cluster.EngineStarted":
+            case "org.mixql.remote.messages.client.toBroker.EngineStarted":
                 return new EngineStarted(
                         (String) anyMsgJsonObject.get("engineName"),
                         (String) anyMsgJsonObject.get("clientIdentity")

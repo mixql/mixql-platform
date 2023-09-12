@@ -6,19 +6,23 @@ import org.json.simple.JSONObject;
 import java.util.Arrays;
 
 class JsonUtils {
-    public static JSONObject buildEngineStarted(String type, String name) {
+    public static JSONObject buildEngineStarted(String type, String name, String clientIdentity) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("type", type);
+        jsonObject.put("engineName", name);
+        jsonObject.put("clientIdentity", clientIdentity);
+        return jsonObject;
+    }
+
+    public static JSONObject buildEngineIsReady(String type, String name) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("engineName", name);
         return jsonObject;
     }
 
-    public static JSONObject buildEngineIsReady(String type, String name) {
-        return buildEngineStarted(type, name);
-    }
-
     public static JSONObject buildEnginePingHeartBeat(String type, String name) {
-        return buildEngineStarted(type, name);
+        return buildEngineIsReady(type, name);
     }
 
     public static JSONObject buildShutDown(String type, String moduleIdentity, String clientIdentity) {

@@ -284,7 +284,7 @@ class ClientModule(clientIdentity: String,
         )
         moduleStarted = true
         logInfo(s" Clientmodule $clientIdentity: notify broker about started engine " + moduleIdentity)
-        _sendMsg(new EngineStarted(moduleIdentity))
+        _sendMsg(new EngineStarted(moduleIdentity, clientIdentity))
       end if
       _sendMsg(msg)
     }

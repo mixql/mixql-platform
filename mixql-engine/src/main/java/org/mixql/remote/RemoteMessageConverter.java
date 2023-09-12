@@ -237,7 +237,8 @@ public class RemoteMessageConverter {
                 );
             case "org.mixql.remote.messages.cluster.EngineStarted":
                 return new EngineStarted(
-                        (String) anyMsgJsonObject.get("engineName")
+                        (String) anyMsgJsonObject.get("engineName"),
+                        (String) anyMsgJsonObject.get("clientIdentity")
                 );
             case "org.mixql.remote.messages.module.fromBroker.PlatformPongHeartBeat":
                 return new PlatformPongHeartBeat();
@@ -533,7 +534,7 @@ public class RemoteMessageConverter {
 
         if (msg instanceof EngineStarted) {
             EngineStarted msgTmp = ((EngineStarted) msg);
-            return JsonUtils.buildEngineStarted(msgTmp.type(), msgTmp.engineName);
+            return JsonUtils.buildEngineStarted(msgTmp.type(), msgTmp.engineName, msgTmp.clientIdentity());
         }
 
         if (msg instanceof PlatformPongHeartBeat) {

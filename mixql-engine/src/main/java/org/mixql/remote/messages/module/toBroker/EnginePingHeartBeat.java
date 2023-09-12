@@ -2,7 +2,7 @@ package org.mixql.remote.messages.module.toBroker;
 
 import org.mixql.remote.RemoteMessageConverter;
 
-public class EnginePingHeartBeat implements IBrokerReceiver {
+public class EnginePingHeartBeat implements IBrokerReceiverFromModule {
     private String engineName;
 
     @Override

@@ -1,9 +1,8 @@
 package org.mixql.remote.messages.module.toBroker;
 
 import org.mixql.remote.RemoteMessageConverter;
-import org.mixql.remote.messages.module.IModuleSendToClient;
 
-public class EngineIsReady implements IBrokerReceiver {
+public class EngineIsReady implements IBrokerReceiverFromModule {
     private String engineName;
 
     @Override

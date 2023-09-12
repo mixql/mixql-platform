@@ -3,7 +3,7 @@ package org.mixql.remote.messages.module.toBroker;
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.type.Error;
 
-public class EngineFailed extends Error implements IBrokerReceiver {
+public class EngineFailed extends Error implements IBrokerReceiverFromModule {
     private String engineName;
 
     @Override

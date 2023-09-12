@@ -7,7 +7,6 @@ import org.zeromq.{SocketType, ZMQ}
 import org.mixql.remote.messages.module.worker.{IWorkerSendToClient, SendMsgToPlatform, WorkerFinished}
 import org.mixql.remote.RemoteMessageConverter
 import org.mixql.remote.messages.Message
-import org.mixql.remote.messages.`type`.Error
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -34,7 +33,7 @@ import org.mixql.remote.messages.module.toBroker.{
   EngineFailed,
   EngineIsReady,
   EnginePingHeartBeat,
-  IBrokerReceiver
+  IBrokerReceiverFromModule
 }
 import org.mixql.remote.messages.module.fromBroker.{IBrokerSender, PlatformPongHeartBeat}
 
@@ -326,29 +325,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
     }
   }
 
-//  def _sendMsgToServerBroker(msg: Array[Byte], clientAddress: Array[Byte], logger: ModuleLogger): Boolean = {
-//    // Sending multipart message
-//    import logger._
-//    logDebug(s"sendMsgToServerBroker: sending empty frame")
-//    server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
-//    logDebug(s"sendMsgToServerBroker: sending clientaddress")
-//    server.send(clientAddress, ZMQ.SNDMORE) // First send address frame
-//    logDebug(s"sendMsgToServerBroker: sending empty frame")
-//    server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
-//    logDebug(s"sendMsgToServerBroker: sending message")
-//    server.send(msg)
-//  }
-
-//  def _sendMsgToServerBroker(msg: String, logger: ModuleLogger): Boolean = {
-//    import logger._
-//    logDebug(s"sendMsgToServerBroker: convert msg of type String to Array of bytes")
-//    logDebug(s"sending empty frame")
-//    server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
-//    logDebug(s"Send msg to server ")
-//    server.send(msg.getBytes())
-//  }
-
-  def sendMsgToPlatformBroker(msg: IBrokerReceiver, logger: ModuleLogger): Boolean = {
+  def sendMsgToPlatformBroker(msg: IBrokerReceiverFromModule, logger: ModuleLogger): Boolean = {
     import logger._
     logDebug(s"sendMsgToPlatformBroker: sending empty frame")
     server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
@@ -379,27 +356,6 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
       throw new BrakeException() // empty frame
     logDebug(s"readMsgFromServerBroker: received Identity of engine")
     ///////////////////////////////////////////////////////////////////////////////////////
-
-//    val clientAdrress = server.recv(0) // Identity of client object on server
-//    // or pong-heartbeat from broker
-//    if (clientAdrress == null)
-//      throw new BrakeException()
-//
-//    var msg: Option[Array[Byte]] = None
-//
-//    var pongHeartMessage: Option[String] = Some(new String(clientAdrress))
-//    if (pongHeartMessage.get != "PONG-HEARTBEAT") {
-//      pongHeartMessage = None
-//
-//      logDebug(s"readMsgFromServerBroker: got client address: " + new String(clientAdrress))
-//
-//      if (server.recv(0) == null)
-//        throw new BrakeException() // empty frame
-//      logDebug(s"readMsgFromServerBroker: received empty frame")
-//
-//      logDebug(s"have received message from server ${new String(clientAdrress)}")
-//      msg = Some(server.recv(0))
-//    }
 
     /////////////////////////// Empty frame//////////////////////////////
     if (server.recv(0) == null)

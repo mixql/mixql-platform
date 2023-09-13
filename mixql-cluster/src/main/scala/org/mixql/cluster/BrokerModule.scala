@@ -2,13 +2,14 @@ package org.mixql.cluster
 
 import logger.*
 import org.mixql.engine.core.BrakeException
+import org.mixql.protobuf.ErrorOps
 import org.mixql.remote.RemoteMessageConverter
 import org.zeromq.{SocketType, ZMQ}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import org.mixql.remote.messages.Message
-import org.mixql.remote.messages.broker.PlatformPongHeartBeat
+import org.mixql.remote.messages.broker.{CouldNotConvertMsgError, PlatformPongHeartBeat}
 import org.mixql.remote.messages.module.IModuleSendToClient
 import org.mixql.remote.messages.module.toBroker.{
   EngineFailed,
@@ -133,27 +134,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
           case e: Throwable =>
             logError(
               "Broker main thread:\n Got Exception: \n" + e.getMessage +
-                "\n target exception stacktrace: \n" + {
-                  import java.io.PrintWriter
-                  import java.io.StringWriter
-                  var sw: StringWriter = null
-                  var pw: PrintWriter = null
-                  try {
-                    sw = new StringWriter()
-                    pw = new PrintWriter(sw)
-                    e.printStackTrace(pw)
-                    sw.toString
-                  } finally {
-                    Try(
-                      if (pw != null)
-                        pw.close()
-                    )
-                    Try(
-                      if (sw != null)
-                        sw.close()
-                    )
-                  }
-                }
+                "\n target exception stacktrace: \n" + ErrorOps.stackTraceToString(e)
             )
           // TO-DO Send broker error to clients
         }
@@ -230,35 +211,17 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
     val request = frontend.recv()
     val requestStr: String = new String(request)
     logDebug(s"Broker frontend: received request [$requestStr] for engine module from $clientAddrStr")
-    // try {
-    RemoteMessageConverter.unpackAnyMsgFromArray(request)
-//    } catch
-//      case e: Throwable =>
-//        logError(
-//          s"Broker:\n receiveMessageFromFrontend: \n" +
-//            "Could not convert received message from byte array to Message class: \n" +
-//            e.getMessage + "\n target exception stacktrace: \n" + {
-//              import java.io.PrintWriter
-//              import java.io.StringWriter
-//              var sw: StringWriter = null
-//              var pw: PrintWriter = null
-//              try {
-//                sw = new StringWriter()
-//                pw = new PrintWriter(sw)
-//                e.printStackTrace(pw)
-//                sw.toString
-//              } finally {
-//                Try(
-//                  if (pw != null)
-//                    pw.close()
-//                )
-//                Try(
-//                  if (sw != null)
-//                    sw.close()
-//                )
-//              }
-//            }
-//        )
+    try {
+      RemoteMessageConverter.unpackAnyMsgFromArray(request)
+    } catch
+      case e: Throwable =>
+        val msg = logError(
+          s"Broker:\n receiveMessageFromFrontend: \n" +
+            "Could not convert received message from byte array to Message class: \n" +
+            e.getMessage + "\n target exception stacktrace: \n" + ErrorOps.stackTraceToString(e)
+        )
+        sendMessageToFrontend(clientAddrStr, new CouldNotConvertMsgError(msg).toByteArray)
+        throw e
     //////////////////////////////////////////////////////////////////////////////
   }
 

@@ -96,6 +96,10 @@ class JsonUtils {
         return jsonObject;
     }
 
+    public static JSONObject buildCouldNotConvertMsgError(String type, String msg) {
+        return buildError(type, msg);
+    }
+
     public static JSONObject buildEngineFailed(String type, String engineName, String msg) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);

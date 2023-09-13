@@ -1,8 +1,14 @@
 package org.mixql.remote.messages.broker;
 
 import org.mixql.remote.RemoteMessageConverter;
+import org.mixql.remote.messages.type.Error;
 
-public class BrokerError extends Error implements IBrokerSender {
+public class CouldNotConvertMsgError extends Error implements IBrokerSender {
+
+    public CouldNotConvertMsgError(String errorMsg) {
+        super(errorMsg);
+    }
+
     @Override
     public String toString() {
         try {

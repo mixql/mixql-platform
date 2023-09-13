@@ -4,6 +4,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.mixql.remote.messages.*;
+import org.mixql.remote.messages.broker.CouldNotConvertMsgError;
 import org.mixql.remote.messages.client.*;
 import org.mixql.remote.messages.client.toBroker.EngineStarted;
 import org.mixql.remote.messages.module.*;
@@ -280,6 +281,10 @@ public class RemoteMessageConverter {
                         (String) anyMsgJsonObject.get("errorMsg"),
                         (String) anyMsgJsonObject.get("clientIdentity")
                 );
+            case "org.mixql.remote.messages.broker.CouldNotConvertMsgError":
+                return new CouldNotConvertMsgError(
+                        (String) anyMsgJsonObject.get("errorMsg")
+                );
             case "org.mixql.remote.messages.module.GetDefinedFunctionsError":
                 return new GetDefinedFunctionsError(
                         (String) anyMsgJsonObject.get("errorMsg"),
@@ -366,6 +371,11 @@ public class RemoteMessageConverter {
             return JsonUtils.buildGetDefinedFunctionsError(msg.type(),
                     ((GetDefinedFunctionsError) msg).clientIdentity(),
                     ((GetDefinedFunctionsError) msg).getErrorMessage());
+        }
+
+        if (msg instanceof CouldNotConvertMsgError) {
+            return JsonUtils.buildCouldNotConvertMsgError(msg.type(),
+                    ((CouldNotConvertMsgError) msg).getErrorMessage());
         }
 
         if (msg instanceof Error) {

@@ -244,8 +244,11 @@ class ClientModule(clientIdentity: String,
 
   private def sendMsg(msg: IModuleReceiver): Unit = {
     this.synchronized {
-      if !moduleStarted then
-        if !BrokerModule.wasStarted then startBroker()
+      if (!moduleStarted) {
+
+        if (!BrokerModule.wasStarted)
+          startBroker()
+
         startModuleClient()
         ctx = ZMQ.context(1)
         client = ctx.socket(SocketType.DEALER)
@@ -253,13 +256,13 @@ class ClientModule(clientIdentity: String,
         client.setIdentity(clientIdentity.getBytes)
         logInfo(
           "server: Clientmodule " + clientIdentity + " connected to " +
-            s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPortFrontend.get} " + client
-              .connect(s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPortFrontend.get}")
+            s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPort.get} " + client
+              .connect(s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPort.get}")
         )
         moduleStarted = true
         logInfo(s" Clientmodule $clientIdentity: notify broker about started engine " + moduleIdentity)
         _sendMsg(new EngineStarted(moduleIdentity, clientIdentity))
-      end if
+      }
       _sendMsg(msg)
     }
   }
@@ -273,15 +276,11 @@ class ClientModule(clientIdentity: String,
     }
   }
 
-  private def startBroker() = {
+  private def startBroker(): Unit = {
     import ClientModule.config
 
     val portFrontend: Int = portFrontendArgs.getOrElse(Try({
       config.getInt("org.mixql.cluster.broker.portFrontend")
-    }).getOrElse(PortOperations.isPortAvailable(0)))
-
-    val portBackend: Int = portBackendArgs.getOrElse(Try({
-      config.getInt("org.mixql.cluster.broker.portBackend")
     }).getOrElse(PortOperations.isPortAvailable(0)))
 
     val host: String = hostArgs.getOrElse({
@@ -290,14 +289,14 @@ class ClientModule(clientIdentity: String,
 
     logInfo(
       s"Mixql engine demo platform: Starting broker messager with" +
-        s" frontend port $portFrontend and backend port $portBackend on host $host"
+        s" frontend port $portFrontend on host $host"
     )
-    BrokerModule.start(portFrontend, portBackend, host)
+    BrokerModule.start(portFrontend, host)
   }
 
   private def startModuleClient() = {
     val host = BrokerModule.getHost.get
-    val portBackend = BrokerModule.getPortBackend.get
+    val portBackend = BrokerModule.getPort.get
 
     import ClientModule.config
     val basePath: File = basePathArgs.getOrElse(Try({

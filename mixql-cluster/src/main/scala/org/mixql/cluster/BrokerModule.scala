@@ -25,27 +25,23 @@ object BrokerModule extends java.lang.AutoCloseable {
 
   def wasStarted: Boolean = startedBroker
 
-  private var _portFrontend: Option[Int] = None
-  private var _portBackend: Option[Int] = None
+  private var _port: Option[Int] = None
   private var _host: Option[String] = None
 
-  def getPortFrontend: Option[Int] = _portFrontend
-
-  def getPortBackend: Option[Int] = _portBackend
+  def getPort: Option[Int] = _port
 
   def getHost: Option[String] = _host
 
-  def start(portFrontend: Int, portBackend: Int, host: String) = {
+  def start(port: Int, host: String): Unit = {
     this.synchronized {
       if !startedBroker then
         if threadBroker == null then
-          _portFrontend = Some(portFrontend)
-          _portBackend = Some(portBackend)
+          _port = Some(port)
           _host = Some(host)
 
           logInfo("Starting broker thread")
           threadBroker = {
-            new BrokerMainRunnable("BrokerMainThread", host, portFrontend.toString, portBackend.toString)
+            new BrokerMainRunnable("BrokerMainThread", host, _port.get.toString)
           }
           threadBroker.start()
           startedBroker = true
@@ -57,8 +53,7 @@ object BrokerModule extends java.lang.AutoCloseable {
   override def close() = {
     this.synchronized {
       if (threadBroker != null && threadBroker.isAlive() && !threadBroker.isInterrupted)
-        _portFrontend = None
-        _portBackend = None
+        _port = None
         _host = None
         logInfo("Broker: Executing close")
         logInfo("Broker: send interrupt to thread")
@@ -74,10 +69,9 @@ object BrokerModule extends java.lang.AutoCloseable {
   }
 }
 
-class BrokerMainRunnable(name: String, host: String, portFrontend: String, portBackend: String) extends Thread(name) {
+class BrokerMainRunnable(name: String, host: String, port: String) extends Thread(name) {
   var ctx: ZMQ.Context = null
   var frontend: ZMQ.Socket = null
-  var backend: ZMQ.Socket = null
   var poller: ZMQ.Poller = null
 
   // Key is identity, Value is list of messages
@@ -85,47 +79,39 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
   val engines: mutable.Set[String] = mutable.Set()
   val NOFLAGS = 0
 
-  def init(): (Int, Int) = {
+  def init(): Int = {
     logInfo("Initialising broker")
     ctx = ZMQ.context(1)
     frontend = ctx.socket(SocketType.ROUTER)
-    backend = ctx.socket(SocketType.ROUTER)
-    logInfo("Broker: starting frontend router socket on " + portFrontend.toString)
-    frontend.bind(s"tcp://$host:${portFrontend.toString}")
-    logInfo("Broker: starting backend router socket on " + portBackend.toString)
-    backend.bind(s"tcp://$host:${portBackend.toString}")
+    logInfo("Broker: starting frontend router socket on " + port)
+    frontend.bind(s"tcp://$host:$port")
     logDebug("Initialising poller")
-    poller = ctx.poller(2)
-    val polBackendIndex = poller.register(backend, ZMQ.Poller.POLLIN)
+    poller = ctx.poller(1)
     val polFrontendIndex = poller.register(frontend, ZMQ.Poller.POLLIN)
     logDebug("initialised brocker")
     logDebug(
-      "broker : polBackendIndex: " + polBackendIndex +
-        " polFrontendIndex: " + polFrontendIndex
+      "broker :\n" +
+        " polFrontendIndex: \n" + polFrontendIndex
     )
-    (polBackendIndex, polFrontendIndex)
+    polFrontendIndex
   }
 
   override def run(): Unit = {
     val initRes = init()
     logDebug("Broker thread was started")
     try {
-      while (!Thread.currentThread().isInterrupted()) {
+      while (!Thread.currentThread().isInterrupted) {
         val rc = poller.poll(1000)
         if (rc == -1)
           throw Exception("brake")
-        logDebug("ThreadInterrupted: " + Thread.currentThread().isInterrupted())
+        logDebug("ThreadInterrupted: " + Thread.currentThread().isInterrupted)
         // Receive messages from engines
-        if (poller.pollin(initRes._1)) {
-          receiveMessageFromBackend() match {
+        if (poller.pollin(initRes)) {
+          receiveMessageFromFrontend() match {
             case m: IBrokerReceiverFromModule =>
               logDebug("Received message for broker from engine")
               reactOnEngineMsgForBroker(m)
             case m: IModuleSendToClient => sendMessageToFrontend(m.clientIdentity(), m.toByteArray)
-          }
-        }
-        if (poller.pollin(initRes._2)) {
-          receiveMessageFromFrontend() match {
             case m: IBrokerReceiverFromClient =>
               logDebug("Received message for broker from client")
               reactOnClientMsgForBroker(m)
@@ -144,15 +130,6 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
         // TO-DO Send broker error to clients
         throw e
     } finally {
-      try {
-        if (backend != null) {
-          logDebug("Broker: closing backend")
-          backend.close()
-        }
-      } catch {
-        case e: Throwable => logError("Warning error while closing backend socket in broker: " + e.getMessage)
-      }
-
       try {
         if frontend != null then
           logDebug("Broker: closing frontend")
@@ -213,28 +190,6 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
         )
   }
 
-  private def receiveMessageFromBackend(): Message = {
-    ///////////////////////////////////////////////////////////////////////////////////////
-    // FOR PROTOCOL SEE BOOK OReilly ZeroMQ Messaging for any applications 2013 ~page 100//
-    ///////////////////////////////////////////////////////////////////////////////////////
-
-    ///////////////////////////////////////////////////////////////////////////////////////
-    // Identity frame was added by ROUTER socket                                         //
-    ///////////////////////////////////////////////////////////////////////////////////////
-    val workerAddr = backend.recv(NOFLAGS) // Received engine module identity frame
-    val workerAddrStr = String(workerAddr)
-    logDebug(s"Broker backend: received identity $workerAddrStr from engine module")
-    ///////////////////////////////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////////////////////////////////
-    //                                   Main msg                                         //
-    ////////////////////////////////////////////////////////////////////////////////////////
-    val msgRAW: Array[Byte] = backend.recv(NOFLAGS)
-    val msgRAWStr: String = new String(msgRAW)
-    logDebug(s"Broker backend : received protobuf message [$msgRAWStr] from engine module $workerAddrStr")
-    RemoteMessageConverter.unpackAnyMsgFromArray(msgRAW)
-  }
-
   private def receiveMessageFromFrontend(): Message = {
     ////// Identity frame was added by ROUTER socket////////////////////////
     val clientAddr = frontend.recv()
@@ -276,11 +231,11 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
 
   private def sendMessageToBackend(logMessagePrefix: String, engineIdentityStr: String, request: Array[Byte]) = {
     logDebug(s"$logMessagePrefix: sending $engineIdentityStr  to backend")
-    backend.send(engineIdentityStr.getBytes, ZMQ.SNDMORE)
+    frontend.send(engineIdentityStr.getBytes, ZMQ.SNDMORE)
     logDebug(s"$logMessagePrefix: sending epmpty frame to $engineIdentityStr to backend")
-    backend.send("".getBytes(), ZMQ.SNDMORE)
+    frontend.send("".getBytes(), ZMQ.SNDMORE)
     logDebug(s"$logMessagePrefix: sending message frame to $engineIdentityStr to backend")
-    backend.send(request) // , NOFLAGS)
+    frontend.send(request) // , NOFLAGS)
   }
 
   private def sendStashedMessagesToBackendIfTheyAre(workerAddrStr: String): Unit = {

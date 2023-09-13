@@ -1,6 +1,7 @@
 package org.mixql.cluster
 
 import logger.*
+import org.mixql.engine.core.BrakeException
 import org.mixql.remote.RemoteMessageConverter
 import org.zeromq.{SocketType, ZMQ}
 
@@ -17,6 +18,8 @@ import org.mixql.remote.messages.module.toBroker.{
 }
 import org.mixql.remote.messages.client.toBroker.{EngineStarted, IBrokerReceiverFromClient}
 import org.mixql.remote.messages.client.IModuleReceiver
+
+import scala.util.Try
 
 object BrokerModule extends java.lang.AutoCloseable {
   private var threadBroker: Thread = null
@@ -101,38 +104,66 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
     logDebug("Broker thread was started")
     try {
       while (!Thread.currentThread().isInterrupted) {
-        val rc = poller.poll(1000)
-        if (rc == -1)
-          throw Exception("brake")
-        logDebug("ThreadInterrupted: " + Thread.currentThread().isInterrupted)
-        // Receive messages from engines
-        if (poller.pollin(initRes)) {
-          receiveMessageFromFrontend() match {
-            case m: IBrokerReceiverFromModule =>
-              logDebug("Received message for broker from engine")
-              reactOnEngineMsgForBroker(m)
-            case m: IModuleSendToClient => sendMessageToFrontend(m.clientIdentity(), m.toByteArray)
-            case m: IBrokerReceiverFromClient =>
-              logDebug("Received message for broker from client")
-              reactOnClientMsgForBroker(m)
-            case m: IModuleReceiver =>
-              logDebug(s"Received message for engine ${m.moduleIdentity()} from client ${m.clientIdentity()}")
-              if !engines.contains(m.moduleIdentity()) then
-                logDebug(s"Broker frontend: engine was not initialized yet. Stash message in engines map")
-                stashMessage(m.moduleIdentity(), m.clientIdentity(), m.toByteArray)
-              else sendMessageToBackend("Broker frontend", m.moduleIdentity(), m.toByteArray)
+        try {
+
+          val rc = poller.poll(1000)
+          if (rc == -1)
+            throw new BrakeException()
+          logDebug("ThreadInterrupted: " + Thread.currentThread().isInterrupted)
+          // Receive messages from engines
+          if (poller.pollin(initRes)) {
+            receiveMessageFromFrontend() match {
+              case m: IBrokerReceiverFromModule =>
+                logDebug("Received message for broker from engine")
+                reactOnEngineMsgForBroker(m)
+              case m: IModuleSendToClient => sendMessageToFrontend(m.clientIdentity(), m.toByteArray)
+              case m: IBrokerReceiverFromClient =>
+                logDebug("Received message for broker from client")
+                reactOnClientMsgForBroker(m)
+              case m: IModuleReceiver =>
+                logDebug(s"Received message for engine ${m.moduleIdentity()} from client ${m.clientIdentity()}")
+                if !engines.contains(m.moduleIdentity()) then
+                  logDebug(s"Broker frontend: engine was not initialized yet. Stash message in engines map")
+                  stashMessage(m.moduleIdentity(), m.clientIdentity(), m.toByteArray)
+                else sendMessageToBackend("Broker frontend", m.moduleIdentity(), m.toByteArray)
+            }
           }
+        } catch {
+          case e: BrakeException => throw e
+          case e: Throwable =>
+            logError(
+              "Broker main thread:\n Got Exception: \n" + e.getMessage +
+                "\n target exception stacktrace: \n" + {
+                  import java.io.PrintWriter
+                  import java.io.StringWriter
+                  var sw: StringWriter = null
+                  var pw: PrintWriter = null
+                  try {
+                    sw = new StringWriter()
+                    pw = new PrintWriter(sw)
+                    e.printStackTrace(pw)
+                    sw.toString
+                  } finally {
+                    Try(
+                      if (pw != null)
+                        pw.close()
+                    )
+                    Try(
+                      if (sw != null)
+                        sw.close()
+                    )
+                  }
+                }
+            )
+          // TO-DO Send broker error to clients
         }
       }
     } catch {
-      case e: Throwable =>
-        logError("Broker main thread: Got Exception: " + e.getMessage)
-        // TO-DO Send broker error to clients
-        throw e
+      case e: BrakeException =>
     } finally {
       try {
         if frontend != null then
-          logDebug("Broker: closing frontend")
+          logInfo("Broker: closing frontend")
           frontend.close()
       } catch {
         case e: Throwable => logError("Warning error while closing frontend socket in broker: " + e.getMessage)
@@ -140,7 +171,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
 
       try {
         if poller != null then {
-          logDebug("Broker: close poll")
+          logInfo("Broker: close poll")
           poller.close()
         }
       } catch {
@@ -149,7 +180,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
 
       try {
         if ctx != null then {
-          logDebug("Broker: terminate context")
+          logInfo("Broker: terminate context")
           //          ctx.term()
           ctx.close()
         }
@@ -157,7 +188,6 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
         case e: Throwable => logError("Warning error while closing broker context: " + e.getMessage)
       }
     }
-    logDebug("Broker thread finished...")
   }
 
   private def reactOnClientMsgForBroker(m: IBrokerReceiverFromClient): Unit = {

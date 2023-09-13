@@ -1,9 +1,11 @@
 import org.json.{JSONException, JSONObject}
 import org.mixql.core.context.gtype
+import org.mixql.core.context.gtype.string
 import org.mixql.remote.{GtypeConverter, RemoteMessageConverter}
 import org.mixql.remote.messages.Message
 import org.mixql.remote.messages.`type`.gtype.{Bool, gArray, gDouble, gString, map}
-import org.mixql.remote.messages.client.InvokedPlatformFunctionResult
+import org.mixql.remote.messages.client.{Execute, InvokedPlatformFunctionResult}
+import org.mixql.remote.messages.module.ExecuteResult
 import org.mixql.remote.messages.module.toBroker.EnginePingHeartBeat
 
 class RemoteMessageConverterTest extends munit.FunSuite {
@@ -112,4 +114,40 @@ class RemoteMessageConverterTest extends munit.FunSuite {
     //////////////////////////////////////////////////////////////////////////////////////
 
   }
+
+  test("convert Execute remote message to json and back") {
+
+    val json = RemoteMessageConverter.toJson({
+      new Execute("stub", "client-stub", "test-stmt")
+    })
+
+    assert(json.isInstanceOf[String])
+    assert(isJson(json))
+
+    val res = RemoteMessageConverter.unpackAnyMsg(json)
+    assert(res.isInstanceOf[Execute])
+    val execute = res.asInstanceOf[Execute]
+    assertEquals(execute.moduleIdentity(), "stub")
+    assertEquals(execute.clientIdentity(), "client-stub")
+    assertEquals(execute.statement, "test-stmt")
+  }
+
+  test("convert ExecuteResult remote message to json and back") {
+
+    val json = RemoteMessageConverter.toJson({
+      new ExecuteResult("test-stmt", new gString("stub", "").asInstanceOf[Message], "client-stub")
+    })
+
+    assert(json.isInstanceOf[String])
+    assert(isJson(json))
+
+    val res = RemoteMessageConverter.unpackAnyMsg(json)
+    assert(res.isInstanceOf[ExecuteResult])
+    val msg = res.asInstanceOf[ExecuteResult]
+    assertEquals(msg.clientIdentity(), "client-stub")
+    assert(msg.result.isInstanceOf[gString])
+    assertEquals(msg.result.asInstanceOf[gString].value, "stub")
+    assertEquals(msg.stmt, "test-stmt")
+  }
+
 }

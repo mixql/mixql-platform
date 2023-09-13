@@ -254,14 +254,6 @@ class ClientModule(clientIdentity: String,
   }
 
   private def _sendMsg(msg: messages.Message): Unit = {
-//    logDebug(
-//      "server: Clientmodule " + clientIdentity + " sending identity of remote module " + moduleIdentity + " " +
-//        client.send(moduleIdentity.getBytes, ZMQ.SNDMORE)
-//    )
-//    logDebug(
-//      "server: Clientmodule " + clientIdentity + " sending empty frame to remote module " + moduleIdentity + " " +
-//        client.send("".getBytes, ZMQ.SNDMORE)
-//    )
     logDebug(
       "server: Clientmodule " + clientIdentity + " sending protobuf message to remote module " + moduleIdentity + " " +
         client.send(msg.toByteArray, 0)
@@ -274,7 +266,7 @@ class ClientModule(clientIdentity: String,
         if !BrokerModule.wasStarted then startBroker()
         startModuleClient()
         ctx = ZMQ.context(1)
-        client = ctx.socket(SocketType.REQ)
+        client = ctx.socket(SocketType.DEALER)
         // set id for client
         client.setIdentity(clientIdentity.getBytes)
         logInfo(

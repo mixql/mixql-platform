@@ -226,17 +226,12 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
     logDebug(s"Broker backend: received identity $workerAddrStr from engine module")
     ///////////////////////////////////////////////////////////////////////////////////////
 
-    ///////////////////////////////////////////////////////////////////////////////////////
-    // Empty frame in zeroMQ is used as delimiter                                        //
-    ///////////////////////////////////////////////////////////////////////////////////////
-    backend.recv(NOFLAGS) // received empty frame
-    logDebug(s"Broker backend: received empty frame from engine module $workerAddrStr")
-
     ////////////////////////////////////////////////////////////////////////////////////////
     //                                   Main msg                                         //
     ////////////////////////////////////////////////////////////////////////////////////////
     val msgRAW: Array[Byte] = backend.recv(NOFLAGS)
-    logDebug(s"Broker backend : received protobuf message from engine module $workerAddrStr")
+    val msgRAWStr: String = new String(msgRAW)
+    logDebug(s"Broker backend : received protobuf message [$msgRAWStr] from engine module $workerAddrStr")
     RemoteMessageConverter.unpackAnyMsgFromArray(msgRAW)
   }
 
@@ -247,16 +242,12 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
     logDebug("Broker frontend: received client's identity " + clientAddrStr)
     ///////////////////////////////////////////////////////////////////////
 
-    ////// Empty frame was added by REQ socket////////////////////////
-    frontend.recv()
-    logDebug(s"Broker frontend: received empty frame from $clientAddrStr")
-    /////////////////////////////////////////////////////////////////
-
     //////////////////////////////////////////////////////////////////////////////
     // Main msg, contains engine's address and message, separated by empty frame//
     //////////////////////////////////////////////////////////////////////////////
     val request = frontend.recv()
-    logDebug(s"Broker frontend: received request for engine module from $clientAddrStr")
+    val requestStr: String = new String(request)
+    logDebug(s"Broker frontend: received request [$requestStr] for engine module from $clientAddrStr")
     RemoteMessageConverter.unpackAnyMsgFromArray(request)
     //////////////////////////////////////////////////////////////////////////////
   }

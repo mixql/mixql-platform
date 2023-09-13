@@ -101,7 +101,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
         if (poller.pollin(serverPollInIndex)) {
           logDebug("Setting processStart for timer, as message was received")
 //          val (clientAdrressTmp, msg, pongHeartBeatMsg) =
-          RemoteMessageConverter.unpackAnyMsgFromArray(readMsgFromServerBroker(logger)) match {
+          readMsgFromServerBroker(logger) match {
             case m: IBrokerSender => // got pong heart beat message
               logDebug(s"got broker's service message")
               reactOnReceivedBrokerMsg(m)
@@ -327,21 +327,17 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
 
   def sendMsgToPlatformBroker(msg: IBrokerReceiverFromModule, logger: ModuleLogger): Boolean = {
     import logger._
-    logDebug(s"sendMsgToPlatformBroker: sending empty frame")
-    server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
     logDebug(s"sendMsgToPlatformBroker: Send msg to server ")
     server.send(msg.toByteArray())
   }
 
   def sendMsgToClient(msg: IModuleSendToClient, logger: ModuleLogger): Boolean = {
     import logger._
-    logDebug(s"sendMsgToClient: sending empty frame")
-    server.send("".getBytes(), ZMQ.SNDMORE) // Send empty frame
     logDebug(s"sendMsgToClient: Send msg to server ")
     server.send(msg.toByteArray())
   }
 
-  def readMsgFromServerBroker(logger: ModuleLogger): Array[Byte] = {
+  def readMsgFromServerBroker(logger: ModuleLogger): Message = {
     import logger._
     ///////////////////////////////////////////////////////////////////////////////////////
     // FOR PROTOCOL SEE BOOK OReilly ZeroMQ Messaging for any applications 2013 ~page 100//
@@ -352,21 +348,17 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
     ///////////////////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////// Identity frame of engine/////////////////////////////
-    if (server.recv(0) == null)
-      throw new BrakeException() // empty frame
-    logDebug(s"readMsgFromServerBroker: received Identity of engine")
+    val identity = server.recv(0)
+    val identityStr = new String(identity)
+    logDebug(s"readMsgFromServerBroker: received Identity of engine " + identityStr)
     ///////////////////////////////////////////////////////////////////////////////////////
-
-    /////////////////////////// Empty frame//////////////////////////////
-    if (server.recv(0) == null)
-      throw new BrakeException() // empty frame
-    logDebug(s"readMsgFromServerBroker: received empty frame")
-    ////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////// MSG /////////////////////////////////////////////////
-    logDebug(s"have received message from server")
-    server.recv(0)
+    val request = server.recv(0)
+    val requestStr = new String(request)
+    logDebug(s"have received message from server: " + requestStr)
     ///////////////////////////////////////////////////////////////////////////////////////
+    RemoteMessageConverter.unpackAnyMsgFromArray(request)
   }
 
   // key -> workers unique name

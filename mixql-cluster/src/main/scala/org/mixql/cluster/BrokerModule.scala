@@ -8,8 +8,8 @@ import org.zeromq.{SocketType, ZMQ}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import org.mixql.remote.messages.Message
+import org.mixql.remote.messages.broker.PlatformPongHeartBeat
 import org.mixql.remote.messages.module.IModuleSendToClient
-import org.mixql.remote.messages.module.fromBroker.PlatformPongHeartBeat
 import org.mixql.remote.messages.module.toBroker.{
   EngineFailed,
   EngineIsReady,
@@ -125,7 +125,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
                 if !engines.contains(m.moduleIdentity()) then
                   logDebug(s"Broker frontend: engine was not initialized yet. Stash message in engines map")
                   stashMessage(m.moduleIdentity(), m.clientIdentity(), m.toByteArray)
-                else sendMessageToBackend("Broker frontend", m.moduleIdentity(), m.toByteArray)
+                else sendMessageToFrontend(m.moduleIdentity(), m.toByteArray)
             }
           }
         } catch {
@@ -214,11 +214,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
         // TO-DO Properly react on EngineFailed
         throw new UnsupportedOperationException(msg.getErrorMessage)
       case msg: EnginePingHeartBeat => // Its heart beat message from engine
-        sendMessageToBackend(
-          s"Broker backend heart beat pong:",
-          msg.engineName(),
-          new PlatformPongHeartBeat().toByteArray
-        )
+        sendMessageToFrontend(msg.engineName(), new PlatformPongHeartBeat().toByteArray)
   }
 
   private def receiveMessageFromFrontend(): Message = {
@@ -234,7 +230,35 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
     val request = frontend.recv()
     val requestStr: String = new String(request)
     logDebug(s"Broker frontend: received request [$requestStr] for engine module from $clientAddrStr")
+    // try {
     RemoteMessageConverter.unpackAnyMsgFromArray(request)
+//    } catch
+//      case e: Throwable =>
+//        logError(
+//          s"Broker:\n receiveMessageFromFrontend: \n" +
+//            "Could not convert received message from byte array to Message class: \n" +
+//            e.getMessage + "\n target exception stacktrace: \n" + {
+//              import java.io.PrintWriter
+//              import java.io.StringWriter
+//              var sw: StringWriter = null
+//              var pw: PrintWriter = null
+//              try {
+//                sw = new StringWriter()
+//                pw = new PrintWriter(sw)
+//                e.printStackTrace(pw)
+//                sw.toString
+//              } finally {
+//                Try(
+//                  if (pw != null)
+//                    pw.close()
+//                )
+//                Try(
+//                  if (sw != null)
+//                    sw.close()
+//                )
+//              }
+//            }
+//        )
     //////////////////////////////////////////////////////////////////////////////
   }
 
@@ -256,17 +280,10 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
     logDebug(s"Broker backend : sending clientId $clientIDStr to frontend")
     frontend.send(clientIDStr.getBytes, ZMQ.SNDMORE)
+    logDebug(s"sending epmpty frame to $clientIDStr to backend")
+    frontend.send("".getBytes(), ZMQ.SNDMORE)
     logDebug(s"Broker backend : sending protobuf message to frontend")
     frontend.send(msg)
-  }
-
-  private def sendMessageToBackend(logMessagePrefix: String, engineIdentityStr: String, request: Array[Byte]) = {
-    logDebug(s"$logMessagePrefix: sending $engineIdentityStr  to backend")
-    frontend.send(engineIdentityStr.getBytes, ZMQ.SNDMORE)
-    logDebug(s"$logMessagePrefix: sending epmpty frame to $engineIdentityStr to backend")
-    frontend.send("".getBytes(), ZMQ.SNDMORE)
-    logDebug(s"$logMessagePrefix: sending message frame to $engineIdentityStr to backend")
-    frontend.send(request) // , NOFLAGS)
   }
 
   private def sendStashedMessagesToBackendIfTheyAre(workerAddrStr: String): Unit = {
@@ -279,7 +296,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
             s"Broker: Have founded stashed messages (amount: ${messages.length}) " +
               s"for engine $workerAddrStr. Sending them"
           )
-          messages.foreach(msg => sendMessageToBackend("Broker stashed: ", workerAddrStr, msg.request))
+          messages.foreach(msg => sendMessageToFrontend(workerAddrStr, msg.request))
           //                  engines.put(workerAddrStr, ListBuffer())
           messages.clear()
 

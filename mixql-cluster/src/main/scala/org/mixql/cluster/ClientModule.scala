@@ -269,6 +269,10 @@ class ClientModule(clientIdentity: String,
 
   private def recvMsg(): messages.Message = {
     this.synchronized {
+      val emptyRAW = client.recv(0)
+      val emptyRAWStr = new String(emptyRAW)
+      logDebug("Received empty msg " + emptyRAWStr)
+
       val msgRAW = client.recv(0)
       val msgRAWStr = new String(msgRAW)
       logDebug("Received raw msg " + msgRAWStr)

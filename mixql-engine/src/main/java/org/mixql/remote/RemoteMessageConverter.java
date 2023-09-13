@@ -7,7 +7,7 @@ import org.mixql.remote.messages.*;
 import org.mixql.remote.messages.client.*;
 import org.mixql.remote.messages.client.toBroker.EngineStarted;
 import org.mixql.remote.messages.module.*;
-import org.mixql.remote.messages.module.fromBroker.PlatformPongHeartBeat;
+import org.mixql.remote.messages.broker.PlatformPongHeartBeat;
 import org.mixql.remote.messages.module.toBroker.EngineFailed;
 import org.mixql.remote.messages.module.toBroker.EngineIsReady;
 import org.mixql.remote.messages.module.toBroker.EnginePingHeartBeat;
@@ -243,7 +243,7 @@ public class RemoteMessageConverter {
                         (String) anyMsgJsonObject.get("engineName"),
                         (String) anyMsgJsonObject.get("clientIdentity")
                 );
-            case "org.mixql.remote.messages.module.fromBroker.PlatformPongHeartBeat":
+            case "org.mixql.remote.messages.broker.PlatformPongHeartBeat":
                 return new PlatformPongHeartBeat();
             case "org.mixql.remote.messages.module.toBroker.EngineFailed":
                 return new EngineFailed(

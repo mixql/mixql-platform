@@ -1,4 +1,4 @@
-package org.mixql.remote.messages.module.fromBroker;
+package org.mixql.remote.messages.broker;
 
 import org.mixql.remote.messages.Message;
 

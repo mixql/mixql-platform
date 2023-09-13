@@ -7,6 +7,7 @@ import org.zeromq.{SocketType, ZMQ}
 import org.mixql.remote.messages.module.worker.{IWorkerSendToClient, SendMsgToPlatform, WorkerFinished}
 import org.mixql.remote.RemoteMessageConverter
 import org.mixql.remote.messages.Message
+import org.mixql.remote.messages.broker.{IBrokerSender, PlatformPongHeartBeat}
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -35,7 +36,6 @@ import org.mixql.remote.messages.module.toBroker.{
   EnginePingHeartBeat,
   IBrokerReceiverFromModule
 }
-import org.mixql.remote.messages.module.fromBroker.{IBrokerSender, PlatformPongHeartBeat}
 
 class Module(executor: IModuleExecutor, identity: String, host: String, port: Int)(implicit logger: ModuleLogger) {
   val config: Config = ConfigFactory.load()

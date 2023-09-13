@@ -174,6 +174,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
     m match
       case msg: EngineIsReady =>
         // Its READY message from engine
+        logInfo("Received EngineIsReady from engine " + msg.engineName())
         if !engines.contains(msg.engineName()) then
           logDebug(s"Broker: Add ${msg.engineName()} as key in engines set")
           engines.add(msg.engineName()) // only this thread will write, so there will be no race condition

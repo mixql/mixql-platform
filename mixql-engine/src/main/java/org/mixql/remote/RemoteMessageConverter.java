@@ -16,12 +16,15 @@ import org.mixql.remote.messages.type.Param;
 import org.mixql.remote.messages.module.worker.*;
 import org.mixql.remote.messages.type.Error;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 
 public class RemoteMessageConverter {
-    public static Message unpackAnyMsgFromArray(byte[] array) {
+    public static Message unpackAnyMsgFromArray(byte[] array) throws IOException {
         return unpackAnyMsg(new String(array, StandardCharsets.UTF_8));
     }
 
@@ -286,18 +289,29 @@ public class RemoteMessageConverter {
         throw new Exception("_unpackAnyMsg: unknown anyMsgJsonObject" + anyMsgJsonObject);
     }
 
-    public static Message unpackAnyMsg(String json) {
+    public static Message unpackAnyMsg(String json) throws IOException {
 
         try {
             JSONObject anyMsgJsonObject = (JSONObject) JSONValue.parseWithException(json);
             return _unpackAnyMsg(anyMsgJsonObject);
         } catch (Exception e) {
+            String stackTraceMsg = "target exception stacktrace: ";
+
+            try (
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+            ) {
+                e.printStackTrace(pw);
+                stackTraceMsg += sw.toString();
+            }
             return new Error(
                     String.format(
-                            "Protobuf anymsg converter: Error: %s", e.getMessage()
+                            "Protobuf anymsg converter:\n Error: %s \n StackTrace: \n %s", e.getMessage(),
+                            stackTraceMsg
                     )
             );
         }
+
     }
 
     public static byte[] toArray(Message msg) throws Exception {
@@ -322,7 +336,8 @@ public class RemoteMessageConverter {
         }
 
         if (msg instanceof Execute) {
-            return JsonUtils.buildExecute(msg.type(), ((Execute) msg).statement, ((Execute) msg).moduleIdentity());
+            return JsonUtils.buildExecute(msg.type(), ((Execute) msg).statement, ((Execute) msg).moduleIdentity(),
+                    ((Execute) msg).clientIdentity());
         }
 
         if (msg instanceof Param) {

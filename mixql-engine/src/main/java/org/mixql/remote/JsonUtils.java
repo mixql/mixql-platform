@@ -51,11 +51,13 @@ class JsonUtils {
         return buildNULL(type);
     }
 
-    public static JSONObject buildExecute(String type, String statement, String moduleIdentity) {
+    public static JSONObject buildExecute(String type, String statement, String moduleIdentity,
+                                          String clientIdentity) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("statement", statement);
         jsonObject.put("moduleIdentity", moduleIdentity);
+        jsonObject.put("clientIdentity", clientIdentity);
         return jsonObject;
     }
 

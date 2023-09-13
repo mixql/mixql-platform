@@ -37,8 +37,7 @@ import org.mixql.remote.messages.module.toBroker.{
 }
 import org.mixql.remote.messages.module.fromBroker.{IBrokerSender, PlatformPongHeartBeat}
 
-class Module(executor: IModuleExecutor, identity: String, host: String, port: Int)(implicit
-  logger: ModuleLogger) {
+class Module(executor: IModuleExecutor, identity: String, host: String, port: Int)(implicit logger: ModuleLogger) {
   val config: Config = ConfigFactory.load()
   var ctx: ZMQ.Context = null
   implicit var server: ZMQ.Socket = null
@@ -47,10 +46,9 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
 
   val pollerTimeout: Long = Try(config.getLong("org.mixql.engine.module.pollerTimeout")).getOrElse(1000)
 
-  val workerPollerTimeout: Long = Try(config.getLong("org.mixql.engine.module.workerPollerTimeout"))
-    .getOrElse({
-      1500
-    })
+  val workerPollerTimeout: Long = Try(config.getLong("org.mixql.engine.module.workerPollerTimeout")).getOrElse({
+    1500
+  })
 
   private val heartBeatInterval: Long = {
     Try(config.getLong("org.mixql.engine.module.heartBeatInterval")).getOrElse(16500)
@@ -204,10 +202,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
       case msg: ExecuteFunction => reactOnExecuteFunctionMessageAsync(msg)
       case _: GetDefinedFunctions =>
         try {
-          sendMsgToClient(
-            executor.reactOnGetDefinedFunctions(identity, message.clientIdentity(), logger),
-            logger
-          )
+          sendMsgToClient(executor.reactOnGetDefinedFunctions(identity, message.clientIdentity(), logger), logger)
         } catch {
           case e: Throwable =>
             sendMsgToClient(
@@ -243,8 +238,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
       },
       (value, socket, workerID) => {
         socket.send(
-          new SendMsgToPlatform(new ExecuteResult(msg.statement, value, msg.clientIdentity()), workerID)
-            .toByteArray
+          new SendMsgToPlatform(new ExecuteResult(msg.statement, value, msg.clientIdentity()), workerID).toByteArray
         )
       },
       (ex: Throwable, socket, workerID) => {
@@ -271,8 +265,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
       },
       (value, socket, workerID) => {
         socket.send(
-          new SendMsgToPlatform(new ExecutedFunctionResult(msg.name, value, msg.clientIdentity()), workerID)
-            .toByteArray
+          new SendMsgToPlatform(new ExecutedFunctionResult(msg.name, value, msg.clientIdentity()), workerID).toByteArray
         )
       },
       (e: Throwable, socket, workerID) => {

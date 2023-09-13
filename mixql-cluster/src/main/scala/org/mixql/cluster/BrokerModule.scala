@@ -66,8 +66,7 @@ object BrokerModule extends java.lang.AutoCloseable {
         logInfo("Waiting while broker thread is alive")
         try {
           threadBroker.join();
-        } catch
-          case _: InterruptedException => System.out.printf("%s has been interrupted", threadBroker.getName())
+        } catch case _: InterruptedException => System.out.printf("%s has been interrupted", threadBroker.getName())
         logInfo("server: Broker was shutdown")
         threadBroker = null
         startedBroker = false
@@ -75,8 +74,7 @@ object BrokerModule extends java.lang.AutoCloseable {
   }
 }
 
-class BrokerMainRunnable(name: String, host: String, portFrontend: String, portBackend: String)
-    extends Thread(name) {
+class BrokerMainRunnable(name: String, host: String, portFrontend: String, portBackend: String) extends Thread(name) {
   var ctx: ZMQ.Context = null
   var frontend: ZMQ.Socket = null
   var backend: ZMQ.Socket = null
@@ -141,7 +139,10 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
         }
       }
     } catch {
-      case e: Throwable => logError("Broker main thread: Got Exception: " + e.getMessage)
+      case e: Throwable =>
+        logError("Broker main thread: Got Exception: " + e.getMessage)
+        // TO-DO Send broker error to clients
+        throw e
     } finally {
       try {
         if (backend != null) {
@@ -157,8 +158,7 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
           logDebug("Broker: closing frontend")
           frontend.close()
       } catch {
-        case e: Throwable =>
-          logError("Warning error while closing frontend socket in broker: " + e.getMessage)
+        case e: Throwable => logError("Warning error while closing frontend socket in broker: " + e.getMessage)
       }
 
       try {
@@ -270,29 +270,24 @@ class BrokerMainRunnable(name: String, host: String, portFrontend: String, portB
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
     logDebug(s"Broker backend : sending clientId $clientIDStr to frontend")
     frontend.send(clientIDStr.getBytes, ZMQ.SNDMORE)
-    logDebug(s"Broker backend : sending empty frame to frontend")
-    frontend.send("".getBytes, ZMQ.SNDMORE)
     logDebug(s"Broker backend : sending protobuf message to frontend")
     frontend.send(msg)
   }
 
-  private def sendMessageToBackend(logMessagePrefix: String,
-                                   engineIdentityStr: String,
-                                   request: Array[Byte]) = {
+  private def sendMessageToBackend(logMessagePrefix: String, engineIdentityStr: String, request: Array[Byte]) = {
     logDebug(s"$logMessagePrefix: sending $engineIdentityStr  to backend")
     backend.send(engineIdentityStr.getBytes, ZMQ.SNDMORE)
     logDebug(s"$logMessagePrefix: sending epmpty frame to $engineIdentityStr to backend")
     backend.send("".getBytes(), ZMQ.SNDMORE)
     logDebug(s"$logMessagePrefix: sending message frame to $engineIdentityStr to backend")
-    backend.send(request, NOFLAGS)
+    backend.send(request) // , NOFLAGS)
   }
 
   private def sendStashedMessagesToBackendIfTheyAre(workerAddrStr: String): Unit = {
     logDebug(s"Broker: Check if there are stashed messages for our engine")
     enginesStashedMsgs.get(workerAddrStr) match
       case Some(messages) =>
-        if messages.isEmpty then
-          logDebug(s"Broker: Checked engines map. No stashed messages for $workerAddrStr")
+        if messages.isEmpty then logDebug(s"Broker: Checked engines map. No stashed messages for $workerAddrStr")
         else
           logDebug(
             s"Broker: Have founded stashed messages (amount: ${messages.length}) " +

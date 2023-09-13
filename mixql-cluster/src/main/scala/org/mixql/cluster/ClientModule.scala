@@ -88,14 +88,9 @@ class ClientModule(clientIdentity: String,
     reactOnRequest(recvMsg(), ctx)
   }
 
-  override def executeFuncImpl(name: String,
-                               ctx: EngineContext,
-                               kwargs: Map[String, Object],
-                               params: Type*): Type = {
+  override def executeFuncImpl(name: String, ctx: EngineContext, kwargs: Map[String, Object], params: Type*): Type = {
     if (kwargs.nonEmpty)
-      throw new UnsupportedOperationException(
-        "named arguments are not supported in functions in remote engine " + name
-      )
+      throw new UnsupportedOperationException("named arguments are not supported in functions in remote engine " + name)
 
     logInfo(s"[ClientModule-$clientIdentity]: module $moduleIdentity was triggered by executeFunc request")
     sendMsg(
@@ -111,9 +106,7 @@ class ClientModule(clientIdentity: String,
 
   override def getDefinedFunctions(): List[String] = {
     if (!engineStarted) {
-      logInfo(
-        s"[ClientModule-$clientIdentity]: module $moduleIdentity was triggered by getDefinedFunctions request"
-      )
+      logInfo(s"[ClientModule-$clientIdentity]: module $moduleIdentity was triggered by getDefinedFunctions request")
     }
     engineStarted = true
 
@@ -188,20 +181,13 @@ class ClientModule(clientIdentity: String,
             reactOnRequest(recvMsg(), ctx)
           case msg: GetPlatformVarsNames =>
             sendMsg(
-              new PlatformVarsNames(
-                moduleIdentity,
-                clientIdentity,
-                msg.workerIdentity(),
-                ctx.getVarsNames().toArray
-              )
+              new PlatformVarsNames(moduleIdentity, clientIdentity, msg.workerIdentity(), ctx.getVarsNames().toArray)
             )
             reactOnRequest(recvMsg(), ctx)
           case msg: InvokeFunction =>
 //            try {
-            val res = ctx.invokeFunction(
-              msg.name,
-              msg.args.map(arg => unpack(GtypeConverter.messageToGtype(arg))).toList
-            )
+            val res = ctx
+              .invokeFunction(msg.name, msg.args.map(arg => unpack(GtypeConverter.messageToGtype(arg))).toList)
             sendMsg(
               new InvokedPlatformFunctionResult(
                 moduleIdentity,
@@ -223,15 +209,13 @@ class ClientModule(clientIdentity: String,
                 "Server: ClientModule: Error while executing function " + msg.functionName + "error: " +
                   msg.msg.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage
               )
-              throw new Exception(
-                msg.msg.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage
-              )
+              throw new Exception(msg.msg.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage)
             }
             GtypeConverter.messageToGtype(msg.msg)
           case msg: org.mixql.remote.messages.`type`.Error =>
             logError(
-              "Server: ClientModule: $clientIdentity:" + msg
-                .asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage
+              "Server: ClientModule: $clientIdentity:" + msg.asInstanceOf[org.mixql.remote.messages.`type`.Error]
+                .getErrorMessage
             )
             throw new Exception(msg.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage)
           case msg: ExecuteResult =>
@@ -240,14 +224,12 @@ class ClientModule(clientIdentity: String,
                 "Server: ClientModule: Error while executing statement " + msg.stmt + "error: " +
                   msg.result.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage
               )
-              throw new Exception(
-                msg.result.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage
-              )
+              throw new Exception(msg.result.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage)
             }
             GtypeConverter.messageToGtype(msg.result)
       case msg: org.mixql.remote.messages.`type`.Error =>
         logError(
-          "Server: ClientModule: $clientIdentity: error while reacting on request" +
+          s"Server: ClientModule: $clientIdentity: \n error while reacting on request\n" +
             msg.getErrorMessage
         )
         throw new Exception(msg.getErrorMessage)
@@ -284,7 +266,10 @@ class ClientModule(clientIdentity: String,
 
   private def recvMsg(): messages.Message = {
     this.synchronized {
-      RemoteMessageConverter.unpackAnyMsgFromArray(client.recv(0))
+      val msgRAW = client.recv(0)
+      val msgRAWStr = new String(msgRAW)
+      logDebug("Received raw msg " + msgRAWStr)
+      RemoteMessageConverter.unpackAnyMsgFromArray(msgRAW)
     }
   }
 
@@ -353,8 +338,7 @@ class ClientModule(clientIdentity: String,
         )
         clientRemoteProcess = CmdOperations.runCmdNoWait(
           Some(
-            s"$scriptName.bat --port $portBackend --host $host --identity $moduleIdentity ${startScriptExtraOpts
-                .getOrElse("")}"
+            s"$scriptName.bat --port $portBackend --host $host --identity $moduleIdentity ${startScriptExtraOpts.getOrElse("")}"
           ),
           Some(
             s"$scriptName --port $portBackend --host $host --identity $moduleIdentity ${startScriptExtraOpts.getOrElse("")}"
@@ -366,8 +350,7 @@ class ClientModule(clientIdentity: String,
           case Some(engine) =>
             logInfo(
               s"server: ClientModule: $clientIdentity trying to  start module $moduleIdentity at " + host +
-                " and port at " + portBackend + " in " + basePath
-                  .getAbsolutePath + " by executing in scala future"
+                " and port at " + portBackend + " in " + basePath.getAbsolutePath + " by executing in scala future"
             )
             clientFuture = engine.start(moduleIdentity, host, portBackend.toString)
           case None =>

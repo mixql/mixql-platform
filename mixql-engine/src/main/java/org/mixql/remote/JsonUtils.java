@@ -6,11 +6,12 @@ import org.json.simple.JSONObject;
 import java.util.Arrays;
 
 class JsonUtils {
-    public static JSONObject buildEngineStarted(String type, String name, String clientIdentity) {
+    public static JSONObject buildEngineStarted(String type, String name, String clientIdentity, Long timeout) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("engineName", name);
         jsonObject.put("clientIdentity", clientIdentity);
+        jsonObject.put("timeout", timeout);
         return jsonObject;
     }
 
@@ -106,6 +107,10 @@ class JsonUtils {
         jsonObject.put("engineName", engineName);
         jsonObject.put("errorMsg", msg);
         return jsonObject;
+    }
+
+    public static JSONObject buildEngineStartedTimeOutElapsedError(String type, String engineName, String msg) {
+        return buildEngineFailed(type, engineName, msg);
     }
 
     public static JSONObject buildGetDefinedFunctionsError(String type, String clientIdentity, String msg) {

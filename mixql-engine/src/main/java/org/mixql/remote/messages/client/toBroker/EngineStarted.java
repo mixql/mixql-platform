@@ -7,10 +7,13 @@ public class EngineStarted implements IBrokerReceiverFromClient {
     public String engineName;
     private String clientIdentity;
 
+    private long timeout;
 
-    public EngineStarted(String engineName, String clientIdentity) {
+
+    public EngineStarted(String engineName, String clientIdentity, long timeout) {
         this.engineName = engineName;
         this.clientIdentity = clientIdentity;
+        this.timeout = timeout;
     }
 
     @Override
@@ -22,6 +25,10 @@ public class EngineStarted implements IBrokerReceiverFromClient {
                             type(), e.getMessage());
             return super.toString();
         }
+    }
+
+    public long getTimeout(){
+        return this.timeout;
     }
 
     @Override

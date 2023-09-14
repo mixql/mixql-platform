@@ -4,6 +4,8 @@ import org.mixql.core.context.gtype.string
 import org.mixql.remote.{GtypeConverter, RemoteMessageConverter}
 import org.mixql.remote.messages.Message
 import org.mixql.remote.messages.`type`.gtype.{Bool, gArray, gDouble, gString, map}
+import org.mixql.remote.messages.broker.EngineStartedTimeOutElapsedError
+import org.mixql.remote.messages.client.toBroker.EngineStarted
 import org.mixql.remote.messages.client.{Execute, InvokedPlatformFunctionResult}
 import org.mixql.remote.messages.module.ExecuteResult
 import org.mixql.remote.messages.module.toBroker.EnginePingHeartBeat
@@ -148,6 +150,40 @@ class RemoteMessageConverterTest extends munit.FunSuite {
     assert(msg.result.isInstanceOf[gString])
     assertEquals(msg.result.asInstanceOf[gString].value, "stub")
     assertEquals(msg.stmt, "test-stmt")
+  }
+
+  test("convert EngineStarted remote message to json and back") {
+
+    val json = RemoteMessageConverter.toJson({
+      new EngineStarted("stub", "client-stub", 6000)
+    })
+
+    assert(json.isInstanceOf[String])
+    assert(isJson(json))
+
+    val res = RemoteMessageConverter.unpackAnyMsg(json)
+    assert(res.isInstanceOf[EngineStarted])
+    val msg = res.asInstanceOf[EngineStarted]
+    assertEquals(msg.clientIdentity(), "client-stub")
+    assertEquals(msg.engineName, "stub")
+    assert(msg.getTimeout.isInstanceOf[Long])
+    assertEquals(msg.getTimeout.toString, 6000.toString)
+  }
+
+  test("convert EngineStartedTimeOutElapsedError remote message to json and back") {
+
+    val json = RemoteMessageConverter.toJson({
+      new EngineStartedTimeOutElapsedError("stub", "error-test")
+    })
+
+    assert(json.isInstanceOf[String])
+    assert(isJson(json))
+
+    val res = RemoteMessageConverter.unpackAnyMsg(json)
+    assert(res.isInstanceOf[EngineStartedTimeOutElapsedError])
+    val msg = res.asInstanceOf[EngineStartedTimeOutElapsedError]
+    assertEquals(msg.getErrorMessage(), "error-test")
+    assertEquals(msg.engineName, "stub")
   }
 
 }

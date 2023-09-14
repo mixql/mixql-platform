@@ -5,6 +5,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.mixql.remote.messages.*;
 import org.mixql.remote.messages.broker.CouldNotConvertMsgError;
+import org.mixql.remote.messages.broker.EngineStartedTimeOutElapsedError;
 import org.mixql.remote.messages.client.*;
 import org.mixql.remote.messages.client.toBroker.EngineStarted;
 import org.mixql.remote.messages.module.*;
@@ -242,10 +243,16 @@ public class RemoteMessageConverter {
             case "org.mixql.remote.messages.client.toBroker.EngineStarted":
                 return new EngineStarted(
                         (String) anyMsgJsonObject.get("engineName"),
-                        (String) anyMsgJsonObject.get("clientIdentity")
+                        (String) anyMsgJsonObject.get("clientIdentity"),
+                        (Long) anyMsgJsonObject.get("timeout")
                 );
             case "org.mixql.remote.messages.broker.PlatformPongHeartBeat":
                 return new PlatformPongHeartBeat();
+            case "org.mixql.remote.messages.broker.EngineStartedTimeOutElapsedError":
+                return new EngineStartedTimeOutElapsedError(
+                        (String) anyMsgJsonObject.get("engineName"),
+                        (String) anyMsgJsonObject.get("errorMsg")
+                );
             case "org.mixql.remote.messages.module.toBroker.EngineFailed":
                 return new EngineFailed(
                         (String) anyMsgJsonObject.get("engineName"),
@@ -353,6 +360,12 @@ public class RemoteMessageConverter {
         if (msg instanceof EngineFailed) {
             return JsonUtils.buildEngineFailed(msg.type(), ((EngineFailed) msg).engineName(),
                     ((EngineFailed) msg).getErrorMessage());
+        }
+
+        if (msg instanceof EngineStartedTimeOutElapsedError) {
+            return JsonUtils.buildEngineStartedTimeOutElapsedError(msg.type(),
+                    ((EngineStartedTimeOutElapsedError) msg).engineName,
+                    ((EngineStartedTimeOutElapsedError) msg).getErrorMessage());
         }
 
         if (msg instanceof ExecutedFunctionResultFailed) {
@@ -559,7 +572,8 @@ public class RemoteMessageConverter {
 
         if (msg instanceof EngineStarted) {
             EngineStarted msgTmp = ((EngineStarted) msg);
-            return JsonUtils.buildEngineStarted(msgTmp.type(), msgTmp.engineName, msgTmp.clientIdentity());
+            return JsonUtils.buildEngineStarted(msgTmp.type(), msgTmp.engineName, msgTmp.clientIdentity(),
+                    msgTmp.getTimeout());
         }
 
         if (msg instanceof PlatformPongHeartBeat) {

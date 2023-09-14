@@ -1,5 +1,6 @@
 package org.mixql.cluster
 
+import com.github.nscala_time.time.Imports.{DateTime, richReadableInstant, richReadableInterval}
 import logger.*
 import org.mixql.engine.core.BrakeException
 import org.mixql.protobuf.ErrorOps
@@ -9,7 +10,11 @@ import org.zeromq.{SocketType, ZMQ}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import org.mixql.remote.messages.Message
-import org.mixql.remote.messages.broker.{CouldNotConvertMsgError, PlatformPongHeartBeat}
+import org.mixql.remote.messages.broker.{
+  CouldNotConvertMsgError,
+  PlatformPongHeartBeat,
+  EngineStartedTimeOutElapsedError
+}
 import org.mixql.remote.messages.module.IModuleSendToClient
 import org.mixql.remote.messages.module.toBroker.{
   EngineFailed,
@@ -20,6 +25,7 @@ import org.mixql.remote.messages.module.toBroker.{
 import org.mixql.remote.messages.client.toBroker.{EngineStarted, IBrokerReceiverFromClient}
 import org.mixql.remote.messages.client.IModuleReceiver
 
+import scala.language.postfixOps
 import scala.util.Try
 
 object BrokerModule extends java.lang.AutoCloseable {
@@ -81,6 +87,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
   // Key is identity, Value is list of messages
   val enginesStashedMsgs: mutable.Map[String, ListBuffer[StashedClientMessage]] = mutable.Map()
   val engines: mutable.Set[String] = mutable.Set()
+  val enginesStartedTimeOut: mutable.Map[String, (Long, DateTime, String)] = mutable.Map()
   val NOFLAGS = 0
 
   def init(): Int = {
@@ -129,6 +136,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
                 else sendMessageToFrontend(m.moduleIdentity(), m.toByteArray)
             }
           }
+          processTimeOutForStartedEngines()
         } catch {
           case e: BrakeException => throw e
           case e: Throwable =>
@@ -171,6 +179,52 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
     }
   }
 
+  def processTimeOutForStartedEngines(): Unit = {
+    val engineFailedSet = mutable.Map[String, mutable.Set[String]]()
+
+    enginesStartedTimeOut.foreach(tuple => {
+      val engineName = tuple._1
+      val timeOut = tuple._2._1
+      val processStart = tuple._2._2
+
+      val elapsed = (processStart to DateTime.now()).millis
+      if (elapsed > timeOut) {
+        logError("Broker: elapsed timeout for engine " + engineName)
+        // Added here clientIdentity of sender of EngineStarted
+        engineFailedSet.put(engineName, mutable.Set[String](tuple._2._3))
+      }
+    })
+
+    enginesStartedTimeOut.dropWhile(p => engineFailedSet.contains(p._1))
+
+    // Add clientIdentities which sent messages to engine and they where stashed
+    engineFailedSet.foreach(failedEngine => {
+      enginesStashedMsgs.get(failedEngine._1) match
+        case Some(messages) =>
+          if (messages.nonEmpty) {
+            messages.foreach(msg => engineFailedSet.apply(failedEngine._1).add(msg.ClientAddr))
+//            messages.clear() //Do we need to clear messages?
+          }
+        case None =>
+      end match
+    })
+
+    engineFailedSet.foreach(engineFailed => {
+      val engineFailedName = engineFailed._1
+      val clientIdentities = engineFailed._2
+      clientIdentities.foreach(clientIdentity =>
+        logInfo("Broker: send error message EngineStartedTimeOutElapsedError to client " + clientIdentity)
+        sendMessageToFrontend(
+          clientIdentity,
+          new EngineStartedTimeOutElapsedError(
+            engineFailedName,
+            "Broker: elapsed timeout for engine " + engineFailedName
+          ).toByteArray
+        )
+      )
+    })
+  }
+
   private def reactOnClientMsgForBroker(m: IBrokerReceiverFromClient): Unit = {
     m match
       case msg: EngineStarted =>
@@ -178,7 +232,8 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
           s"Received notification about started engine ${msg.engineName} from client " +
             msg.clientIdentity()
         )
-      // TO-DO Properly react on EngineStarted message
+        val t = (msg.getTimeout, DateTime.now(), msg.clientIdentity())
+        enginesStartedTimeOut.put(msg.engineName, t)
   }
 
   private def reactOnEngineMsgForBroker(m: IBrokerReceiverFromModule): Unit = {
@@ -186,10 +241,14 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
       case msg: EngineIsReady =>
         // Its READY message from engine
         logInfo("Received EngineIsReady from engine " + msg.engineName())
+
+        enginesStartedTimeOut.dropWhile(t => t._1 == msg.engineName())
+
         if !engines.contains(msg.engineName()) then
           logDebug(s"Broker: Add ${msg.engineName()} as key in engines set")
           engines.add(msg.engineName()) // only this thread will write, so there will be no race condition
           sendStashedMessagesToBackendIfTheyAre(msg.engineName())
+
       case msg: EngineFailed =>
         logError("Received EngineFailed error from engine " + msg.engineName())
         // TO-DO Properly react on EngineFailed

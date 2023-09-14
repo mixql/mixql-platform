@@ -69,7 +69,8 @@ class ClientModule(clientIdentity: String,
                    portFrontendArgs: Option[Int],
                    portBackendArgs: Option[Int],
                    basePathArgs: Option[File],
-                   startScriptExtraOpts: Option[String] = None)
+                   startScriptExtraOpts: Option[String] = None,
+                   startEngineTimeOut: Long = 45000)
     extends Engine
     with java.lang.AutoCloseable {
   var client: ZMQ.Socket = null
@@ -261,7 +262,7 @@ class ClientModule(clientIdentity: String,
         )
         moduleStarted = true
         logInfo(s" Clientmodule $clientIdentity: notify broker about started engine " + moduleIdentity)
-        _sendMsg(new EngineStarted(moduleIdentity, clientIdentity))
+        _sendMsg(new EngineStarted(moduleIdentity, clientIdentity, startEngineTimeOut))
       }
       _sendMsg(msg)
     }

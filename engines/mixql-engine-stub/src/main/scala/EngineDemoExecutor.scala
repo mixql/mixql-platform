@@ -33,8 +33,7 @@ object EngineDemoExecutor extends IModuleExecutor {
       "stub_simple_func_return_arr" -> StubSimpleProc.simple_func_return_arr,
       "stub_simple_func_return_map" -> StubSimpleProc.simple_func_return_map,
       "execute_platform_func_in_stub_func" -> StubSimpleProc.execute_platform_func_in_stub_func,
-      "execute_stub_func_using_platform_in_stub_func" -> StubSimpleProc
-        .execute_stub_func_using_platform_in_stub_func,
+      "execute_stub_func_using_platform_in_stub_func" -> StubSimpleProc.execute_stub_func_using_platform_in_stub_func,
       "stub_simple_proc_context" -> StubSimpleProc.stub_simple_proc_context,
       "execute_stub_func_long_sleep" -> StubSimpleProc.execute_stub_func_long_sleep,
       "stub_simple_proc_context_test_setting_getting_vars" -> StubSimpleProc

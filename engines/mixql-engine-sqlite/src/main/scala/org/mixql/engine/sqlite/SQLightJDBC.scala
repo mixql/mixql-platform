@@ -81,8 +81,7 @@ class SQLightJDBC(identity: String, platformCtx: PlatformContext) extends java.l
           NULL()
       } catch {
         case e: Throwable =>
-          org.mixql.remote.messages.`type`
-            .Error(s"Module $identity: SQLightJDBC error while execute: " + e.getMessage)
+          org.mixql.remote.messages.`type`.Error(s"Module $identity: SQLightJDBC error while execute: " + e.getMessage)
       } finally {
         if (jdbcStmt != null)
           jdbcStmt.close()
@@ -125,8 +124,7 @@ class SQLightJDBC(identity: String, platformCtx: PlatformContext) extends java.l
         gtype.gArray(JavaSqlArrayConverter.toDoubleArray(javaSqlArray).map { value =>
           new gDouble(value)
         }.toArray)
-      case _: Any =>
-        throw new Exception(s"Module $identity: SQLightJDBC error while execute: unknown type of array")
+      case _: Any => throw new Exception(s"Module $identity: SQLightJDBC error while execute: unknown type of array")
     }
   }
 

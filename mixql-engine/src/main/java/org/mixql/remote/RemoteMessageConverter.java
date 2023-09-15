@@ -72,7 +72,7 @@ public class RemoteMessageConverter {
                 );
             case "org.mixql.remote.messages.type.Error":
                 return new Error(
-                        "error while unpacking from json Error: " + anyMsgJsonObject.get("errorMsg")
+                        (String) anyMsgJsonObject.get("errorMsg")
                 );
             case "org.mixql.remote.messages.client.ExecuteFunction":
                 return new ExecuteFunction(

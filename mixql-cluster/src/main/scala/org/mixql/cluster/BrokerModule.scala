@@ -87,7 +87,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
   // Key is identity, Value is list of messages
   val enginesStashedMsgs: mutable.Map[String, ListBuffer[StashedClientMessage]] = mutable.Map()
   val engines: mutable.Set[String] = mutable.Set()
-  val enginesStartedTimeOut: mutable.Map[String, (Long, DateTime, String)] = mutable.Map()
+  var enginesStartedTimeOut: mutable.Map[String, (Long, DateTime, String)] = mutable.Map()
   val NOFLAGS = 0
 
   def init(): Int = {
@@ -180,6 +180,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
   }
 
   def processTimeOutForStartedEngines(): Unit = {
+    // Name of engine, clientsIdentity set
     val engineFailedSet = mutable.Map[String, mutable.Set[String]]()
 
     enginesStartedTimeOut.foreach(tuple => {
@@ -195,7 +196,11 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
       }
     })
 
-    enginesStartedTimeOut.dropWhile(p => engineFailedSet.contains(p._1))
+    engineFailedSet.keySet.foreach(failedEngineName => {
+      enginesStartedTimeOut = enginesStartedTimeOut.dropWhile(p => {
+        p._1 == failedEngineName
+      })
+    })
 
     // Add clientIdentities which sent messages to engine and they where stashed
     engineFailedSet.foreach(failedEngine => {
@@ -203,7 +208,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
         case Some(messages) =>
           if (messages.nonEmpty) {
             messages.foreach(msg => engineFailedSet.apply(failedEngine._1).add(msg.ClientAddr))
-//            messages.clear() //Do we need to clear messages?
+            messages.clear() // Do we need to clear messages?
           }
         case None =>
       end match
@@ -242,7 +247,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
         // Its READY message from engine
         logInfo("Received EngineIsReady from engine " + msg.engineName())
 
-        enginesStartedTimeOut.dropWhile(t => t._1 == msg.engineName())
+        enginesStartedTimeOut = enginesStartedTimeOut.dropWhile(t => t._1 == msg.engineName())
 
         if !engines.contains(msg.engineName()) then
           logDebug(s"Broker: Add ${msg.engineName()} as key in engines set")

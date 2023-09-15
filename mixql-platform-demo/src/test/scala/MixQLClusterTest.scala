@@ -85,7 +85,23 @@ trait MixQLClusterTest extends FunSuite {
             "stub-local" -> EngineStubLocal,
             "sqlite-local" -> EngineSqlightLocal(),
             "sqlite-local-titanic" -> EngineSqlightLocal(Some("mixql.org.engine.sqlight.titanic-db.path")),
-            "sqlite-local-sakila" -> EngineSqlightLocal(Some("mixql.org.engine.sqlight.sakila-db.path"))
+            "sqlite-local-sakila" -> EngineSqlightLocal(Some("mixql.org.engine.sqlight.sakila-db.path")),
+            "dummy" -> new ClientModule(
+              // Name of client, is used for identification in broker,
+              // must be unique
+              "mixql-engine-dummy-demo-platform",
+              // Name of remote engine, is used for identification in broker,
+              // must be unique
+              "mixql-engine-dummy",
+              // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
+              // in base path
+              None,
+              Some(MixQlEngineDummyExecutor),
+              None,
+              None,
+              None,
+              None
+            )
           )
         }
 

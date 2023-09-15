@@ -2,9 +2,9 @@ name: Scala CI
 jobs:
   test:
     runs-on: ubuntu-latest
-#    env:
+    env:
       # define Java options for both official sbt and sbt-extras
-#      JAVA_OPTS: -Xmx5g -Dfile.encoding=UTF-8
+      JAVA_OPTS: -Xmx5g -Dfile.encoding=UTF-8
     steps:
       - uses: actions/checkout@v2
       - uses: oracle-actions/setup-java@v1

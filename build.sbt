@@ -117,24 +117,27 @@ lazy val mixQLPlatformDemo = project.in(file("mixql-platform-demo"))
     mixQLEngineSqlite % "compile->test",
     mixQLEngineStubLocal, // % "compile->compile;compile->test",
     mixQLEngineSqliteLocal // % "compile->compile;compile->test",
-  ).settings(stageEnginesDemo := {
-    //      implicit val log = streams.value.log
-    //      log.info("-------stageEnginesDemo---------")
-    var cache: Seq[(File, String)] = Seq()
-    (mixQLEngineStub / Universal / stage).value
-    (mixQLEngineSqlite / Universal / stage).value
-    val baseDirs = Seq((mixQLEngineStub / baseDirectory).value, (mixQLEngineSqlite / baseDirectory).value)
+  ).settings(
+    stageEnginesDemo := {
+      //      implicit val log = streams.value.log
+      //      log.info("-------stageEnginesDemo---------")
+      var cache: Seq[(File, String)] = Seq()
+      (mixQLEngineStub / Universal / stage).value
+      (mixQLEngineSqlite / Universal / stage).value
+      val baseDirs = Seq((mixQLEngineStub / baseDirectory).value, (mixQLEngineSqlite / baseDirectory).value)
 
-    baseDirs.foreach(baseDir => {
-      cache =
-        cache ++
-          (baseDir / "target" / "universal" / "stage" / "bin").listFiles().toSeq
-            .map(f => (f, "bin/" + f.getName)) ++ (baseDir / "target" / "universal" / "stage" / "lib").listFiles().toSeq
-            .map(f => (f, "lib/" + f.getName))
-    })
+      baseDirs.foreach(baseDir => {
+        cache =
+          cache ++
+            (baseDir / "target" / "universal" / "stage" / "bin").listFiles().toSeq
+              .map(f => (f, "bin/" + f.getName)) ++ (baseDir / "target" / "universal" / "stage" / "lib").listFiles()
+              .toSeq.map(f => (f, "lib/" + f.getName))
+      })
 
-    cache
-  })
+      cache
+    },
+    Test / parallelExecution := false
+  )
 
 lazy val mixQLOozie = project.in(file("mixql-oozie"))
 
@@ -269,7 +272,7 @@ testGitHubActions := Def.sequential(
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ThisBuild / Test / parallelExecution := false
-ThisBuild / Test / fork := true
+//ThisBuild / Test / fork := true
 ThisBuild / libraryDependencies ++= Seq("org.xerial" % "sqlite-jdbc" % "3.40.0.0" % Test)
 
 lazy val format = taskKey[Unit]("format src, test, sbt")

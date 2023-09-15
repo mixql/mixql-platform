@@ -8,10 +8,10 @@ jobs:
         with:
           website: oracle.com
           release: 17
-      - name: Trigger antlr plugin to generate java files
-        run: sbt buildAllMixQLCore #temp fix: call buildAllMixQLCore to generate antlr java files
+#      - name: Trigger antlr plugin to generate java files
+#        run: sbt buildAllMixQLCore #temp fix: call buildAllMixQLCore to generate antlr java files
       - name: Run tests
-        run: sbt coverage test
+        run: sbt buildAllMixQLCore coverage test
       - name: Coverage Report
         run: sbt coverageReport
       - name: Upload coverage to Codecov

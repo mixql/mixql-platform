@@ -1,5 +1,7 @@
 package org.mixql.remote.messages.type.gtype;
 
+import org.mixql.core.context.gtype.Type;
+import org.mixql.core.context.gtype.bool;
 import org.mixql.remote.messages.Message;
 
 import java.util.HashMap;
@@ -36,5 +38,18 @@ public class map implements IGtypeMessage {
         buffer.append("}");
         buffer.replace(buffer.length() - 3, buffer.length(), "}");
         return "{ type: " + type() + " map: " + buffer + "}";
+    }
+
+    @Override
+    public int hashCode() {
+        return m.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other instanceof map) {
+            return m.equals(((map) other).m);
+        }
+        return false;
     }
 }

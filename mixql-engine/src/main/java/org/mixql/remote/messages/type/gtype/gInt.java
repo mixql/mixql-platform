@@ -11,4 +11,20 @@ public class gInt implements IGtypeMessage {
         return "{ type: " + type() + " value: " + value + "}";
     }
 
+    @Override
+    public int hashCode() {
+        return Integer.valueOf(value).hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof gInt) {
+            return ((gInt) obj).value == value;
+        }
+        if (obj instanceof Integer) {
+            return (Integer) obj == value;
+        }
+        return false;
+    }
+
 }

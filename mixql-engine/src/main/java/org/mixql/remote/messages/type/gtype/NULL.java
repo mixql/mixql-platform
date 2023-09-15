@@ -5,5 +5,13 @@ public class NULL implements IGtypeMessage {
     public String toString() {
         return "{ type: " + type() + "}";
     }
-    
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof NULL)
+            return true;
+        else
+            return false;
+    }
+
 }

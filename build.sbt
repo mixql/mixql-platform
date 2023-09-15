@@ -217,59 +217,34 @@ lazy val archiveMixQLPlatformOozie = taskKey[Unit]("Create dist archive of platf
 archiveMixQLPlatformOozie := Def
   .sequential(mixQLPlatformOozie / Universal / packageBin, mixQLPlatformOozie / Universal / packageZipTarball).value
 
-val projectsTest = inProjects(
-  mixQLPlatformDemo,
-  mixQLPlatformOozie,
-  mixQLOozie,
-  mixQLRepl,
-//  mixQLCoreSCALA3,
-  mixQLEngineSqliteLocal,
-  mixQLEngineStubLocal,
-  mixQLEngineSqlite,
-  mixQLEngineStub,
-  mixQLCluster,
-  mixQLEngineSCALA3
-)
-
 Test / test := Def.sequential(
 //  test in Test,
-  test.all(ScopeFilter(projectsTest, inConfigurations(Test)))
+//  test.all(ScopeFilter(projectsTest, inConfigurations(Test)))
+  mixQLPlatformDemo / Test / test,
+  mixQLPlatformOozie / Test / test,
+  mixQLOozie / Test / test,
+  mixQLRepl / Test / test,
+  mixQLEngineSqliteLocal / Test / test,
+  mixQLEngineStubLocal / Test / test,
+  mixQLEngineSqlite / Test / test,
+  mixQLEngineStub / Test / test,
+  mixQLCluster / Test / test,
+  mixQLEngineSCALA3 / Test / test,
+  mixQLCoreSCALA3 / Test / test
 ).value
 /////////////////////////////////For github actions tests//////////////////////////////////////////////////////////////
 
 lazy val testGitHubActions = taskKey[Unit]("subset of tests for github action without sockets, as the hang")
 
 testGitHubActions := Def.sequential(
-  //  test in Test,
-//  test
-//    .all(
-//      ScopeFilter(
-//        inProjects(
-////    mixQLPlatformDemo,
-////    mixQLPlatformOozie,
-//          mixQLOozie,
-//          mixQLRepl,
-//          //  mixQLCoreSCALA3,
-//          mixQLEngineSqliteLocal,
-//          mixQLEngineStubLocal,
-//          mixQLEngineSqlite,
-//          mixQLEngineStub,
-//          mixQLCluster,
-//          mixQLEngineSCALA3
-//        ),
-//        inConfigurations(Test)
-//      )
-//    )
-//  (mixQLPlatformDemo / Test / testOnly).toTask(" TestBooleanExpressions"),
-//  (mixQLPlatformDemo / Test / testOnly).toTask(" TestParsingUri"),
-//  (mixQLPlatformDemo / Test / testOnly).toTask(" TestSimpleQueries"),
-//  (mixQLPlatformDemo / Test / testOnly).toTask(" TestSqlCreateTableFor"),
-//  (mixQLPlatformDemo / Test / testOnly).toTask(" TestSqlLightSakila"),
-//  (mixQLPlatformDemo / Test / testOnly).toTask(" TestSqlLightTitanic"),
-//  (mixQLPlatformDemo / Test / testOnly).toTask(" TestStubLocalEngineSimpleFuncs"),
-//  (mixQLPlatformDemo / Test / testOnly).toTask(" TestSimpleFuncs")
-  mixQLPlatformDemo / Test / test,
-  mixQLPlatformOozie / Test / test,
+  (mixQLPlatformDemo / Test / testOnly).toTask(" TestBooleanExpressions"),
+  (mixQLPlatformDemo / Test / testOnly).toTask(" TestParsingUri"),
+  (mixQLPlatformDemo / Test / testOnly).toTask(" TestSimpleQueries"),
+  (mixQLPlatformDemo / Test / testOnly).toTask(" TestSqlCreateTableFor"),
+  (mixQLPlatformDemo / Test / testOnly).toTask(" TestSqlLightSakila"),
+  (mixQLPlatformDemo / Test / testOnly).toTask(" TestSqlLightTitanic"),
+  (mixQLPlatformDemo / Test / testOnly).toTask(" TestStubLocalEngineSimpleFuncs"),
+  (mixQLPlatformDemo / Test / testOnly).toTask(" TestSimpleFuncs"),
   mixQLOozie / Test / test,
   mixQLRepl / Test / test,
   mixQLEngineSqliteLocal / Test / test,
@@ -284,7 +259,7 @@ testGitHubActions := Def.sequential(
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ThisBuild / Test / parallelExecution := false
-//ThisBuild / Test / fork := true
+ThisBuild / Test / fork := true
 ThisBuild / libraryDependencies ++= Seq("org.xerial" % "sqlite-jdbc" % "3.40.0.0" % Test)
 
 lazy val format = taskKey[Unit]("format src, test, sbt")
@@ -305,7 +280,7 @@ val projectsFormat = inProjects(
 
 format := Def.sequential(
   scalafmtAll.all(ScopeFilter(projectsFormat, inConfigurations(Test, Compile))),
-  scalafmtSbt.all(ScopeFilter(projectsFormat, inConfigurations(Compile)))
-  //  scalafmtAll.value
-  //  (Compile / scalafmtSbt).value
+  scalafmtSbt.all(ScopeFilter(projectsFormat, inConfigurations(Compile))),
+  scalafmtAll,
+  Compile / scalafmtSbt
 ).value

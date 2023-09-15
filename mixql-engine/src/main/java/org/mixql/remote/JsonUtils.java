@@ -167,7 +167,7 @@ class JsonUtils {
         return jsonObject;
     }
 
-    public static JSONObject buildInt(String type, Integer value) {
+    public static JSONObject buildInt(String type, Long value) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("value", value.toString());

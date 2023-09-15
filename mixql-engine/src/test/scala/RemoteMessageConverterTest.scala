@@ -115,7 +115,7 @@ class RemoteMessageConverterTest extends munit.FunSuite {
 
     val res = RemoteMessageConverter.unpackAnyMsg(json)
     assert(res.isInstanceOf[gInt])
-    assertEquals(res.asInstanceOf[gInt].value, 123)
+    assertEquals(res.asInstanceOf[gInt].value.toString, 123.toString)
   }
 
   test("convert gString remote message to json and back") {

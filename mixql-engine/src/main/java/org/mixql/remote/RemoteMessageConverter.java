@@ -103,7 +103,7 @@ public class RemoteMessageConverter {
                 );
             case "org.mixql.remote.messages.type.gtype.gInt":
                 return new gInt(
-                        Integer.parseInt((String) anyMsgJsonObject.get("value"))
+                        Long.parseLong((String) anyMsgJsonObject.get("value"))
                 );
             case "org.mixql.remote.messages.type.gtype.gDouble":
                 return new gDouble(

@@ -7,7 +7,9 @@ jobs:
       - uses: oracle-actions/setup-java@v1
         with:
           website: oracle.com
-          release: 17
+          release: 8
+      - name: Trigger antlr plugin to generate java files
+        run: sbt buildAllMixQLCore #temp fix: call buildAllMixQLCore to generate antlr java files
       - name: Run tests
         run: sbt coverage test
       - name: Coverage Report
@@ -23,7 +25,7 @@ jobs:
       - uses: oracle-actions/setup-java@v1
         with:
           website: oracle.com
-          release: 17
+          release: 8
       - name: Formatting
         run: sbt scalafmtSbtCheck scalafmtCheck test:scalafmtCheck
 on:

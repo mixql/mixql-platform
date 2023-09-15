@@ -14,13 +14,13 @@ jobs:
 #      - name: Trigger antlr plugin to generate java files
 #        run: sbt buildAllMixQLCore #temp fix: call buildAllMixQLCore to generate antlr java files
       - name: Run tests
-        run: sbt coverage buildAllMixQLCore test
-      - name: Coverage Report
-        run: sbt coverageReport
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
-        with:
-          fail_ci_if_error: true
+        run: sbt buildAllMixQLCore test
+      # - name: Coverage Report
+      #   run: sbt coverageReport
+      # - name: Upload coverage to Codecov
+      #   uses: codecov/codecov-action@v2
+      #   with:
+      #     fail_ci_if_error: true
   lint:
     runs-on: ubuntu-latest
     steps:

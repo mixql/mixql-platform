@@ -3,7 +3,7 @@ import com.typesafe.sbt.packager.SettingsHelper.{addPackage, makeDeploymentSetti
 name := "mixql-platform-oozie"
 
 description := "MixQL platform oozie, that can run MixQl engines, executed by oozie"
-scalaVersion := "3.2.1"
+scalaVersion := "3.1.3"
 
 licenses := List("Apache 2" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt"))
 

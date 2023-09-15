@@ -2,25 +2,27 @@ name: Scala CI
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
+    # env:
       # define Java options for both official sbt and sbt-extras
-      JAVA_OPTS: -Xmx6g -Dfile.encoding=UTF-8
+      # JAVA_OPTS: -Xmx6g -Dfile.encoding=UTF-8
     steps:
       - uses: actions/checkout@v2
       - uses: oracle-actions/setup-java@v1
         with:
           website: oracle.com
           release: 17
-#      - name: Trigger antlr plugin to generate java files
-#        run: sbt buildAllMixQLCore #temp fix: call buildAllMixQLCore to generate antlr java files
+      - name: Update submodules
+        run: git submodule update --init --recursive  
+      - name: Trigger antlr plugin to generate java files
+        run: sbt buildAllMixQLCore #temp fix: call buildAllMixQLCore to generate antlr java files
       - name: Run tests
-        run: sbt buildAllMixQLCore test
-      # - name: Coverage Report
-      #   run: sbt coverageReport
-      # - name: Upload coverage to Codecov
-      #   uses: codecov/codecov-action@v2
-      #   with:
-      #     fail_ci_if_error: true
+        run: sbt coverage test
+      - name: Coverage Report
+        run: sbt coverageReport
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          fail_ci_if_error: true
   lint:
     runs-on: ubuntu-latest
     steps:

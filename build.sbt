@@ -258,6 +258,11 @@ testGitHubActions := Def.sequential(
   ),
   (mixQLPlatformDemo / Test / testOnly).toTask(" TestBooleanExpressions"),
   (mixQLPlatformDemo / Test / testOnly).toTask(" TestParsingUri"),
+  (mixQLPlatformDemo / Test / testOnly).toTask(" TestSimpleQueries"),
+  (mixQLPlatformDemo / Test / testOnly).toTask(" TestSqlCreateTableFor"),
+  (mixQLPlatformDemo / Test / testOnly).toTask(" TestSqlLightSakila"),
+  (mixQLPlatformDemo / Test / testOnly).toTask(" TestSqlLightTitanic"),
+  (mixQLPlatformDemo / Test / testOnly).toTask(" TestStubLocalEngineSimpleFuncs"),
   (mixQLPlatformDemo / Test / testOnly).toTask(" TestSimpleFuncs")
 ).value
 

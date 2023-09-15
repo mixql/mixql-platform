@@ -237,8 +237,10 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
           s"Received notification about started engine ${msg.engineName} from client " +
             msg.clientIdentity()
         )
-        val t = (msg.getTimeout, DateTime.now(), msg.clientIdentity())
-        enginesStartedTimeOut.put(msg.engineName, t)
+        if (!engines.contains(msg.engineName)) {
+          val t = (msg.getTimeout, DateTime.now(), msg.clientIdentity())
+          enginesStartedTimeOut.put(msg.engineName, t)
+        }
   }
 
   private def reactOnEngineMsgForBroker(m: IBrokerReceiverFromModule): Unit = {

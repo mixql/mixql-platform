@@ -272,7 +272,7 @@ testGitHubActions := Def.sequential(
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ThisBuild / Test / parallelExecution := false
-//ThisBuild / Test / fork := true
+ThisBuild / Test / fork := true
 ThisBuild / libraryDependencies ++= Seq("org.xerial" % "sqlite-jdbc" % "3.40.0.0" % Test)
 
 lazy val format = taskKey[Unit]("format src, test, sbt")

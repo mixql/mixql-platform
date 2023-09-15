@@ -6,9 +6,11 @@ import java.sql.*
 import scala.collection.mutable
 import org.mixql.engine.core.logger.ModuleLogger
 import org.mixql.remote.{GtypeConverter, RemoteMessageConverter, messages}
-import org.mixql.remote.messages.{gtype, module}
-import org.mixql.remote.messages.gtype.{Bool, gArray, gDouble, gInt, gString}
+import org.mixql.remote.messages.module
 import org.mixql.engine.core.PlatformContext
+import org.mixql.remote.messages.`type`.Error
+import org.mixql.remote.messages.`type`.gtype
+import org.mixql.remote.messages.`type`.gtype.{Bool, gArray, gDouble, gInt, gString, NULL}
 
 class SQLightJDBC(identity: String, platformCtx: PlatformContext) extends java.lang.AutoCloseable {
 
@@ -76,9 +78,10 @@ class SQLightJDBC(identity: String, platformCtx: PlatformContext) extends java.l
               res.close()
           }
         } else
-          messages.gtype.NULL()
+          NULL()
       } catch {
-        case e: Throwable => module.Error(s"Module $identity: SQLightJDBC error while execute: " + e.getMessage)
+        case e: Throwable =>
+          org.mixql.remote.messages.`type`.Error(s"Module $identity: SQLightJDBC error while execute: " + e.getMessage)
       } finally {
         if (jdbcStmt != null)
           jdbcStmt.close()
@@ -93,7 +96,7 @@ class SQLightJDBC(identity: String, platformCtx: PlatformContext) extends java.l
     for (i <- 1 to columnCount)
       yield {
         columnTypes(i - 1) match {
-          case _: gString => gtype.gString(res.getString(i), "")
+          case _: gString => gString(res.getString(i), "")
           case _: Bool    => gtype.Bool(res.getBoolean(i))
           case _: gInt    => gtype.gInt(res.getInt(i))
           case _: gDouble => gDouble(res.getDouble(i))

@@ -2,26 +2,27 @@ package org.mixql.remote.messages.module.worker;
 
 import org.mixql.remote.RemoteMessageConverter;
 import org.mixql.remote.messages.Message;
+import org.mixql.remote.messages.module.IModuleSendToClient;
 
-public class SetPlatformVar implements IWorkerSendToPlatform {
+public class SetPlatformVar implements IWorkerSendToClient {
     public String name;
     public Message msg;
 
-    private byte[] _clientAddress;
+    private String _clientAddress;
 
     @Override
-    public byte[] clientAddress() {
+    public String clientIdentity() {
         return _clientAddress;
     }
 
     @Override
-    public String sender() {
+    public String workerIdentity() {
         return _sender;
     }
 
     private String _sender;
 
-    public SetPlatformVar(String sender, String name, Message msg, byte[] clientAddress) {
+    public SetPlatformVar(String sender, String name, Message msg, String clientAddress) {
         _sender = sender;
         this.name = name;
         this.msg = msg;

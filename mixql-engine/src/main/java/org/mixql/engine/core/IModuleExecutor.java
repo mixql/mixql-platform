@@ -3,17 +3,13 @@ package org.mixql.engine.core;
 import org.mixql.engine.core.logger.ModuleLogger;
 import org.mixql.remote.messages.*;
 import org.mixql.remote.messages.module.DefinedFunctions;
-import org.mixql.remote.messages.module.Execute;
-import org.mixql.remote.messages.module.ExecuteFunction;
-import org.mixql.remote.messages.module.ParamChanged;
+import org.mixql.remote.messages.client.Execute;
+import org.mixql.remote.messages.client.ExecuteFunction;
 
 public interface IModuleExecutor {
 
     Message reactOnExecuteAsync(Execute msg, String identity, String clientAddress, ModuleLogger logger,
                                 PlatformContext platformContext);
-
-    void reactOnParamChangedAsync(ParamChanged msg, String identity, String clientAddress, ModuleLogger logger,
-                                  PlatformContext platformContext);
 
     void reactOnShutDown(String identity, String clientAddress, ModuleLogger logger);
 

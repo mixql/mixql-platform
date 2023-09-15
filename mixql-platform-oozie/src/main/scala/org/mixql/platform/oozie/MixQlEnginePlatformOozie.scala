@@ -14,7 +14,7 @@ import org.mixql.engine.sqlite.local.EngineSqlightLocal
 import scala.collection.mutable
 import org.mixql.platform.oozie.logger.*
 import org.mixql.oozie.OozieParamsReader
-import org.mixql.remote.messages.module.ShutDown
+import org.mixql.remote.messages.client.ShutDown
 import org.mixql.repl.{TerminalApp, WebTextIoExecutor}
 
 import scala.util.Try
@@ -32,11 +32,7 @@ object MixQlEnginePlatformOozie:
     }.getOrElse(None)
 
     val portFrontend = Try {
-      Some(oozieParams("org.mixql.cluster.broker.portFrontend").toInt)
-    }.getOrElse(None)
-
-    val portBackend = Try {
-      Some(oozieParams("org.mixql.cluster.broker.portBackend").toInt)
+      Some(oozieParams("org.mixql.cluster.broker.port").toInt)
     }.getOrElse(None)
 
     logDebug(s"Mixql engine demo platform: initialising engines")
@@ -44,18 +40,18 @@ object MixQlEnginePlatformOozie:
       "sqlite" -> new ClientModule(
         // Name of client, is used for identification in broker,
         // must be unique
-        "mixql-engine-sqlite-demo-platform",
+        clientIdentity = "mixql-engine-sqlite-demo-platform",
         // Name of remote engine, is used for identification in broker,
         // must be unique
-        "mixql-engine-sqlite",
+        moduleIdentity = "mixql-engine-sqlite",
         // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
         // in base path
-        Some("mixql-engine-sqlite"),
-        None,
-        host,
-        portFrontend,
-        portBackend,
-        Some(new File("."))
+        startScriptName = Some("mixql-engine-sqlite"),
+        executor = None,
+        hostArgs = host,
+        portFrontendArgs = portFrontend,
+        basePathArgs = Some(new File(".")),
+        startEngineTimeOut = 15000 // 15sec
       ),
       "sqlite-local" -> EngineSqlightLocal()
     )

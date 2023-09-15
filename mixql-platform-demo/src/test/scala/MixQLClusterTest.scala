@@ -15,7 +15,7 @@ import org.mixql.engine.stub.local.EngineStubLocal
 import org.mixql.platform.demo.engines.executors.{MixQlEngineSqliteExecutor, MixQlEngineStubExecutor}
 import org.mixql.platform.demo.logger.{logDebug, logInfo}
 import org.mixql.platform.demo.procedures.SimpleFuncs
-import org.mixql.remote.messages.module.ShutDown
+import org.mixql.remote.messages.client.ShutDown
 import org.scalatest.funsuite.AnyFunSuite
 
 import scala.concurrent.duration.Duration
@@ -53,39 +53,58 @@ trait MixQLClusterTest extends FunSuite {
             "stub" -> new ClientModule(
               // Name of client, is used for identification in broker,
               // must be unique
-              "mixql-engine-stub-demo-platform",
+              clientIdentity = "mixql-engine-stub-demo-platform",
               // Name of remote engine, is used for identification in broker,
               // must be unique
-              "mixql-engine-stub",
+              moduleIdentity = "mixql-engine-stub",
               // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
               // in base path
-              None,
-              Some(MixQlEngineStubExecutor),
-              None,
-              None,
-              None,
-              None
+              startScriptName = None,
+              executor = Some(MixQlEngineStubExecutor),
+              hostArgs = None,
+              portFrontendArgs = None,
+              basePathArgs = None,
+              startScriptExtraOpts = None,
+              startEngineTimeOut = 10000 // 10sec
             ),
             "sqlite" -> new ClientModule(
               // Name of client, is used for identification in broker,
               // must be unique
-              "mixql-engine-sqlite-demo-platform",
+              clientIdentity = "mixql-engine-sqlite-demo-platform",
               // Name of remote engine, is used for identification in broker,
               // must be unique
-              "mixql-engine-sqlite",
+              moduleIdentity = "mixql-engine-sqlite",
               // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
               // in base path
-              None,
-              Some(MixQlEngineSqliteExecutor),
-              None,
-              None,
-              None,
-              None
+              startScriptName = None,
+              executor = Some(MixQlEngineSqliteExecutor),
+              hostArgs = None,
+              portFrontendArgs = None,
+              basePathArgs = None,
+              startScriptExtraOpts = None,
+              startEngineTimeOut = 10000 // 10sec
             ),
             "stub-local" -> EngineStubLocal,
             "sqlite-local" -> EngineSqlightLocal(),
             "sqlite-local-titanic" -> EngineSqlightLocal(Some("mixql.org.engine.sqlight.titanic-db.path")),
-            "sqlite-local-sakila" -> EngineSqlightLocal(Some("mixql.org.engine.sqlight.sakila-db.path"))
+            "sqlite-local-sakila" -> EngineSqlightLocal(Some("mixql.org.engine.sqlight.sakila-db.path")),
+            "dummy" -> new ClientModule(
+              // Name of client, is used for identification in broker,
+              // must be unique
+              clientIdentity = "mixql-engine-dummy-demo-platform",
+              // Name of remote engine, is used for identification in broker,
+              // must be unique
+              moduleIdentity = "mixql-engine-dummy",
+              // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
+              // in base path
+              startScriptName = None,
+              executor = Some(MixQlEngineDummyExecutor),
+              hostArgs = None,
+              portFrontendArgs = None,
+              basePathArgs = None,
+              startScriptExtraOpts = None,
+              startEngineTimeOut = 10000 // 10sec
+            )
           )
         }
 

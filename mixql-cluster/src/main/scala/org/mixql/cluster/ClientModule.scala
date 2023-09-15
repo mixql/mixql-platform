@@ -67,10 +67,9 @@ class ClientModule(clientIdentity: String,
                    executor: Option[IExecutor],
                    hostArgs: Option[String],
                    portFrontendArgs: Option[Int],
-                   portBackendArgs: Option[Int],
                    basePathArgs: Option[File],
-                   startScriptExtraOpts: Option[String] = None,
-                   startEngineTimeOut: Long = 45000)
+                   startEngineTimeOut: Long,
+                   startScriptExtraOpts: Option[String] = None)
     extends Engine
     with java.lang.AutoCloseable {
   var client: ZMQ.Socket = null

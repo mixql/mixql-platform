@@ -53,34 +53,36 @@ trait MixQLClusterTest extends FunSuite {
             "stub" -> new ClientModule(
               // Name of client, is used for identification in broker,
               // must be unique
-              "mixql-engine-stub-demo-platform",
+              clientIdentity = "mixql-engine-stub-demo-platform",
               // Name of remote engine, is used for identification in broker,
               // must be unique
-              "mixql-engine-stub",
+              moduleIdentity = "mixql-engine-stub",
               // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
               // in base path
-              None,
-              Some(MixQlEngineStubExecutor),
-              None,
-              None,
-              None,
-              None
+              startScriptName = None,
+              executor = Some(MixQlEngineStubExecutor),
+              hostArgs = None,
+              portFrontendArgs = None,
+              basePathArgs = None,
+              startScriptExtraOpts = None,
+              startEngineTimeOut = 10000 // 10sec
             ),
             "sqlite" -> new ClientModule(
               // Name of client, is used for identification in broker,
               // must be unique
-              "mixql-engine-sqlite-demo-platform",
+              clientIdentity = "mixql-engine-sqlite-demo-platform",
               // Name of remote engine, is used for identification in broker,
               // must be unique
-              "mixql-engine-sqlite",
+              moduleIdentity = "mixql-engine-sqlite",
               // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
               // in base path
-              None,
-              Some(MixQlEngineSqliteExecutor),
-              None,
-              None,
-              None,
-              None
+              startScriptName = None,
+              executor = Some(MixQlEngineSqliteExecutor),
+              hostArgs = None,
+              portFrontendArgs = None,
+              basePathArgs = None,
+              startScriptExtraOpts = None,
+              startEngineTimeOut = 10000 // 10sec
             ),
             "stub-local" -> EngineStubLocal,
             "sqlite-local" -> EngineSqlightLocal(),
@@ -89,18 +91,19 @@ trait MixQLClusterTest extends FunSuite {
             "dummy" -> new ClientModule(
               // Name of client, is used for identification in broker,
               // must be unique
-              "mixql-engine-dummy-demo-platform",
+              clientIdentity = "mixql-engine-dummy-demo-platform",
               // Name of remote engine, is used for identification in broker,
               // must be unique
-              "mixql-engine-dummy",
+              moduleIdentity = "mixql-engine-dummy",
               // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
               // in base path
-              None,
-              Some(MixQlEngineDummyExecutor),
-              None,
-              None,
-              None,
-              None
+              startScriptName = None,
+              executor = Some(MixQlEngineDummyExecutor),
+              hostArgs = None,
+              portFrontendArgs = None,
+              basePathArgs = None,
+              startScriptExtraOpts = None,
+              startEngineTimeOut = 10000 // 10sec
             )
           )
         }

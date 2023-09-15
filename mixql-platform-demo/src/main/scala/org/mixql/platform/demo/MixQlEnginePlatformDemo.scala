@@ -26,7 +26,7 @@ object MixQlEnginePlatformDemo:
 
   def main(args: Array[String]): Unit =
     logDebug("Mixql engine demo platform: parsing args")
-    val (host, portFrontend, portBackend, homePath, sqlScriptFiles) = parseArgs(args.toList)
+    val (host, portFrontend, homePath, sqlScriptFiles) = parseArgs(args.toList)
 
     val binPath: Option[File] =
       if homePath.isEmpty then None
@@ -37,34 +37,34 @@ object MixQlEnginePlatformDemo:
       "stub" -> new ClientModule(
         // Name of client, is used for identification in broker,
         // must be unique
-        "mixql-engine-stub-demo-platform",
+        clientIdentity = "mixql-engine-stub-demo-platform",
         // Name of remote engine, is used for identification in broker,
         // must be unique
-        "mixql-engine-stub",
+        moduleIdentity = "mixql-engine-stub",
         // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
         // in base path
-        None,
-        Some(MixQlEngineStubExecutor),
-        host,
-        portFrontend,
-        portBackend,
-        None
+        startScriptName = None,
+        executor = Some(MixQlEngineStubExecutor),
+        hostArgs = host,
+        portFrontendArgs = portFrontend,
+        basePathArgs = None,
+        startEngineTimeOut = 10000 // 10sec
       ),
       "sqlite" -> new ClientModule(
         // Name of client, is used for identification in broker,
         // must be unique
-        "mixql-engine-sqlite-demo-platform",
+        clientIdentity = "mixql-engine-sqlite-demo-platform",
         // Name of remote engine, is used for identification in broker,
         // must be unique
-        "mixql-engine-sqlite",
+        moduleIdentity = "mixql-engine-sqlite",
         // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
         // in base path
-        None,
-        Some(MixQlEngineSqliteExecutor),
-        host,
-        portFrontend,
-        portBackend,
-        None
+        startScriptName = None,
+        executor = Some(MixQlEngineSqliteExecutor),
+        hostArgs = host,
+        portFrontendArgs = portFrontend,
+        basePathArgs = None,
+        startEngineTimeOut = 10000 // 10sec
       ),
       "stub-local" -> EngineStubLocal,
       "sqlite-local" -> EngineSqlightLocal()
@@ -148,15 +148,12 @@ object MixQlEnginePlatformDemo:
     Try(config.getBoolean("org.mixql.platform.demo.repl.launch-desktop-web-browser")).getOrElse(true)
   }
 
-  def parseArgs(args: List[String]): (Option[String], Option[Int], Option[Int], Option[File], Option[List[File]]) =
+  def parseArgs(args: List[String]): (Option[String], Option[Int], Option[File], Option[List[File]]) =
     import org.rogach.scallop.ScallopConfBase
     val appArgs = AppArgs(args)
     val host = appArgs.host.toOption
     val portFrontend = // PortOperations.isPortAvailable(
       appArgs.portFrontend.toOption
-    // )
-    val portBackend = // PortOperations.isPortAvailable(
-      appArgs.portBackend.toOption
     // )
     val homePath: Option[File] = Try({
       Some(appArgs.homePath.toOption.get)
@@ -179,7 +176,7 @@ object MixQlEnginePlatformDemo:
     }).getOrElse(None))
 
     val sqlScripts = appArgs.sqlFile.toOption
-    (host, portFrontend, portBackend, homePath, sqlScripts)
+    (host, portFrontend, homePath, sqlScripts)
 
 case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments):
 
@@ -189,14 +186,10 @@ case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments):
   import org.rogach.scallop.fileListConverter
 
   val portFrontend = opt[Int](
-    descr = "frontend port of platform's broker, client modules will connect to it",
+    descr = "port of platform's broker, clients and engines will connect to it",
     required = false
   ) // , default = Some(0))
 
-  val portBackend = opt[Int](
-    descr = "backend port of platform's broker, remote engines will connect to it",
-    required = false
-  ) // , default = Some(0))
   val host = opt[String](descr = "host of platform's broker", required = false) // , default = Some("0.0.0.0"))
   val homePath = opt[File](descr = "home path of platform demo", required = false) // , default = Some(new File(".")))
   val sqlFile = opt[List[File]](descr = "path to sql script file", required = false)

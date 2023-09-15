@@ -11,6 +11,8 @@ jobs:
         with:
           website: oracle.com
           release: 17
+      - name: Delete mixql-core folder
+        run: yes | rm -r mixql-core
       - name: Update submodules
         run: git submodule update --init --recursive  
       - name: Trigger antlr plugin to generate java files

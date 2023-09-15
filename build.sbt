@@ -232,6 +232,36 @@ Test / test := Def.sequential(
 //  test in Test,
   test.all(ScopeFilter(projectsTest, inConfigurations(Test)))
 ).value
+/////////////////////////////////For github actions tests//////////////////////////////////////////////////////////////
+
+lazy val testGitHubActions = taskKey[Unit]("subset of tests for github action without sockets, as the hang")
+
+testGitHubActions := Def.sequential(
+  //  test in Test,
+  test.all(
+    ScopeFilter(
+      inProjects(
+//    mixQLPlatformDemo,
+//    mixQLPlatformOozie,
+        mixQLOozie,
+        mixQLRepl,
+        //  mixQLCoreSCALA3,
+        mixQLEngineSqliteLocal,
+        mixQLEngineStubLocal,
+        mixQLEngineSqlite,
+        mixQLEngineStub,
+        mixQLCluster,
+        mixQLEngineSCALA3
+      ),
+      inConfigurations(Test)
+    )
+  ),
+  (mixQLPlatformDemo / Test / testOnly).toTask(" TestBooleanExpressions"),
+  (mixQLPlatformDemo / Test / testOnly).toTask(" TestParsingUri"),
+  (mixQLPlatformDemo / Test / testOnly).toTask(" TestSimpleFuncs")
+).value
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ThisBuild / Test / parallelExecution := false
 ThisBuild / Test / fork := true

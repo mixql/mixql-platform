@@ -1,6 +1,7 @@
 package org.mixql.cluster
 
 import com.github.nscala_time.time.Imports.{DateTime, richReadableInstant, richReadableInterval}
+import com.typesafe.config.{Config, ConfigFactory}
 import logger.*
 import org.mixql.engine.core.BrakeException
 import org.mixql.protobuf.ErrorOps
@@ -12,8 +13,8 @@ import scala.collection.mutable.ListBuffer
 import org.mixql.remote.messages.Message
 import org.mixql.remote.messages.broker.{
   CouldNotConvertMsgError,
-  PlatformPongHeartBeat,
-  EngineStartedTimeOutElapsedError
+  EngineStartedTimeOutElapsedError,
+  PlatformPongHeartBeat
 }
 import org.mixql.remote.messages.module.IModuleSendToClient
 import org.mixql.remote.messages.module.toBroker.{
@@ -89,6 +90,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
   val engines: mutable.Set[String] = mutable.Set()
   var enginesStartedTimeOut: mutable.Map[String, (Long, DateTime, String)] = mutable.Map()
   val NOFLAGS = 0
+  val config: Config = ConfigFactory.load()
 
   def init(): Int = {
     logInfo("Initialising broker")
@@ -114,7 +116,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
       while (!Thread.currentThread().isInterrupted) {
         try {
 
-          val rc = poller.poll(1000)
+          val rc = poller.poll(Try(config.getLong("org.mixql.cluster.broker.pollerTimeout")).getOrElse(100))
           if (rc == -1)
             throw new BrakeException()
           logDebug("ThreadInterrupted: " + Thread.currentThread().isInterrupted)

@@ -44,10 +44,10 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
   var poller: ZMQ.Poller = null
   var workerPoller: ZMQ.Poller = null
 
-  val pollerTimeout: Long = Try(config.getLong("org.mixql.engine.module.pollerTimeout")).getOrElse(1000)
+  val pollerTimeout: Long = Try(config.getLong("org.mixql.engine.module.pollerTimeout")).getOrElse(100)
 
   val workerPollerTimeout: Long = Try(config.getLong("org.mixql.engine.module.workerPollerTimeout")).getOrElse({
-    1500
+    95
   })
 
   private val heartBeatInterval: Long = {

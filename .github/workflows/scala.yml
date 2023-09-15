@@ -31,6 +31,8 @@ jobs:
         with:
           website: oracle.com
           release: 17
+      - name: Update submodules
+        run: git submodule update --init --recursive    
       - name: Formatting
         run: sbt scalafmtSbtCheck scalafmtCheck test:scalafmtCheck
 on:

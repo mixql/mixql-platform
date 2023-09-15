@@ -39,8 +39,7 @@ lazy val mixQLCore = projectMatrix.in(file("mixql-core")).enablePlugins(Antlr4Pl
   Antlr4 / antlr4PackageName := Some("org.mixql.core.generated"),
   Antlr4 / antlr4FolderToClean := (Antlr4 / javaSource).value / "org" / "mixql" / "core" / "generated",
   //    Antlr4 / javaSource := baseDirectory.value / "src" / "main" / "java" / "antlr4",
-  Compile / unmanagedSourceDirectories += baseDirectory
-    .value / "src" / "main" / "java" / "antlr4", // For stupid IDEA
+  Compile / unmanagedSourceDirectories += baseDirectory.value / "src" / "main" / "java" / "antlr4", // For stupid IDEA
   libraryDependencies ++= Seq(
     "org.antlr"                % "antlr4-runtime" % "4.8-1",
     "org.apache.logging.log4j" % "log4j-api"      % "2.19.0",
@@ -75,17 +74,16 @@ lazy val mixQLCoreSCALA3 = mixQLCore.jvm(Scala3)
 lazy val mixQLCoreSCALA212 = mixQLCore.jvm(Scala212)
 lazy val mixQLCoreSCALA213 = mixQLCore.jvm(Scala213)
 
-lazy val mixQLEngine = projectMatrix.in(file("mixql-engine")).dependsOn(mixQLCore)
-  .settings(libraryDependencies ++= {
-    Seq(
-      "com.typesafe"               % "config"      % "1.4.2",
-      "org.scalameta"             %% "munit"       % "0.7.29"   % Test,
-      "org.zeromq"                 % "jeromq"      % "0.5.3",
-      "com.github.nscala-time"    %% "nscala-time" % "2.32.0",
-      "com.googlecode.json-simple" % "json-simple" % "1.1.1",
-      "org.json"                   % "json"        % "20230227" % Test
-    )
-  }).jvmPlatform(Seq(Scala3, Scala213, Scala212))
+lazy val mixQLEngine = projectMatrix.in(file("mixql-engine")).dependsOn(mixQLCore).settings(libraryDependencies ++= {
+  Seq(
+    "com.typesafe"               % "config"      % "1.4.2",
+    "org.scalameta"             %% "munit"       % "0.7.29"   % Test,
+    "org.zeromq"                 % "jeromq"      % "0.5.3",
+    "com.github.nscala-time"    %% "nscala-time" % "2.32.0",
+    "com.googlecode.json-simple" % "json-simple" % "1.1.1",
+    "org.json"                   % "json"        % "20230227" % Test
+  )
+}).jvmPlatform(Seq(Scala3, Scala213, Scala212))
 
 lazy val mixQLEngineSCALA3 = mixQLEngine.jvm(Scala3)
   .dependsOn(mixQLCoreSCALA3 % "compile->compile;compile->test;test->test;")
@@ -131,8 +129,8 @@ lazy val mixQLPlatformDemo = project.in(file("mixql-platform-demo"))
       cache =
         cache ++
           (baseDir / "target" / "universal" / "stage" / "bin").listFiles().toSeq
-            .map(f => (f, "bin/" + f.getName)) ++ (baseDir / "target" / "universal" / "stage" / "lib")
-            .listFiles().toSeq.map(f => (f, "lib/" + f.getName))
+            .map(f => (f, "bin/" + f.getName)) ++ (baseDir / "target" / "universal" / "stage" / "lib").listFiles().toSeq
+            .map(f => (f, "lib/" + f.getName))
     })
 
     cache
@@ -168,8 +166,7 @@ lazy val mixQLPlatformOozie = project.in(file("mixql-platform-oozie"))
       // Generate shell script in engine's lib folder
       baseDirs.keys.foreach(engineName => {
         val baseDir = baseDirs(engineName)
-        val jars =
-          (baseDir / "target" / "universal" / "stage" / "lib").listFiles().toSeq.map(f => f.getName).toList
+        val jars = (baseDir / "target" / "universal" / "stage" / "lib").listFiles().toSeq.map(f => f.getName).toList
 
         val target = baseDir / "target" / "universal" / "stage" / "lib" / engineName
         RemoteEngineShell.gen_shell(target, engineName, engineClasses(engineName), jars)
@@ -210,14 +207,12 @@ buildAllMixQLCore := {
 lazy val archiveMixQLPlatformDemo = taskKey[Unit]("Create dist archive of platform-demo")
 
 archiveMixQLPlatformDemo := Def
-  .sequential(mixQLPlatformDemo / Universal / packageBin, mixQLPlatformDemo / Universal / packageZipTarball)
-  .value
+  .sequential(mixQLPlatformDemo / Universal / packageBin, mixQLPlatformDemo / Universal / packageZipTarball).value
 
 lazy val archiveMixQLPlatformOozie = taskKey[Unit]("Create dist archive of platform-oozie")
 
 archiveMixQLPlatformOozie := Def
-  .sequential(mixQLPlatformOozie / Universal / packageBin, mixQLPlatformOozie / Universal / packageZipTarball)
-  .value
+  .sequential(mixQLPlatformOozie / Universal / packageBin, mixQLPlatformOozie / Universal / packageZipTarball).value
 
 val projectsTest = inProjects(
   mixQLPlatformDemo,

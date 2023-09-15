@@ -1,7 +1,8 @@
 import org.mixql.core.context.gtype
 import org.mixql.remote.GtypeConverter
 import org.mixql.remote.messages.Message
-import org.mixql.remote.messages.`type`.gtype.{Bool, NONE, NULL, gDouble, gInt, gString, map}
+import org.mixql.remote.messages.`type`.gtype.{Bool, NONE, NULL, gDouble, gInt, gString, map, gArray}
+import org.mixql.remote.messages.`type`.Error
 // For more information on writing tests, see
 
 // https://scalameta.org/munit/docs/getting-started.html
@@ -60,5 +61,30 @@ class GtypeConverterRemoteMsgToMixQlType extends munit.FunSuite {
     assert(!val2.asInstanceOf[gtype.bool].getValue)
   }
 
-  // TO-DO Test array, error
+  test("convert org.mixql.remote.messages.type.gtype.gArray remote message to gtype array") {
+
+    val res = GtypeConverter.messageToGtype({
+      new gArray(Seq[Message](new gString("123.9", "'"), new gString("8.8", "\"")).toArray)
+    })
+    assert(res.isInstanceOf[gtype.array])
+    val arr = res.asInstanceOf[gtype.array].getArr
+
+    assertEquals(arr.length, 2)
+
+    val val1: gtype.Type = arr(0)
+    assert(val1.isInstanceOf[gtype.string])
+    assertEquals(val1.asInstanceOf[gtype.string].quoted(), "'123.9'")
+
+    val val2: gtype.Type = arr(1)
+    assert(val2.isInstanceOf[gtype.string])
+    assertEquals(val2.asInstanceOf[gtype.string].quoted(), "\"8.8\"")
+  }
+
+  test("when converts org.mixql.remote.messages.type.Error remote message throws exception") {
+    interceptMessage[java.lang.Exception]("test-exception") {
+      GtypeConverter.messageToGtype(new Error("test-exception"))
+    }
+  }
+
+  // TO-DO Test nested array in array in array, nested map in map, array of maps, etc
 }

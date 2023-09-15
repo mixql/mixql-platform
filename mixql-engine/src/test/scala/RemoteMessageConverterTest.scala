@@ -4,11 +4,29 @@ import org.mixql.core.context.gtype.string
 import org.mixql.remote.{GtypeConverter, RemoteMessageConverter}
 import org.mixql.remote.messages.Message
 import org.mixql.remote.messages.`type`.gtype.{Bool, gArray, gDouble, gString, map}
-import org.mixql.remote.messages.broker.EngineStartedTimeOutElapsedError
+import org.mixql.remote.messages.broker.{
+  CouldNotConvertMsgError,
+  EngineStartedTimeOutElapsedError,
+  PlatformPongHeartBeat
+}
 import org.mixql.remote.messages.client.toBroker.EngineStarted
-import org.mixql.remote.messages.client.{Execute, InvokedPlatformFunctionResult}
+import org.mixql.remote.messages.client.{
+  Execute,
+  ExecuteFunction,
+  GetDefinedFunctions,
+  InvokedPlatformFunctionResult,
+  PlatformVar,
+  PlatformVarWasSet,
+  PlatformVars,
+  PlatformVarsNames,
+  PlatformVarsWereSet,
+  ShutDown
+}
 import org.mixql.remote.messages.module.ExecuteResult
 import org.mixql.remote.messages.module.toBroker.EnginePingHeartBeat
+import org.mixql.remote.messages.`type`.{Error, Param}
+
+import java.util
 
 class RemoteMessageConverterTest extends munit.FunSuite {
 
@@ -184,6 +202,263 @@ class RemoteMessageConverterTest extends munit.FunSuite {
     val msg = res.asInstanceOf[EngineStartedTimeOutElapsedError]
     assertEquals(msg.getErrorMessage(), "error-test")
     assertEquals(msg.engineName, "stub")
+  }
+
+  test("convert CouldNotConvertMsgError remote message to json and back") {
+
+    val json = RemoteMessageConverter.toJson({
+      new CouldNotConvertMsgError("error-test")
+    })
+
+    assert(json.isInstanceOf[String])
+    assert(isJson(json))
+
+    val res = RemoteMessageConverter.unpackAnyMsg(json)
+    assert(res.isInstanceOf[CouldNotConvertMsgError])
+    assert(res.isInstanceOf[Error])
+    val msg = res.asInstanceOf[CouldNotConvertMsgError]
+    assertEquals(msg.getErrorMessage(), "error-test")
+  }
+
+  test("convert PlatformPongHeartBeat remote message to json and back") {
+
+    val json = RemoteMessageConverter.toJson({
+      new PlatformPongHeartBeat()
+    })
+
+    assert(json.isInstanceOf[String])
+    assert(isJson(json))
+
+    val res = RemoteMessageConverter.unpackAnyMsg(json)
+    assert(res.isInstanceOf[PlatformPongHeartBeat])
+  }
+
+  test("convert Param remote message to json and back") {
+
+    val json = RemoteMessageConverter.toJson({
+      new Param("test-param-name", new gString("123.9", "'"))
+    })
+
+    assert(json.isInstanceOf[String])
+    assert(isJson(json))
+
+    val res = RemoteMessageConverter.unpackAnyMsg(json)
+    assert(res.isInstanceOf[Param])
+    val param = res.asInstanceOf[Param]
+    assertEquals(param.name, "test-param-name")
+
+    val msgRAW = param.msg
+    assert(msgRAW.isInstanceOf[gString])
+    val msg = msgRAW.asInstanceOf[gString]
+    assertEquals(msg.value, "123.9")
+  }
+
+  test("convert ExecuteFunction remote message to json and back") {
+
+    val json = RemoteMessageConverter.toJson({
+      new ExecuteFunction("stub", "stub-client", "testFuncName", Seq[Message](new gString("123.9", "'")).toArray)
+    })
+
+    assert(json.isInstanceOf[String])
+    assert(isJson(json))
+
+    val resRAW = RemoteMessageConverter.unpackAnyMsg(json)
+    assert(resRAW.isInstanceOf[ExecuteFunction])
+
+    val res = resRAW.asInstanceOf[ExecuteFunction]
+
+    assertEquals(res.moduleIdentity, "stub")
+    assertEquals(res.clientIdentity(), "stub-client")
+    assertEquals(res.name, "testFuncName")
+
+    assert(res.params.length == 1)
+
+    {
+      val value = res.params(0)
+      assert(value.isInstanceOf[gString])
+      assertEquals(value.asInstanceOf[gString].value, "123.9")
+    }
+  }
+
+  test("convert GetDefinedFunctions remote message to json and back") {
+
+    val json = RemoteMessageConverter.toJson({
+      new GetDefinedFunctions("stub", "stub-client")
+    })
+
+    assert(json.isInstanceOf[String])
+    assert(isJson(json))
+
+    val resRAW = RemoteMessageConverter.unpackAnyMsg(json)
+    assert(resRAW.isInstanceOf[GetDefinedFunctions])
+
+    val res = resRAW.asInstanceOf[GetDefinedFunctions]
+
+    assertEquals(res.moduleIdentity, "stub")
+    assertEquals(res.clientIdentity(), "stub-client")
+  }
+
+  test("convert PlatformVar remote message to json and back") {
+
+    val json = RemoteMessageConverter.toJson({
+      new PlatformVar("stub", "stub-client", "worker1233", "test-var-name", new gDouble(123.9))
+    })
+
+    assert(json.isInstanceOf[String])
+    assert(isJson(json))
+
+    val resRAW = RemoteMessageConverter.unpackAnyMsg(json)
+    assert(resRAW.isInstanceOf[PlatformVar])
+
+    val res = resRAW.asInstanceOf[PlatformVar]
+
+    assertEquals(res.moduleIdentity, "stub")
+    assertEquals(res.clientIdentity(), "stub-client")
+    assertEquals(res.workerIdentity(), "worker1233")
+    assertEquals(res.name, "test-var-name")
+
+    val valueRAW = res.msg
+    assert(valueRAW.isInstanceOf[gDouble])
+    assert(valueRAW.asInstanceOf[gDouble].value == 123.9)
+  }
+
+  test("convert PlatformVars remote message to json and back") {
+
+    val json = RemoteMessageConverter.toJson({
+      new PlatformVars(
+        "stub",
+        "stub-client",
+        "worker1233",
+        Seq[Param](new Param("test-param-name", new gString("123.9", "'"))).toArray
+      )
+    })
+
+    assert(json.isInstanceOf[String])
+    assert(isJson(json))
+
+    val resRAW = RemoteMessageConverter.unpackAnyMsg(json)
+    assert(resRAW.isInstanceOf[PlatformVars])
+
+    val res = resRAW.asInstanceOf[PlatformVars]
+
+    assertEquals(res.moduleIdentity, "stub")
+    assertEquals(res.clientIdentity(), "stub-client")
+    assertEquals(res.workerIdentity(), "worker1233")
+
+    val vars = res.vars
+    assert(vars.length == 1)
+
+    {
+      val value = vars(0)
+      assertEquals(value.name, "test-param-name")
+
+      val msgRAW = value.msg
+      assert(msgRAW.isInstanceOf[gString])
+      val msg = msgRAW.asInstanceOf[gString]
+      assertEquals(msg.value, "123.9")
+    }
+  }
+
+  test("convert PlatformVarsNames remote message to json and back") {
+
+    val json = RemoteMessageConverter.toJson({
+      new PlatformVarsNames(
+        "stub",
+        "stub-client",
+        "worker1233",
+        Seq[String]("test-var-name1", "test-var-name2").toArray
+      )
+    })
+
+    assert(json.isInstanceOf[String])
+    assert(isJson(json))
+
+    val resRAW = RemoteMessageConverter.unpackAnyMsg(json)
+    assert(resRAW.isInstanceOf[PlatformVarsNames])
+
+    val res = resRAW.asInstanceOf[PlatformVarsNames]
+
+    assertEquals(res.moduleIdentity, "stub")
+    assertEquals(res.clientIdentity(), "stub-client")
+    assertEquals(res.workerIdentity(), "worker1233")
+
+    val vars = res.names
+    assert(vars.length == 2)
+
+    assertEquals(vars(0), "test-var-name1")
+    assertEquals(vars(1), "test-var-name2")
+  }
+
+  test("convert PlatformVarsWereSet remote message to json and back") {
+
+    val json = RemoteMessageConverter.toJson({
+      new PlatformVarsWereSet(
+        "stub",
+        "stub-client",
+        "worker1233", {
+          val names: util.ArrayList[String] = new util.ArrayList()
+          names.add("test-var-name1")
+          names.add("test-var-name2")
+          names
+        }
+      )
+    })
+
+    assert(json.isInstanceOf[String])
+    assert(isJson(json))
+
+    val resRAW = RemoteMessageConverter.unpackAnyMsg(json)
+    assert(resRAW.isInstanceOf[PlatformVarsWereSet])
+
+    val res = resRAW.asInstanceOf[PlatformVarsWereSet]
+
+    assertEquals(res.moduleIdentity, "stub")
+    assertEquals(res.clientIdentity(), "stub-client")
+    assertEquals(res.workerIdentity(), "worker1233")
+
+    val vars = res.names
+    assert(vars.size() == 2)
+
+    assertEquals(vars.get(0), "test-var-name1")
+    assertEquals(vars.get(1), "test-var-name2")
+  }
+
+  test("convert PlatformVarWasSet remote message to json and back") {
+
+    val json = RemoteMessageConverter.toJson({
+      new PlatformVarWasSet("stub", "stub-client", "worker1233", "test-var-name1")
+    })
+
+    assert(json.isInstanceOf[String])
+    assert(isJson(json))
+
+    val resRAW = RemoteMessageConverter.unpackAnyMsg(json)
+    assert(resRAW.isInstanceOf[PlatformVarWasSet])
+
+    val res = resRAW.asInstanceOf[PlatformVarWasSet]
+
+    assertEquals(res.moduleIdentity, "stub")
+    assertEquals(res.clientIdentity(), "stub-client")
+    assertEquals(res.workerIdentity(), "worker1233")
+    assertEquals(res.name, "test-var-name1")
+  }
+
+  test("convert ShutDown remote message to json and back") {
+
+    val json = RemoteMessageConverter.toJson({
+      new ShutDown("stub", "stub-client")
+    })
+
+    assert(json.isInstanceOf[String])
+    assert(isJson(json))
+
+    val resRAW = RemoteMessageConverter.unpackAnyMsg(json)
+    assert(resRAW.isInstanceOf[ShutDown])
+
+    val res = resRAW.asInstanceOf[ShutDown]
+
+    assertEquals(res.moduleIdentity, "stub")
+    assertEquals(res.clientIdentity(), "stub-client")
   }
 
 }

@@ -1,7 +1,9 @@
 package org.mixql.platform.demo.procedures
 
 import org.mixql.core.context.Context
-import org.mixql.platform.demo.logger.{logInfo}
+import org.mixql.platform.demo.logger.{logInfo, logWarn}
+import org.mixql.core.context.gtype.none
+import org.mixql.core.engine.Engine
 
 object SimpleFuncs {
 
@@ -32,6 +34,25 @@ object SimpleFuncs {
         val engineNames = ctx.engineNames
         logInfo("[get_engines_list] supported engines: " + engineNames.mkString(","))
         engineNames.toArray
+      }
+    }
+
+  val closeEngine =
+    new ((Context, String) => none) {
+
+      override def apply(ctx: Context, engineName: String = ""): none = {
+        logInfo("[close_engine] started")
+        val engine: Engine =
+          if engineName.isEmpty then ctx.currentEngine
+          else ctx.getEngine(engineName.trim).get
+
+        if engine.isInstanceOf[AutoCloseable] then
+          val closableEngine = engine.asInstanceOf[AutoCloseable]
+          logInfo("[close_engine] trigger engine's " + engine.name + " close")
+          closableEngine.close()
+        else logWarn("[close_engine] unsupported engine " + engine.name + ". It's not AutoCloseable. Ignore it")
+
+        new none()
       }
     }
 }

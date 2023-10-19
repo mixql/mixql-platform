@@ -1,8 +1,8 @@
-import org.mixql.core.context.gtype.Type
+import org.mixql.core.context.mtype.MType
 import org.mixql.engine.sqlite.SQLightJDBC
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
-import org.mixql.core.context.{EngineContext, gtype}
+import org.mixql.core.context.{EngineContext, mtype}
 import org.mixql.engine.core.PlatformContext
 import org.mixql.engine.core.logger.ModuleLogger
 
@@ -12,8 +12,8 @@ object MixqlEngineSqliteTest:
   var context: SQLightJDBC = null
   val identity = "MixqlEngineSqliteTest"
 
-  val engineParams: mutable.Map[String, Type] = mutable
-    .Map("mixql.org.engine.sqlight.db.path" -> gtype.string("jdbc:sqlite::memory:", ""))
+  val engineParams: mutable.Map[String, MType] = mutable
+    .Map("mixql.org.engine.sqlight.db.path" -> mtype.MString("jdbc:sqlite::memory:", ""))
   val logger = new ModuleLogger(identity)
 
 class MixqlEngineSqliteTest extends AnyFlatSpec with BeforeAndAfterAll:
@@ -24,7 +24,7 @@ class MixqlEngineSqliteTest extends AnyFlatSpec with BeforeAndAfterAll:
     context = SQLightJDBC(identity, new PlatformContextTest(engineParams, identity))
     super.beforeAll()
 
-  def execute(code: String): gtype.Type =
+  def execute(code: String): mtype.MType =
     import org.mixql.remote.GtypeConverter
 
     val res = context.execute(code)

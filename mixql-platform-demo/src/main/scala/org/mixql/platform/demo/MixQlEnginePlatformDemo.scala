@@ -9,7 +9,7 @@ import java.io.File
 import org.mixql.cluster.{BrokerModule, ClientModule}
 import org.mixql.core.engine.Engine
 import org.mixql.net.PortOperations
-import org.mixql.core.context.{Context, gtype}
+import org.mixql.core.context.{Context, mtype}
 import org.mixql.engine.stub.local.EngineStubLocal
 import org.mixql.engine.sqlite.local.EngineSqlightLocal
 import org.mixql.platform.demo.engines.executors.{MixQlEngineSqliteExecutor, MixQlEngineStubExecutor}
@@ -79,8 +79,8 @@ object MixQlEnginePlatformDemo:
     )
 
     logDebug(s"Init variables for mixql context")
-    val variables: mutable.Map[String, gtype.Type] = mutable.Map[String, gtype.Type](
-      "mixql.org.engine.sqlight.db.path" -> gtype.string(config.getString("mixql.org.engine.sqlight.db.path"))
+    val variables: mutable.Map[String, mtype.MType] = mutable.Map[String, mtype.MType](
+      "mixql.org.engine.sqlight.db.path" -> mtype.MString(config.getString("mixql.org.engine.sqlight.db.path"))
     )
 
     logDebug(s"Mixql engine demo platform: init Cluster context")

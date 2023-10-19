@@ -1,9 +1,9 @@
-package org.mixql.remote.messages.type.gtype;
+package org.mixql.remote.messages.rtype.mtype;
 
-public class Bool implements IGtypeMessage {
+public class MBool implements IGtypeMessage {
     public Boolean value;
 
-    public Bool(Boolean value) {
+    public MBool(Boolean value) {
         this.value = value;
     }
 
@@ -19,8 +19,8 @@ public class Bool implements IGtypeMessage {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof Bool) {
-            int res = ((Bool) obj).value.compareTo(value);
+        if (obj instanceof MBool) {
+            int res = ((MBool) obj).value.compareTo(value);
             if (res == 0)
                 return true;
             else

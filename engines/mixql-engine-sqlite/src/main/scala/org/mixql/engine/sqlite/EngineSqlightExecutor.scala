@@ -1,14 +1,13 @@
 package org.mixql.engine.sqlite
 
-import org.mixql.core.context.gtype
 import scala.collection.mutable
 import org.mixql.engine.core.{BrakeException, IModuleExecutor, PlatformContext}
 import org.mixql.engine.core.logger.ModuleLogger
 import org.mixql.remote.messages
-import org.mixql.remote.messages.`type`.gtype.Bool
 import org.mixql.remote.messages.client.{Execute, ExecuteFunction}
 import org.mixql.remote.messages.module.DefinedFunctions
-import org.mixql.remote.messages.{Message}
+import org.mixql.remote.messages.Message
+import org.mixql.remote.messages.rtype.mtype.MBool
 
 object EngineSqlightExecutor extends IModuleExecutor:
 

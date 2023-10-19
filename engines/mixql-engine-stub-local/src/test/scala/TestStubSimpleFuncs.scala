@@ -1,13 +1,13 @@
 import org.scalatest.funsuite.AnyFunSuite
 import org.mixql.engine.stub.local.{EngineStubLocal, StubContext}
-import org.mixql.core.context.{Context, EngineContext, gtype}
+import org.mixql.core.context.{Context, EngineContext, mtype}
 import scala.collection.mutable
 
 class TestStubSimpleFuncs extends AnyFunSuite {
   val engine = EngineStubLocal
 
   test("Invoke stub_simple_proc function") {
-    val res = gtype.unpack(
+    val res = mtype.unpack(
       engine.executeFunc(
         "stub_simple_proc",
         null, {
@@ -24,7 +24,7 @@ class TestStubSimpleFuncs extends AnyFunSuite {
     val b = 5
 
     val res = {
-      gtype.unpack(
+      mtype.unpack(
         engine.executeFunc(
           "stub_simple_proc_params",
           new EngineContext(
@@ -34,8 +34,8 @@ class TestStubSimpleFuncs extends AnyFunSuite {
             val kwargs: Map[String, Object] = Map.empty
             kwargs
           },
-          gtype.pack(a),
-          gtype.pack(b)
+          mtype.pack(a),
+          mtype.pack(b)
         )
       )
     }
@@ -49,7 +49,7 @@ class TestStubSimpleFuncs extends AnyFunSuite {
     val ctx = StubContext()
 
     val res = {
-      gtype.unpack({
+      mtype.unpack({
         engine.executeFunc(
           "stub_simple_proc_context_params",
           new EngineContext(
@@ -59,8 +59,8 @@ class TestStubSimpleFuncs extends AnyFunSuite {
             val kwargs: Map[String, Object] = Map.empty
             kwargs
           },
-          gtype.pack(a),
-          gtype.pack(b)
+          mtype.pack(a),
+          mtype.pack(b)
         )
       })
     }

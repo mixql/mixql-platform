@@ -1,8 +1,8 @@
-package org.mixql.remote.messages.type.gtype;
+package org.mixql.remote.messages.rtype.mtype;
 
-public class gInt implements IGtypeMessage {
+public class MInt implements IGtypeMessage {
     public long value;
-    public gInt(long value){
+    public MInt(long value){
         this.value = value;
     }
 
@@ -18,8 +18,8 @@ public class gInt implements IGtypeMessage {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof gInt) {
-            return ((gInt) obj).value == value;
+        if (obj instanceof MInt) {
+            return ((MInt) obj).value == value;
         }
         if (obj instanceof Long) {
             return (Long) obj == value;

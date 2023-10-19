@@ -1,7 +1,9 @@
 package org.mixql.platform.demo.procedures
 
 import org.mixql.core.context.Context
-import org.mixql.platform.demo.logger.{logInfo}
+import org.mixql.platform.demo.logger.{logInfo, logWarn}
+import org.mixql.core.context.mtype.MNone
+import org.mixql.core.engine.Engine
 
 object SimpleFuncs {
 

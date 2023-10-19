@@ -13,10 +13,10 @@ import org.mixql.remote.messages.broker.PlatformPongHeartBeat;
 import org.mixql.remote.messages.module.toBroker.EngineFailed;
 import org.mixql.remote.messages.module.toBroker.EngineIsReady;
 import org.mixql.remote.messages.module.toBroker.EnginePingHeartBeat;
-import org.mixql.remote.messages.type.gtype.*;
-import org.mixql.remote.messages.type.Param;
+import org.mixql.remote.messages.rtype.mtype.*;
+import org.mixql.remote.messages.rtype.Param;
 import org.mixql.remote.messages.module.worker.*;
-import org.mixql.remote.messages.type.Error;
+import org.mixql.remote.messages.rtype.Error;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -65,12 +65,12 @@ public class RemoteMessageConverter {
                         (String) anyMsgJsonObject.get("clientIdentity"),
                         (String) anyMsgJsonObject.get("statement")
                 );
-            case "org.mixql.remote.messages.type.Param":
+            case "org.mixql.remote.messages.rtype.Param":
                 return new Param(
                         (String) anyMsgJsonObject.get("name"),
                         _unpackAnyMsg((JSONObject) anyMsgJsonObject.get("msg"))
                 );
-            case "org.mixql.remote.messages.type.Error":
+            case "org.mixql.remote.messages.rtype.Error":
                 return new Error(
                         (String) anyMsgJsonObject.get("errorMsg")
                 );
@@ -93,32 +93,32 @@ public class RemoteMessageConverter {
                         parseStringsArray((JSONArray) anyMsgJsonObject.get("arr")),
                         (String) anyMsgJsonObject.get("clientIdentity")
                 );
-            case "org.mixql.remote.messages.type.gtype.NULL":
-                return new NULL();
-            case "org.mixql.remote.messages.type.gtype.NONE":
-                return new NONE();
-            case "org.mixql.remote.messages.type.gtype.Bool":
-                return new Bool(
+            case "org.mixql.remote.messages.rtype.mtype.MNULL":
+                return new MNULL();
+            case "org.mixql.remote.messages.rtype.mtype.MNONE":
+                return new MNONE();
+            case "org.mixql.remote.messages.rtype.mtype.MBool":
+                return new MBool(
                         Boolean.parseBoolean((String) anyMsgJsonObject.get("value"))
                 );
-            case "org.mixql.remote.messages.type.gtype.gInt":
-                return new gInt(
+            case "org.mixql.remote.messages.rtype.mtype.MInt":
+                return new MInt(
                         Long.parseLong((String) anyMsgJsonObject.get("value"))
                 );
-            case "org.mixql.remote.messages.type.gtype.gDouble":
-                return new gDouble(
+            case "org.mixql.remote.messages.rtype.mtype.MDouble":
+                return new MDouble(
                         Double.parseDouble((String) anyMsgJsonObject.get("value"))
                 );
-            case "org.mixql.remote.messages.type.gtype.gString":
-                return new gString(
+            case "org.mixql.remote.messages.rtype.mtype.MString":
+                return new MString(
                         (String) anyMsgJsonObject.get("value"),
                         (String) anyMsgJsonObject.get("quote")
                 );
-            case "org.mixql.remote.messages.type.gtype.gArray":
-                return new gArray(
+            case "org.mixql.remote.messages.rtype.mtype.MArray":
+                return new MArray(
                         parseMessagesArray((JSONArray) anyMsgJsonObject.get("arr"))
                 );
-            case "org.mixql.remote.messages.type.gtype.map":
+            case "org.mixql.remote.messages.rtype.mtype.MMap":
                 JSONArray mapJsonObject = (JSONArray) anyMsgJsonObject.get("map");
                 Map<Message, Message> m = new HashMap<>();
                 for (int i = 0; i < mapJsonObject.size(); i++) {
@@ -130,7 +130,7 @@ public class RemoteMessageConverter {
                             )
                     );
                 }
-                return new map(m);
+                return new MMap(m);
             case "org.mixql.remote.messages.module.worker.GetPlatformVar":
                 return new GetPlatformVar(
                         (String) anyMsgJsonObject.get("worker"),
@@ -429,37 +429,37 @@ public class RemoteMessageConverter {
                     ((DefinedFunctions) msg).clientIdentity());
         }
 
-        if (msg instanceof NULL) {
+        if (msg instanceof MNULL) {
             return JsonUtils.buildNULL(msg.type());
         }
 
-        if (msg instanceof NONE) {
+        if (msg instanceof MNONE) {
             return JsonUtils.buildNONE(msg.type());
         }
 
-        if (msg instanceof Bool) {
-            return JsonUtils.buildBool(msg.type(), ((Bool) msg).value);
+        if (msg instanceof MBool) {
+            return JsonUtils.buildBool(msg.type(), ((MBool) msg).value);
         }
 
-        if (msg instanceof gInt) {
-            return JsonUtils.buildInt(msg.type(), ((gInt) msg).value);
+        if (msg instanceof MInt) {
+            return JsonUtils.buildInt(msg.type(), ((MInt) msg).value);
         }
 
-        if (msg instanceof gDouble) {
-            return JsonUtils.buildDouble(msg.type(), ((gDouble) msg).value);
+        if (msg instanceof MDouble) {
+            return JsonUtils.buildDouble(msg.type(), ((MDouble) msg).value);
         }
 
-        if (msg instanceof gString) {
-            return JsonUtils.buildGString(msg.type(), ((gString) msg).value, ((gString) msg).quote);
+        if (msg instanceof MString) {
+            return JsonUtils.buildGString(msg.type(), ((MString) msg).value, ((MString) msg).quote);
         }
 
-        if (msg instanceof gArray) {
-            return JsonUtils.buildGArray(msg.type(), _toJsonObjects(((gArray) msg).arr));
+        if (msg instanceof MArray) {
+            return JsonUtils.buildGArray(msg.type(), _toJsonObjects(((MArray) msg).arr));
         }
 
-        if (msg instanceof map) {
-            Set<Message> keys = ((map) msg).getMap().keySet();
-            Collection<Message> values = ((map) msg).getMap().values();
+        if (msg instanceof MMap) {
+            Set<Message> keys = ((MMap) msg).getMap().keySet();
+            Collection<Message> values = ((MMap) msg).getMap().values();
             return JsonUtils.buildMap(msg.type(), _toJsonObjects(keys.toArray(new Message[keys.size()])),
                     _toJsonObjects(values.toArray(new Message[values.size()])));
         }

@@ -1,16 +1,13 @@
-package org.mixql.remote.messages.type.gtype;
+package org.mixql.remote.messages.rtype.mtype;
 
-import org.mixql.core.context.gtype.Type;
-import org.mixql.core.context.gtype.array;
-import org.mixql.core.context.gtype.bool;
 import org.mixql.remote.messages.Message;
 
 import java.util.Arrays;
 
-public class gArray implements IGtypeMessage {
+public class MArray implements IGtypeMessage {
     public Message[] arr;
 
-    public gArray(Message[] arr){
+    public MArray(Message[] arr){
         this.arr = arr;
     }
 
@@ -20,8 +17,8 @@ public class gArray implements IGtypeMessage {
         buffer.append("[");
         for (int i = 0; i <= arr.length - 1; i++) {
             Message a = arr[i];
-            if (a instanceof gString)
-                buffer.append(((gString) a).asLiteral());
+            if (a instanceof MString)
+                buffer.append(((MString) a).asLiteral());
             else
                 buffer.append(a.toString());
             if (i != arr.length - 1) {
@@ -39,8 +36,8 @@ public class gArray implements IGtypeMessage {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof gArray) {
-            Message[] otherArr = ((gArray) obj).arr;
+        if (obj instanceof MArray) {
+            Message[] otherArr = ((MArray) obj).arr;
             return Arrays.equals(arr, otherArr);
         }
         return false;

@@ -1,8 +1,8 @@
 import org.json.{JSONException, JSONObject}
-import org.mixql.core.context.gtype
+import org.mixql.core.context.mtype
 import org.mixql.remote.{GtypeConverter, RemoteMessageConverter}
 import org.mixql.remote.messages.Message
-import org.mixql.remote.messages.`type`.gtype.{Bool, NONE, NULL, gArray, gDouble, gInt, gString, map}
+import org.mixql.remote.messages.rtype.mtype.{MBool, MNONE, MNULL, MArray, MDouble, MInt, MString, MMap}
 import org.mixql.remote.messages.broker.{
   CouldNotConvertMsgError,
   EngineStartedTimeOutElapsedError,
@@ -30,7 +30,7 @@ import org.mixql.remote.messages.module.{
   GetDefinedFunctionsError
 }
 import org.mixql.remote.messages.module.toBroker.{EngineFailed, EngineIsReady, EnginePingHeartBeat}
-import org.mixql.remote.messages.`type`.{Error, Param}
+import org.mixql.remote.messages.rtype.{Error, Param}
 import org.mixql.remote.messages.module.worker.{
   GetPlatformVar,
   GetPlatformVars,
@@ -57,122 +57,122 @@ class RemoteMessageConverterTest extends munit.FunSuite {
 
   test("convert Bool remote message to json and back") {
 
-    val json = RemoteMessageConverter.toJson(new Bool(false))
+    val json = RemoteMessageConverter.toJson(new MBool(false))
 
     assert(json.isInstanceOf[String])
     assert(isJson(json))
 
     val res = RemoteMessageConverter.unpackAnyMsg(json)
-    assert(res.isInstanceOf[Bool])
-    assert(!res.asInstanceOf[Bool].value)
+    assert(res.isInstanceOf[MBool])
+    assert(!res.asInstanceOf[MBool].value)
   }
 
   test("convert gArray remote message to json and back") {
 
     val json = RemoteMessageConverter
-      .toJson(new gArray(Seq[Message](new gString("123.9", "'"), new gString("8.8", "\"")).toArray))
+      .toJson(new MArray(Seq[Message](new MString("123.9", "'"), new MString("8.8", "\"")).toArray))
 
     assert(json.isInstanceOf[String])
     assert(isJson(json))
 
     val res = RemoteMessageConverter.unpackAnyMsg(json)
-    assert(res.isInstanceOf[gArray])
-    val arr = res.asInstanceOf[gArray].arr
+    assert(res.isInstanceOf[MArray])
+    val arr = res.asInstanceOf[MArray].arr
 
     assertEquals(arr.length, 2)
 
     {
       val value: Message = arr(0)
-      assert(value.isInstanceOf[gString])
-      assertEquals(value.asInstanceOf[gString].quoted(), "'123.9'")
+      assert(value.isInstanceOf[MString])
+      assertEquals(value.asInstanceOf[MString].quoted(), "'123.9'")
     }
 
     {
       val val2: Message = arr(1)
-      assert(val2.isInstanceOf[gString])
-      assertEquals(val2.asInstanceOf[gString].quoted(), "\"8.8\"")
+      assert(val2.isInstanceOf[MString])
+      assertEquals(val2.asInstanceOf[MString].quoted(), "\"8.8\"")
     }
   }
 
   test("convert gDouble remote message to json and back") {
 
-    val json = RemoteMessageConverter.toJson(new gDouble(123.9))
+    val json = RemoteMessageConverter.toJson(new MDouble(123.9))
 
     assert(json.isInstanceOf[String])
     assert(isJson(json))
 
     val res = RemoteMessageConverter.unpackAnyMsg(json)
-    assert(res.isInstanceOf[gDouble])
-    assertEqualsDouble(Double.box(res.asInstanceOf[gDouble].value), Double.box(123.9), Double.box(0.0001))
+    assert(res.isInstanceOf[MDouble])
+    assertEqualsDouble(Double.box(res.asInstanceOf[MDouble].value), Double.box(123.9), Double.box(0.0001))
   }
 
   test("convert gInt remote message to json and back") {
 
-    val json = RemoteMessageConverter.toJson(new gInt(123))
+    val json = RemoteMessageConverter.toJson(new MInt(123))
 
     assert(json.isInstanceOf[String])
     assert(isJson(json))
 
     val res = RemoteMessageConverter.unpackAnyMsg(json)
-    assert(res.isInstanceOf[gInt])
-    assertEquals(res.asInstanceOf[gInt].value.toString, 123.toString)
+    assert(res.isInstanceOf[MInt])
+    assertEquals(res.asInstanceOf[MInt].value.toString, 123.toString)
   }
 
   test("convert gString remote message to json and back") {
 
-    val json = RemoteMessageConverter.toJson(new gString("123.9", "'"))
+    val json = RemoteMessageConverter.toJson(new MString("123.9", "'"))
 
     assert(json.isInstanceOf[String])
     assert(isJson(json))
 
     val res = RemoteMessageConverter.unpackAnyMsg(json)
-    assert(res.isInstanceOf[gString])
-    assertEquals(res.asInstanceOf[gString].value, "123.9")
-    assertEquals(res.asInstanceOf[gString].quoted(), "'123.9'")
+    assert(res.isInstanceOf[MString])
+    assertEquals(res.asInstanceOf[MString].value, "123.9")
+    assertEquals(res.asInstanceOf[MString].quoted(), "'123.9'")
   }
 
-  test("convert org.mixql.remote.messages.type.gtype.map to json and back") {
+  test("convert org.mixql.remote.messages.type.mtype.MMap to json and back") {
     val m = new java.util.HashMap[Message, Message]()
-    m.put(new gString("123.9", "'"), new Bool(false))
-    m.put(new gString("8.8", "\""), new gDouble(123.9))
+    m.put(new MString("123.9", "'"), new MBool(false))
+    m.put(new MString("8.8", "\""), new MDouble(123.9))
 
-    val json = RemoteMessageConverter.toJson(new map(m))
+    val json = RemoteMessageConverter.toJson(new MMap(m))
     assert(json.isInstanceOf[String])
     assert(isJson(json))
 
     val res = RemoteMessageConverter.unpackAnyMsg(json)
-    assert(res.isInstanceOf[map])
-    val gMap = res.asInstanceOf[map].getMap
+    assert(res.isInstanceOf[MMap])
+    val gMap = res.asInstanceOf[MMap].getMap
 
-    val val1: Message = gMap.get(new gString("8.8", "\""))
-    assert(val1.isInstanceOf[gDouble])
-    assertEqualsDouble(Double.box(val1.asInstanceOf[gDouble].value), Double.box(123.9), Double.box(0.0001))
+    val val1: Message = gMap.get(new MString("8.8", "\""))
+    assert(val1.isInstanceOf[MDouble])
+    assertEqualsDouble(Double.box(val1.asInstanceOf[MDouble].value), Double.box(123.9), Double.box(0.0001))
 
-    val val2: Message = gMap.get(new gString("123.9", "'"))
-    assert(val2.isInstanceOf[Bool])
-    assert(!val2.asInstanceOf[Bool].value)
+    val val2: Message = gMap.get(new MString("123.9", "'"))
+    assert(val2.isInstanceOf[MBool])
+    assert(!val2.asInstanceOf[MBool].value)
   }
 
   test("convert NONE remote message to json and back") {
 
-    val json = RemoteMessageConverter.toJson(new NONE())
+    val json = RemoteMessageConverter.toJson(new MNONE())
 
     assert(json.isInstanceOf[String])
     assert(isJson(json))
 
     val res = RemoteMessageConverter.unpackAnyMsg(json)
-    assert(res.isInstanceOf[NONE])
+    assert(res.isInstanceOf[MNONE])
   }
 
   test("convert NULL remote message to json and back") {
 
-    val json = RemoteMessageConverter.toJson(new NULL())
+    val json = RemoteMessageConverter.toJson(new MNULL())
 
     assert(json.isInstanceOf[String])
     assert(isJson(json))
 
     val res = RemoteMessageConverter.unpackAnyMsg(json)
-    assert(res.isInstanceOf[NULL])
+    assert(res.isInstanceOf[MNULL])
   }
 
   test("convert EnginePingHeartBeat remote message to json and back") {
@@ -190,8 +190,8 @@ class RemoteMessageConverterTest extends munit.FunSuite {
 
   test("convert InvokedPlatformFunctionResult remote message to json") {
     val m = new java.util.HashMap[Message, Message]()
-    m.put(new gString("123.9", "'"), new org.mixql.remote.messages.`type`.gtype.Bool(false))
-    m.put(new gString("8.8", "\""), new org.mixql.remote.messages.`type`.gtype.gDouble(123.9))
+    m.put(new MString("123.9", "'"), new MBool(false))
+    m.put(new MString("8.8", "\""), new MDouble(123.9))
 
     val json = RemoteMessageConverter.toJson(
       new InvokedPlatformFunctionResult(
@@ -199,14 +199,14 @@ class RemoteMessageConverterTest extends munit.FunSuite {
         "stub",
         "worker1234566",
         "test_func",
-        new gArray(
+        new MArray(
           Seq(
             {
-              new gString("test", "")
+              new MString("test", "")
             },
-            new map(m),
-            new gArray({
-              Seq(new map(m)).toArray
+            new MMap(m),
+            new MArray({
+              Seq(new MMap(m)).toArray
             })
           ).toArray
         )
@@ -230,41 +230,41 @@ class RemoteMessageConverterTest extends munit.FunSuite {
 
     val funcResult = msg.result
 
-    assert(funcResult.isInstanceOf[gArray])
-    val funcResultArr = funcResult.asInstanceOf[gArray].arr.toSeq
+    assert(funcResult.isInstanceOf[MArray])
+    val funcResultArr = funcResult.asInstanceOf[MArray].arr.toSeq
 
     val firstElem = funcResultArr.head
-    assert(firstElem.isInstanceOf[gString])
-    assertEquals(firstElem.asInstanceOf[gString].value, "test")
+    assert(firstElem.isInstanceOf[MString])
+    assertEquals(firstElem.asInstanceOf[MString].value, "test")
 
     {
-      assert(funcResultArr(1).isInstanceOf[map])
-      val secondElement = GtypeConverter.messageToGtype(funcResultArr(1)).asInstanceOf[gtype.map]
-      val val1 = secondElement.getMap.get(new gtype.string("8.8", "\""))
-      assert(val1.isInstanceOf[gtype.gDouble])
-      assert(val1.asInstanceOf[gtype.gDouble].getValue == 123.9)
+      assert(funcResultArr(1).isInstanceOf[MMap])
+      val secondElement = GtypeConverter.messageToGtype(funcResultArr(1)).asInstanceOf[mtype.MMap]
+      val val1 = secondElement.getMap.get(new mtype.MString("8.8", "\""))
+      assert(val1.isInstanceOf[mtype.MDouble])
+      assert(val1.asInstanceOf[mtype.MDouble].getValue == 123.9)
 
-      val val2 = secondElement.getMap.get(new gtype.string("123.9", "'"))
-      assert(val2.isInstanceOf[gtype.bool])
-      assert(!val2.asInstanceOf[gtype.bool].getValue)
+      val val2 = secondElement.getMap.get(new mtype.MString("123.9", "'"))
+      assert(val2.isInstanceOf[mtype.MBool])
+      assert(!val2.asInstanceOf[mtype.MBool].getValue)
     }
 
     {
-      assert(funcResultArr(2).isInstanceOf[gArray])
-      val thirdElement = funcResultArr(2).asInstanceOf[gArray]
+      assert(funcResultArr(2).isInstanceOf[MArray])
+      val thirdElement = funcResultArr(2).asInstanceOf[MArray]
       val thirdElementArr = thirdElement.arr
 
       val val1Third = thirdElementArr.head
-      assert(val1Third.isInstanceOf[map])
-      val mapSecond = GtypeConverter.messageToGtype(val1Third).asInstanceOf[gtype.map]
+      assert(val1Third.isInstanceOf[MMap])
+      val mapSecond = GtypeConverter.messageToGtype(val1Third).asInstanceOf[mtype.MMap]
 
-      val val1 = mapSecond.getMap.get(new gtype.string("8.8", "\""))
-      assert(val1.isInstanceOf[gtype.gDouble])
-      assert(val1.asInstanceOf[gtype.gDouble].getValue == 123.9)
+      val val1 = mapSecond.getMap.get(new mtype.MString("8.8", "\""))
+      assert(val1.isInstanceOf[mtype.MDouble])
+      assert(val1.asInstanceOf[mtype.MDouble].getValue == 123.9)
 
-      val val2 = mapSecond.getMap.get(new gtype.string("123.9", "'"))
-      assert(val2.isInstanceOf[gtype.bool])
-      assert(!val2.asInstanceOf[gtype.bool].getValue)
+      val val2 = mapSecond.getMap.get(new mtype.MString("123.9", "'"))
+      assert(val2.isInstanceOf[mtype.MBool])
+      assert(!val2.asInstanceOf[mtype.MBool].getValue)
 
     }
     //////////////////////////////////////////////////////////////////////////////////////
@@ -291,7 +291,7 @@ class RemoteMessageConverterTest extends munit.FunSuite {
   test("convert ExecuteResult remote message to json and back") {
 
     val json = RemoteMessageConverter.toJson({
-      new ExecuteResult("test-stmt", new gString("stub", "").asInstanceOf[Message], "client-stub")
+      new ExecuteResult("test-stmt", new MString("stub", "").asInstanceOf[Message], "client-stub")
     })
 
     assert(json.isInstanceOf[String])
@@ -301,8 +301,8 @@ class RemoteMessageConverterTest extends munit.FunSuite {
     assert(res.isInstanceOf[ExecuteResult])
     val msg = res.asInstanceOf[ExecuteResult]
     assertEquals(msg.clientIdentity(), "client-stub")
-    assert(msg.result.isInstanceOf[gString])
-    assertEquals(msg.result.asInstanceOf[gString].value, "stub")
+    assert(msg.result.isInstanceOf[MString])
+    assertEquals(msg.result.asInstanceOf[MString].value, "stub")
     assertEquals(msg.stmt, "test-stmt")
   }
 
@@ -387,7 +387,7 @@ class RemoteMessageConverterTest extends munit.FunSuite {
   test("convert Param remote message to json and back") {
 
     val json = RemoteMessageConverter.toJson({
-      new Param("test-param-name", new gString("123.9", "'"))
+      new Param("test-param-name", new MString("123.9", "'"))
     })
 
     assert(json.isInstanceOf[String])
@@ -399,15 +399,15 @@ class RemoteMessageConverterTest extends munit.FunSuite {
     assertEquals(param.name, "test-param-name")
 
     val msgRAW = param.msg
-    assert(msgRAW.isInstanceOf[gString])
-    val msg = msgRAW.asInstanceOf[gString]
+    assert(msgRAW.isInstanceOf[MString])
+    val msg = msgRAW.asInstanceOf[MString]
     assertEquals(msg.value, "123.9")
   }
 
   test("convert ExecuteFunction remote message to json and back") {
 
     val json = RemoteMessageConverter.toJson({
-      new ExecuteFunction("stub", "stub-client", "testFuncName", Seq[Message](new gString("123.9", "'")).toArray)
+      new ExecuteFunction("stub", "stub-client", "testFuncName", Seq[Message](new MString("123.9", "'")).toArray)
     })
 
     assert(json.isInstanceOf[String])
@@ -426,8 +426,8 @@ class RemoteMessageConverterTest extends munit.FunSuite {
 
     {
       val value = res.params(0)
-      assert(value.isInstanceOf[gString])
-      assertEquals(value.asInstanceOf[gString].value, "123.9")
+      assert(value.isInstanceOf[MString])
+      assertEquals(value.asInstanceOf[MString].value, "123.9")
     }
   }
 
@@ -452,7 +452,7 @@ class RemoteMessageConverterTest extends munit.FunSuite {
   test("convert PlatformVar remote message to json and back") {
 
     val json = RemoteMessageConverter.toJson({
-      new PlatformVar("stub", "stub-client", "worker1233", "test-var-name", new gDouble(123.9))
+      new PlatformVar("stub", "stub-client", "worker1233", "test-var-name", new MDouble(123.9))
     })
 
     assert(json.isInstanceOf[String])
@@ -469,8 +469,8 @@ class RemoteMessageConverterTest extends munit.FunSuite {
     assertEquals(res.name, "test-var-name")
 
     val valueRAW = res.msg
-    assert(valueRAW.isInstanceOf[gDouble])
-    assert(valueRAW.asInstanceOf[gDouble].value == 123.9)
+    assert(valueRAW.isInstanceOf[MDouble])
+    assert(valueRAW.asInstanceOf[MDouble].value == 123.9)
   }
 
   test("convert PlatformVars remote message to json and back") {
@@ -480,7 +480,7 @@ class RemoteMessageConverterTest extends munit.FunSuite {
         "stub",
         "stub-client",
         "worker1233",
-        Seq[Param](new Param("test-param-name", new gString("123.9", "'"))).toArray
+        Seq[Param](new Param("test-param-name", new MString("123.9", "'"))).toArray
       )
     })
 
@@ -504,8 +504,8 @@ class RemoteMessageConverterTest extends munit.FunSuite {
       assertEquals(value.name, "test-param-name")
 
       val msgRAW = value.msg
-      assert(msgRAW.isInstanceOf[gString])
-      val msg = msgRAW.asInstanceOf[gString]
+      assert(msgRAW.isInstanceOf[MString])
+      val msg = msgRAW.asInstanceOf[MString]
       assertEquals(msg.value, "123.9")
     }
   }
@@ -718,7 +718,7 @@ class RemoteMessageConverterTest extends munit.FunSuite {
       new InvokeFunction(
         "worker1234",
         "funcNameTest",
-        Seq[Message](new gString("123.9", "'"), new gDouble(123.9)).toArray,
+        Seq[Message](new MString("123.9", "'"), new MDouble(123.9)).toArray,
         "stub-client"
       )
     })
@@ -740,15 +740,15 @@ class RemoteMessageConverterTest extends munit.FunSuite {
 
     {
       val valueRAW = args(0)
-      assert(valueRAW.isInstanceOf[gString])
-      val arg = valueRAW.asInstanceOf[gString]
+      assert(valueRAW.isInstanceOf[MString])
+      val arg = valueRAW.asInstanceOf[MString]
       assertEquals(arg.value, "123.9")
     }
 
     {
       val valueRAW = args(1)
-      assert(valueRAW.isInstanceOf[gDouble])
-      val arg = valueRAW.asInstanceOf[gDouble]
+      assert(valueRAW.isInstanceOf[MDouble])
+      val arg = valueRAW.asInstanceOf[MDouble]
       assertEqualsDouble(Double.box(arg.value), Double.box(123.9), Double.box(0.0001))
     }
   }
@@ -757,7 +757,7 @@ class RemoteMessageConverterTest extends munit.FunSuite {
 
     val json = RemoteMessageConverter.toJson({
       new SendMsgToPlatform(
-        new ExecuteResult("test-stmt", new gString("stub", "").asInstanceOf[Message], "client-stub"),
+        new ExecuteResult("test-stmt", new MString("stub", "").asInstanceOf[Message], "client-stub"),
         "worker1234"
       )
     })
@@ -776,15 +776,15 @@ class RemoteMessageConverterTest extends munit.FunSuite {
     assert(msgRAW.isInstanceOf[ExecuteResult])
     val msg = msgRAW.asInstanceOf[ExecuteResult]
     assertEquals(msg.clientIdentity(), "client-stub")
-    assert(msg.result.isInstanceOf[gString])
-    assertEquals(msg.result.asInstanceOf[gString].value, "stub")
+    assert(msg.result.isInstanceOf[MString])
+    assertEquals(msg.result.asInstanceOf[MString].value, "stub")
     assertEquals(msg.stmt, "test-stmt")
   }
 
   test("convert SetPlatformVar remote message to json and back") {
 
     val json = RemoteMessageConverter.toJson({
-      new SetPlatformVar("worker1234", "test-var-name", new gString("stub", ""), "stub-client")
+      new SetPlatformVar("worker1234", "test-var-name", new MString("stub", ""), "stub-client")
     })
 
     assert(json.isInstanceOf[String])
@@ -800,8 +800,8 @@ class RemoteMessageConverterTest extends munit.FunSuite {
     assertEquals(res.clientIdentity(), "stub-client")
 
     val msgRAW = res.msg
-    assert(msgRAW.isInstanceOf[gString])
-    val msg = msgRAW.asInstanceOf[gString]
+    assert(msgRAW.isInstanceOf[MString])
+    val msg = msgRAW.asInstanceOf[MString]
     assertEquals(msg.value, "stub")
   }
 
@@ -811,10 +811,10 @@ class RemoteMessageConverterTest extends munit.FunSuite {
       new SetPlatformVars(
         "worker1234", {
           val m = new java.util.HashMap[String, Message]()
-          m.put("test-var-name-1", new Bool(false))
-          m.put("test-var-name-2", new gDouble(123.9))
-          m.put("test-var-name-3", new gString("8.8", "\""))
-          m.put("test-var-name-4", new gString("123.9", "'"))
+          m.put("test-var-name-1", new MBool(false))
+          m.put("test-var-name-2", new MDouble(123.9))
+          m.put("test-var-name-3", new MString("8.8", "\""))
+          m.put("test-var-name-4", new MString("123.9", "'"))
           m
         },
         "stub-client"
@@ -840,8 +840,8 @@ class RemoteMessageConverterTest extends munit.FunSuite {
       val valueRAW = vars.get("test-var-name-1")
       assert(valueRAW != null)
 
-      assert(valueRAW.isInstanceOf[Bool])
-      val value = valueRAW.asInstanceOf[Bool]
+      assert(valueRAW.isInstanceOf[MBool])
+      val value = valueRAW.asInstanceOf[MBool]
       assert(!value.value)
     }
 
@@ -849,8 +849,8 @@ class RemoteMessageConverterTest extends munit.FunSuite {
       val valueRAW = vars.get("test-var-name-2")
       assert(valueRAW != null)
 
-      assert(valueRAW.isInstanceOf[gDouble])
-      val value = valueRAW.asInstanceOf[gDouble]
+      assert(valueRAW.isInstanceOf[MDouble])
+      val value = valueRAW.asInstanceOf[MDouble]
       assertEqualsDouble(Double.box(value.value), Double.box(123.9), Double.box(0.0001))
     }
 
@@ -858,8 +858,8 @@ class RemoteMessageConverterTest extends munit.FunSuite {
       val valueRAW = vars.get("test-var-name-3")
       assert(valueRAW != null)
 
-      assert(valueRAW.isInstanceOf[gString])
-      val value = valueRAW.asInstanceOf[gString]
+      assert(valueRAW.isInstanceOf[MString])
+      val value = valueRAW.asInstanceOf[MString]
       assertEquals(value.quoted(), "\"8.8\"")
     }
 
@@ -867,8 +867,8 @@ class RemoteMessageConverterTest extends munit.FunSuite {
       val valueRAW = vars.get("test-var-name-4")
       assert(valueRAW != null)
 
-      assert(valueRAW.isInstanceOf[gString])
-      val value = valueRAW.asInstanceOf[gString]
+      assert(valueRAW.isInstanceOf[MString])
+      val value = valueRAW.asInstanceOf[MString]
       assertEquals(value.quoted(), "'123.9'")
     }
 
@@ -918,7 +918,7 @@ class RemoteMessageConverterTest extends munit.FunSuite {
   test("convert ExecutedFunctionResult remote message to json and back") {
 
     val json = RemoteMessageConverter.toJson({
-      new ExecutedFunctionResult("funcName", new gString("8.8", "\""), "stub-client")
+      new ExecutedFunctionResult("funcName", new MString("8.8", "\""), "stub-client")
     })
 
     assert(json.isInstanceOf[String])
@@ -934,8 +934,8 @@ class RemoteMessageConverterTest extends munit.FunSuite {
 
     {
       val valueRAW = res.msg
-      assert(valueRAW.isInstanceOf[gString])
-      val value = valueRAW.asInstanceOf[gString]
+      assert(valueRAW.isInstanceOf[MString])
+      val value = valueRAW.asInstanceOf[MString]
       assertEquals(value.quoted(), "\"8.8\"")
     }
   }

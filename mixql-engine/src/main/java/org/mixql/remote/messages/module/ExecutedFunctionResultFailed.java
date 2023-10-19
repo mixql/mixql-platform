@@ -1,7 +1,7 @@
 package org.mixql.remote.messages.module;
 
 import org.mixql.remote.RemoteMessageConverter;
-import org.mixql.remote.messages.type.Error;
+import org.mixql.remote.messages.rtype.Error;
 
 public class ExecutedFunctionResultFailed extends Error implements IModuleSendToClient {
     private String _clientAddress;

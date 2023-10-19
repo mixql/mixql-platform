@@ -1,8 +1,8 @@
 package org.mixql.engine.stub.local
 
 import scala.collection.mutable
-import org.mixql.core.context.{EngineContext, gtype}
-import org.mixql.core.context.gtype.Type
+import org.mixql.core.context.{EngineContext, mtype}
+import org.mixql.core.context.mtype.MType
 import org.mixql.core.engine.Engine
 import org.mixql.core.function.FunctionInvoker
 import org.mixql.engine.local.logger.IEngineLogger
@@ -12,12 +12,12 @@ object EngineStubLocal extends Engine with IEngineLogger {
 
   override def name: String = "mixql-engine-stub-local"
 
-  override def executeImpl(statement: String, ctx: EngineContext): gtype.Type = {
+  override def executeImpl(statement: String, ctx: EngineContext): mtype.MType = {
     logDebug(s"Received statement to execute: ${statement}")
     logDebug(s"Executing command :${statement} for 1sec")
     Thread.sleep(1000)
     logInfo(s"executed: ${statement}")
-    new gtype.Null()
+    mtype.MNull.get()
   }
 
   def functions: Map[String, Any] =
@@ -27,19 +27,18 @@ object EngineStubLocal extends Engine with IEngineLogger {
       "stub_simple_proc_context_params" -> StubSimpleProc.simple_func_context_params
     )
 
-  override def executeFuncImpl(name: String, ctx: EngineContext, kwargs: Map[String, Object], params: Type*): Type = {
-    import org.mixql.core.context.gtype
+  override def executeFuncImpl(name: String, ctx: EngineContext, kwargs: Map[String, Object], params: MType*): MType = {
     try
       logInfo(s"Started executing function $name")
       logDebug(s"Params provided for function $name : " + params.toString())
       logDebug(s"Executing function $name with params " + params.toString)
       val res = FunctionInvoker
-        .invoke(functions, name, List[Object](StubContext(), ctx), params.map(p => gtype.unpack(p)).toList, kwargs)
+        .invoke(functions, name, List[Object](StubContext(), ctx), params.map(p => mtype.unpack(p)).toList, kwargs)
       logInfo(
         s" Successfully executed function $name with params " + params.toString +
           s"\nResult: $res"
       )
-      gtype.pack(res)
+      mtype.pack(res)
     catch
       case e: Throwable =>
         throw new Exception(

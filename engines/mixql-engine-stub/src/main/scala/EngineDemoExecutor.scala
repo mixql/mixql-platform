@@ -3,11 +3,11 @@ package org.mixql.engine.demo
 import scala.collection.mutable
 import org.mixql.engine.core.{IModuleExecutor, PlatformContext}
 import org.mixql.engine.core.logger.ModuleLogger
-import org.mixql.remote.messages.`type`.gtype.Bool
 import org.mixql.remote.messages.client.{Execute, ExecuteFunction}
 import org.mixql.remote.messages.module.DefinedFunctions
 import org.mixql.remote.{GtypeConverter, RemoteMessageConverter, messages}
 import org.mixql.remote.messages.Message
+import org.mixql.remote.messages.rtype.mtype.MBool
 
 object EngineDemoExecutor extends IModuleExecutor {
 
@@ -22,7 +22,7 @@ object EngineDemoExecutor extends IModuleExecutor {
     Thread.sleep(1000)
     logInfo(s"Successfully executed command ${msg.statement}")
     logDebug(s"Sending reply on Execute msg")
-    messages.`type`.gtype.NULL()
+    messages.rtype.mtype.MNULL()
   }
 
   def functions: Map[String, Any] =

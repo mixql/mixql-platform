@@ -1,19 +1,19 @@
-import org.mixql.core.context.gtype
+import org.mixql.core.context.mtype
 import org.mixql.engine.sqlite.local.SQLightJDBC
 
 class TestSqliteInMemoryDB extends MixqlEngineSqliteTest {
 
-  import org.mixql.core.context.gtype._
+  import org.mixql.core.context.mtype._
 
   it should ("create table") in {
     val g = createTableCustomers()
-    assert(gtype.isNull(g))
+    assert(mtype.isNull(g))
   }
 
   it should ("insert values in table") in {
     createTableCustomers()
     val gType = insertValuesIntoCustomers()
-    assert(gtype.isNull(gType))
+    assert(mtype.isNull(gType))
   }
 
   it should ("select all values from table") in {
@@ -41,7 +41,7 @@ class TestSqliteInMemoryDB extends MixqlEngineSqliteTest {
     assert(gType.toString == "[[1]]")
   }
 
-  def createTableCustomers(): gtype.Type = {
+  def createTableCustomers(): mtype.MType = {
     execute(TestOps.readContentFromResource("TestExecution/create_table_customers.sql"))
   }
 

@@ -1,16 +1,17 @@
 package org.mixql.engine.sqlite.local
 
-import org.mixql.core.context.{EngineContext, gtype}
-import org.mixql.core.context.gtype.Type
+import org.mixql.core.context.{EngineContext, mtype}
+import org.mixql.core.context.mtype.MType
 import org.mixql.core.engine.Engine
 import org.mixql.engine.local.logger.IEngineLogger
+
 import scala.collection.mutable
 
 class EngineSqlightLocal(dbPathParameter: Option[String] = None) extends Engine with IEngineLogger:
 
   override def name: String = "mixql-engine-sqlite-local"
 
-  override def executeImpl(statement: String, ctx: EngineContext): gtype.Type = {
+  override def executeImpl(statement: String, ctx: EngineContext): mtype.MType = {
     logInfo(s"Received statement to execute: ${statement}")
     logDebug(s"Executing command ${statement}")
 
@@ -26,7 +27,7 @@ class EngineSqlightLocal(dbPathParameter: Option[String] = None) extends Engine 
     }
   }
 
-  override def executeFuncImpl(name: String, ctx: EngineContext, kwargs: Map[String, Object], params: Type*): Type = {
+  override def executeFuncImpl(name: String, ctx: EngineContext, kwargs: Map[String, Object], params: MType*): MType = {
     try
       logInfo(s"Started executing function $name")
       logDebug(s"Params provided for function $name : " + params.toString())
@@ -36,7 +37,7 @@ class EngineSqlightLocal(dbPathParameter: Option[String] = None) extends Engine 
       )
       Thread.sleep(1000)
       logInfo(s"Successfully executed function $name with params " + params.toString)
-      new gtype.Null()
+      mtype.MNull.get()
     catch
       case e: Throwable =>
         throw new Exception(

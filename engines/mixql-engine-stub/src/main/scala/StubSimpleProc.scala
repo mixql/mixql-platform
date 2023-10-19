@@ -1,6 +1,6 @@
 package org.mixql.engine.demo
 
-import org.mixql.core.context.gtype.{Type, gInt, string}
+import org.mixql.core.context.mtype.{MType, MInt, MString}
 import org.mixql.engine.core.PlatformContext
 
 import collection.mutable
@@ -57,8 +57,8 @@ object StubSimpleProc {
     new ((PlatformContext, String) => String) {
 
       override def apply(ctx: PlatformContext, a: String): String = {
-        val funcArgs = List(new string(a))
-        s"SUCCESS:${ctx.invokeFunction("base64", funcArgs).asInstanceOf[string]}:$a"
+        val funcArgs = List(new MString(a))
+        s"SUCCESS:${ctx.invokeFunction("base64", funcArgs).asInstanceOf[MString]}:$a"
       }
     }
 
@@ -82,12 +82,12 @@ object StubSimpleProc {
 
         val firstVarName = filteredNames.head
         println("firstVarName is " + firstVarName)
-        val firstVar = ctx.getVar(firstVarName).asInstanceOf[string]
+        val firstVar = ctx.getVar(firstVarName).asInstanceOf[MString]
         println("firstVarName before change" + firstVar.getValue)
 
-        ctx.setVar(firstVarName, new string(firstVar.getValue + "_changed", firstVar.getQuote))
+        ctx.setVar(firstVarName, new MString(firstVar.getValue + "_changed", firstVar.getQuote))
 
-        val firstVarChanged = ctx.getVar(firstVarName).asInstanceOf[string]
+        val firstVarChanged = ctx.getVar(firstVarName).asInstanceOf[MString]
 
         assert(firstVarChanged.getValue == firstVar.getValue + "_changed")
 
@@ -96,15 +96,15 @@ object StubSimpleProc {
         ctx.setVars(
           last4Vars.map(t =>
             t._1 ->
-              new string(t._2.asInstanceOf[string].getValue + "_changed", t._2.asInstanceOf[string].getQuote)
+              new MString(t._2.asInstanceOf[MString].getValue + "_changed", t._2.asInstanceOf[MString].getQuote)
           )
         )
         val last4VarsChanged = ctx.getVars(last4VarsNames)
         last4VarsChanged.foreach(t =>
           assert({
             val changedVarName = t._1
-            val changedVar = t._2.asInstanceOf[string]
-            val originVar = last4Vars.apply(changedVarName).asInstanceOf[string]
+            val changedVar = t._2.asInstanceOf[MString]
+            val originVar = last4Vars.apply(changedVarName).asInstanceOf[MString]
             changedVar.getValue == originVar.getValue + "_changed"
           })
         )
@@ -117,8 +117,8 @@ object StubSimpleProc {
     new ((PlatformContext, String, Int) => String) {
 
       override def apply(ctx: PlatformContext, a: String, b: Int): String = {
-        val funcArgs = List(new string(a), new gInt(b))
-        s"CLOSURE:${ctx.invokeFunction("stub_simple_proc_context_params", funcArgs).asInstanceOf[string]}"
+        val funcArgs = List(new MString(a), new MInt(b))
+        s"CLOSURE:${ctx.invokeFunction("stub_simple_proc_context_params", funcArgs).asInstanceOf[MString]}"
       }
     }
 

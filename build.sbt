@@ -143,7 +143,7 @@ lazy val mixQLOozie = project.in(file("mixql-oozie"))
 
 lazy val engineClassName = settingKey[String]("Name of engine's main class")
 
-lazy val mixQLRepl = project.in(file("mixql-repl")).dependsOn(mixQLEngineSCALA3)
+lazy val mixQLRepl = project.in(file("mixql-repl")).dependsOn(mixQLEngineSCALA3, mixQLCluster)
 
 lazy val mixQLPlatformOozie = project.in(file("mixql-platform-oozie"))
   .enablePlugins(UniversalPlugin, JavaServerAppPackaging, UniversalDeployPlugin).dependsOn(

@@ -8,6 +8,9 @@ import org.mixql.core.context.Context
 import org.beryx.textio.web.RunnerData
 import org.mixql.core.run
 import org.mixql.engine.core.BrakeException
+import org.mixql.cluster.BrokerModule
+
+import scala.util.Try
 
 class TerminalApp(context: Context, prompt: String = "mixql>") extends BiConsumer[TextIO, RunnerData] {
 
@@ -76,6 +79,10 @@ class TerminalApp(context: Context, prompt: String = "mixql>") extends BiConsume
       case e: Throwable => println("Exited REPL mode")
     } finally {
       _textIO.dispose()
+      Try(context.close())
+      Try({
+        if BrokerModule.wasStarted then BrokerModule.close()
+      })
     }
   }
 

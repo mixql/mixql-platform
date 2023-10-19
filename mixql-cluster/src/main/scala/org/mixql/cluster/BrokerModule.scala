@@ -24,7 +24,7 @@ import org.mixql.remote.messages.module.toBroker.{
   IBrokerReceiverFromModule
 }
 import org.mixql.remote.messages.client.toBroker.{EngineStarted, IBrokerReceiverFromClient}
-import org.mixql.remote.messages.client.IModuleReceiver
+import org.mixql.remote.messages.client.{IModuleReceiver, ShutDown}
 
 import scala.language.postfixOps
 import scala.util.Try
@@ -87,7 +87,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
 
   // Key is identity, Value is list of messages
   val enginesStashedMsgs: mutable.Map[String, ListBuffer[StashedClientMessage]] = mutable.Map()
-  val engines: mutable.Set[String] = mutable.Set()
+  var engines: mutable.Set[String] = mutable.Set()
   var enginesStartedTimeOut: mutable.Map[String, (Long, DateTime, String)] = mutable.Map()
   val NOFLAGS = 0
   val config: Config = ConfigFactory.load()
@@ -132,10 +132,16 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
                 reactOnClientMsgForBroker(m)
               case m: IModuleReceiver =>
                 logDebug(s"Received message for engine ${m.moduleIdentity()} from client ${m.clientIdentity()}")
-                if !engines.contains(m.moduleIdentity()) then
-                  logDebug(s"Broker frontend: engine was not initialized yet. Stash message in engines map")
-                  stashMessage(m.moduleIdentity(), m.clientIdentity(), m.toByteArray)
-                else sendMessageToFrontend(m.moduleIdentity(), m.toByteArray)
+                if (m.isInstanceOf[ShutDown]) {
+                  logDebug(s"Delete engine ${m.moduleIdentity()} from engine's list")
+                  engines = engines.dropWhile(t => t == m.moduleIdentity().trim)
+                  sendMessageToFrontend(m.moduleIdentity(), m.toByteArray)
+                } else {
+                  if !engines.contains(m.moduleIdentity()) then
+                    logDebug(s"Broker frontend: engine was not initialized yet. Stash message in engines map")
+                    stashMessage(m.moduleIdentity(), m.clientIdentity(), m.toByteArray)
+                  else sendMessageToFrontend(m.moduleIdentity(), m.toByteArray)
+                }
             }
           }
           processTimeOutForStartedEngines()

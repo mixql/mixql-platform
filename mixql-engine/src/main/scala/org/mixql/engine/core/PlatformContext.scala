@@ -1,6 +1,6 @@
 package org.mixql.engine.core
 
-import org.mixql.core.context.gtype.Type
+import org.mixql.core.context.mtype.MType
 import org.mixql.engine.core.logger.ModuleLogger
 import org.mixql.remote.messages.client.{
   InvokedPlatformFunctionResult,
@@ -22,14 +22,14 @@ import org.mixql.remote.{GtypeConverter, RemoteMessageConverter, messages}
 import org.zeromq.ZMQ
 
 import scala.collection.mutable
-import org.mixql.remote.messages.`type`.Error
+import org.mixql.remote.messages.rtype.Error
 
 class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientIdentity: String)(implicit
   logger: ModuleLogger) {
 
   import logger._
 
-  def setVar(key: String, value: Type): Unit = {
+  def setVar(key: String, value: MType): Unit = {
     this.synchronized {
       logInfo(s"[PlatformContext]: was asked to set variable $key in platform context")
       logInfo(s"[PlatformContext]: sending request SetPlatformVar to platform")
@@ -50,7 +50,7 @@ class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientIdentit
     }
   }
 
-  def getVar(key: String): Type = {
+  def getVar(key: String): MType = {
     this.synchronized {
       logInfo(s"[PlatformContext]: was asked to get variable $key in platform context")
       logInfo(s"[PlatformContext]: sending request GetPlatformVar to platform")
@@ -72,7 +72,7 @@ class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientIdentit
     }
   }
 
-  def getVars(keys: List[String]): mutable.Map[String, Type] = {
+  def getVars(keys: List[String]): mutable.Map[String, MType] = {
     this.synchronized {
       logInfo(s"[PlatformContext]: was asked to get variables ${keys.mkString(",")} in platform context")
       logInfo(s"[PlatformContext]: sending request GetPlatformVars to platform")
@@ -84,7 +84,7 @@ class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientIdentit
             s"[PlatformContext]: received answer PlatformVars with variables ${m.vars.map(p => p.name).mkString(",")} from platform"
           )
 
-          val vars: mutable.Map[String, Type] = mutable.Map()
+          val vars: mutable.Map[String, MType] = mutable.Map()
 
           m.vars.foreach(param => vars.put(param.name, GtypeConverter.messageToGtype(param.msg)))
           vars
@@ -102,11 +102,11 @@ class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientIdentit
     }
   }
 
-  def setVars(vars: mutable.Map[String, Type]): Unit = {
+  def setVars(vars: mutable.Map[String, MType]): Unit = {
     setVars(collection.immutable.Map(vars.toSeq: _*))
   }
 
-  def setVars(vars: Map[String, Type]): Unit = {
+  def setVars(vars: Map[String, MType]): Unit = {
     this.synchronized {
       import collection.JavaConverters._
       logInfo(s"[PlatformContext]: was asked to set variables ${vars.keys.mkString(",")} in platform context")
@@ -171,7 +171,7 @@ class PlatformContext(workerSocket: ZMQ.Socket, workersId: String, clientIdentit
     * @param args
     *   arguments for function
     */
-  def invokeFunction(funcName: String, args: List[Type] = Nil): Type = {
+  def invokeFunction(funcName: String, args: List[MType] = Nil): MType = {
     this.synchronized {
       logInfo(s"[PlatformContext]: was asked to invoke function $funcName using platform context")
       logInfo(s"[PlatformContext]: sending request InvokeFunction to platform")

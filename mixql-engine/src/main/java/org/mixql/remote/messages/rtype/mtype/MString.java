@@ -1,12 +1,10 @@
-package org.mixql.remote.messages.type.gtype;
+package org.mixql.remote.messages.rtype.mtype;
 
-import org.mixql.core.context.gtype.string;
-
-public class gString implements IGtypeMessage {
+public class MString implements IGtypeMessage {
     public String value;
     public String quote;
 
-    public gString(String value, String quote){
+    public MString(String value, String quote){
         this.quote = quote;
         this.value = value;
     }
@@ -33,8 +31,8 @@ public class gString implements IGtypeMessage {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof gString) {
-            int res = ((gString) obj).value.compareTo(value);
+        if (obj instanceof MString) {
+            int res = ((MString) obj).value.compareTo(value);
             if (res == 0)
                 return true;
             else

@@ -1,11 +1,11 @@
-package org.mixql.remote.messages.type.gtype;
+package org.mixql.remote.messages.rtype.mtype;
 
-import org.mixql.core.context.gtype.Type;
+import org.mixql.core.context.mtype.MType;
 import org.mixql.remote.GtypeConverter;
 import org.mixql.remote.messages.Message;
 
 public interface IGtypeMessage extends Message {
-    default Type toGType() throws Exception {
+    default MType toGType() throws Exception {
         return GtypeConverter.messageToGtype(this);
     }
 }

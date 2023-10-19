@@ -8,8 +8,8 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import java.io.File
 import scala.collection.mutable
-import org.mixql.core.context.{Context, gtype}
-import org.mixql.core.context.gtype.Type
+import org.mixql.core.context.{Context, mtype}
+import org.mixql.core.context.mtype.MType
 import org.mixql.engine.sqlite.local.EngineSqlightLocal
 import org.mixql.engine.stub.local.EngineStubLocal
 import org.mixql.platform.demo.engines.executors.{MixQlEngineSqliteExecutor, MixQlEngineStubExecutor}
@@ -114,12 +114,12 @@ trait MixQLClusterTest extends FunSuite {
           "get_engines_list" -> SimpleFuncs.get_engines_list
         )
 
-        val variables: mutable.Map[String, Type] = mutable.Map[String, Type](
-          "mixql.org.engine.sqlight.titanic-db.path" -> gtype
-            .string(config.getString("mixql.org.engine.sqlight.titanic-db.path")),
-          "mixql.org.engine.sqlight.sakila-db.path" -> gtype
-            .string(config.getString("mixql.org.engine.sqlight.sakila-db.path")),
-          "mixql.org.engine.sqlight.db.path" -> gtype.string(config.getString("mixql.org.engine.sqlight.db.path"))
+        val variables: mutable.Map[String, MType] = mutable.Map[String, MType](
+          "mixql.org.engine.sqlight.titanic-db.path" -> mtype
+            .MString(config.getString("mixql.org.engine.sqlight.titanic-db.path")),
+          "mixql.org.engine.sqlight.sakila-db.path" -> mtype
+            .MString(config.getString("mixql.org.engine.sqlight.sakila-db.path")),
+          "mixql.org.engine.sqlight.db.path" -> mtype.MString(config.getString("mixql.org.engine.sqlight.db.path"))
         )
 
         logInfo("beforeEach: creating context")

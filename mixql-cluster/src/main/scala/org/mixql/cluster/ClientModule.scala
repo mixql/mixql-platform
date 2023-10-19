@@ -3,7 +3,7 @@ package org.mixql.cluster
 import com.typesafe.config.ConfigFactory
 import org.mixql.cluster.logger.{logDebug, logError, logInfo, logWarn}
 import org.mixql.core.engine.Engine
-import org.mixql.core.context.gtype.{Type, unpack}
+import org.mixql.core.context.mtype.{MType, unpack}
 import org.mixql.net.PortOperations
 import org.mixql.remote.{GtypeConverter, RemoteMessageConverter, messages}
 import org.zeromq.{SocketType, ZMQ}
@@ -15,9 +15,9 @@ import scala.concurrent.Future
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
-import org.mixql.core.context.{EngineContext, gtype}
-import org.mixql.remote.messages.`type`.Param
-import org.mixql.remote.messages.`type`.gtype.IGtypeMessage
+import org.mixql.core.context.{EngineContext, mtype}
+import org.mixql.remote.messages.rtype.Param
+import org.mixql.remote.messages.rtype.mtype.IGtypeMessage
 import org.mixql.remote.messages.client.toBroker.EngineStarted
 import org.mixql.remote.messages.client.{
   Execute,
@@ -51,7 +51,7 @@ import scalapb.options.ScalaPbOptions.OptionsScope
 import java.lang.Thread.sleep
 import scala.annotation.tailrec
 
-case class StashedParam(name: String, value: gtype.Type)
+case class StashedParam(name: String, value: mtype.MType)
 
 object ClientModule {
   val config = ConfigFactory.load()
@@ -81,14 +81,14 @@ class ClientModule(clientIdentity: String,
 
   override def name: String = clientIdentity
 
-  override def executeImpl(stmt: String, ctx: EngineContext): Type = {
+  override def executeImpl(stmt: String, ctx: EngineContext): MType = {
     logInfo(s"[ClientModule-$clientIdentity]: module $moduleIdentity was triggered by execute request")
 
     sendMsg(Execute(moduleIdentity, clientIdentity, stmt))
     reactOnRequest(recvMsg(), ctx)
   }
 
-  override def executeFuncImpl(name: String, ctx: EngineContext, kwargs: Map[String, Object], params: Type*): Type = {
+  override def executeFuncImpl(name: String, ctx: EngineContext, kwargs: Map[String, Object], params: MType*): MType = {
     if (kwargs.nonEmpty)
       throw new UnsupportedOperationException("named arguments are not supported in functions in remote engine " + name)
 
@@ -110,14 +110,13 @@ class ClientModule(clientIdentity: String,
     }
     engineStarted = true
 
-    import org.mixql.core.context.gtype
     logInfo(s"Server: ClientModule: $clientIdentity: ask defined functions from remote engine")
 
     sendMsg(messages.client.GetDefinedFunctions(moduleIdentity, clientIdentity))
     val functionsList =
       recvMsg() match {
         case m: messages.module.DefinedFunctions => m.arr.toList
-        case ex: org.mixql.remote.messages.`type`.Error =>
+        case ex: org.mixql.remote.messages.rtype.Error =>
           val errorMessage =
             s"Server: ClientModule: $clientIdentity: getDefinedFunctions error: \n" + ex.getErrorMessage
           logError(errorMessage)
@@ -135,7 +134,7 @@ class ClientModule(clientIdentity: String,
   }
 
   @tailrec
-  private def reactOnRequest(msg: Message, ctx: EngineContext): Type = {
+  private def reactOnRequest(msg: Message, ctx: EngineContext): MType = {
     msg match
       case msg: IGtypeMessage => msg.toGType
       case m: IModuleSendToClient =>
@@ -204,30 +203,30 @@ class ClientModule(clientIdentity: String,
 //                reactOnRequest(recvMsg(), ctx)
 //            }
           case msg: ExecutedFunctionResult =>
-            if (msg.msg.isInstanceOf[org.mixql.remote.messages.`type`.Error]) {
+            if (msg.msg.isInstanceOf[org.mixql.remote.messages.rtype.Error]) {
               logError(
                 "Server: ClientModule: Error while executing function " + msg.functionName + "error: " +
-                  msg.msg.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage
+                  msg.msg.asInstanceOf[org.mixql.remote.messages.rtype.Error].getErrorMessage
               )
-              throw new Exception(msg.msg.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage)
+              throw new Exception(msg.msg.asInstanceOf[org.mixql.remote.messages.rtype.Error].getErrorMessage)
             }
             GtypeConverter.messageToGtype(msg.msg)
-          case msg: org.mixql.remote.messages.`type`.Error =>
+          case msg: org.mixql.remote.messages.rtype.Error =>
             logError(
-              "Server: ClientModule: $clientIdentity:" + msg.asInstanceOf[org.mixql.remote.messages.`type`.Error]
+              "Server: ClientModule: $clientIdentity:" + msg.asInstanceOf[org.mixql.remote.messages.rtype.Error]
                 .getErrorMessage
             )
-            throw new Exception(msg.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage)
+            throw new Exception(msg.asInstanceOf[org.mixql.remote.messages.rtype.Error].getErrorMessage)
           case msg: ExecuteResult =>
-            if (msg.result.isInstanceOf[org.mixql.remote.messages.`type`.Error]) {
+            if (msg.result.isInstanceOf[org.mixql.remote.messages.rtype.Error]) {
               logError(
                 "Server: ClientModule: Error while executing statement " + msg.stmt + "error: " +
-                  msg.result.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage
+                  msg.result.asInstanceOf[org.mixql.remote.messages.rtype.Error].getErrorMessage
               )
-              throw new Exception(msg.result.asInstanceOf[org.mixql.remote.messages.`type`.Error].getErrorMessage)
+              throw new Exception(msg.result.asInstanceOf[org.mixql.remote.messages.rtype.Error].getErrorMessage)
             }
             GtypeConverter.messageToGtype(msg.result)
-      case msg: org.mixql.remote.messages.`type`.Error =>
+      case msg: org.mixql.remote.messages.rtype.Error =>
         logError(
           s"Server: ClientModule: $clientIdentity: \n error while reacting on request\n" +
             msg.getErrorMessage

@@ -1,86 +1,86 @@
-import org.mixql.core.context.gtype
+import org.mixql.core.context.mtype
 import org.mixql.remote.GtypeConverter
 import org.mixql.remote.messages.Message
-import org.mixql.remote.messages.`type`.gtype.{Bool, NONE, NULL, gDouble, gInt, gString, map, gArray}
-import org.mixql.remote.messages.`type`.Error
+import org.mixql.remote.messages.rtype.mtype.{MBool, MNONE, MNULL, MDouble, MInt, MString, MMap, MArray}
+import org.mixql.remote.messages.rtype.Error
 // For more information on writing tests, see
 
 // https://scalameta.org/munit/docs/getting-started.html
 class GtypeConverterRemoteMsgToMixQlType extends munit.FunSuite {
 
   test("convert NULL remote message to gtype null") {
-    val res = GtypeConverter.messageToGtype(new NULL())
-    assert(res.isInstanceOf[gtype.Null])
+    val res = GtypeConverter.messageToGtype(new MNULL())
+    assert(res.isInstanceOf[mtype.MNull])
   }
 
   test("convert NONE remote message to gtype none") {
-    val res = GtypeConverter.messageToGtype(new NONE())
-    assert(res.isInstanceOf[gtype.none])
+    val res = GtypeConverter.messageToGtype(new MNONE())
+    assert(res.isInstanceOf[mtype.MNone])
   }
 
   test("convert Bool remote message to gtype bool") {
-    val res = GtypeConverter.messageToGtype(new Bool(false))
-    assert(res.isInstanceOf[gtype.bool])
-    assert(!res.asInstanceOf[gtype.bool].getValue)
+    val res = GtypeConverter.messageToGtype(new MBool(false))
+    assert(res.isInstanceOf[mtype.MBool])
+    assert(!res.asInstanceOf[mtype.MBool].getValue)
   }
 
-  test("convert org.mixql.remote.messages.type.gtype.gInt remote message to gtype gInt") {
-    val res = GtypeConverter.messageToGtype(new gInt(123))
-    assert(res.isInstanceOf[gtype.gInt])
-    assert(res.asInstanceOf[gtype.gInt].getValue == 123)
+  test("convert org.mixql.remote.messages.rtype.mtype.MInt remote message to gtype gInt") {
+    val res = GtypeConverter.messageToGtype(new MInt(123))
+    assert(res.isInstanceOf[mtype.MInt])
+    assert(res.asInstanceOf[mtype.MInt].getValue == 123)
   }
 
-  test("convert org.mixql.remote.messages.type.gtype.gDouble remote message to gtype gDouble") {
-    val res = GtypeConverter.messageToGtype(new gDouble(123.9))
-    assert(res.isInstanceOf[gtype.gDouble])
-    assert(res.asInstanceOf[gtype.gDouble].getValue == 123.9)
+  test("convert org.mixql.remote.messages.rtype.mtype.MDouble remote message to gtype gDouble") {
+    val res = GtypeConverter.messageToGtype(new MDouble(123.9))
+    assert(res.isInstanceOf[mtype.MDouble])
+    assert(res.asInstanceOf[mtype.MDouble].getValue == 123.9)
   }
 
-  test("convert org.mixql.remote.messages.type.gtype.gString remote message to gtype string") {
-    val res = GtypeConverter.messageToGtype(new gString("123.9", "'"))
-    assert(res.isInstanceOf[gtype.string])
-    assert(res.asInstanceOf[gtype.string].getValue == "123.9")
-    assert(res.asInstanceOf[gtype.string].quoted() == "'123.9'")
+  test("convert org.mixql.remote.messages.rtype.mtype.gString remote message to gtype string") {
+    val res = GtypeConverter.messageToGtype(new MString("123.9", "'"))
+    assert(res.isInstanceOf[mtype.MString])
+    assert(res.asInstanceOf[mtype.MString].getValue == "123.9")
+    assert(res.asInstanceOf[mtype.MString].quoted() == "'123.9'")
   }
 
-  test("convert org.mixql.remote.messages.type.gtype.map remote message to gtype map") {
+  test("convert org.mixql.remote.messages.rtype.mtype.MMap remote message to gtype map") {
     val m = new java.util.HashMap[Message, Message]()
-    m.put(new gString("123.9", "'"), new Bool(false))
-    m.put(new gString("8.8", "\""), new gDouble(123.9))
+    m.put(new MString("123.9", "'"), new MBool(false))
+    m.put(new MString("8.8", "\""), new MDouble(123.9))
 
-    val res = GtypeConverter.messageToGtype(new map(m))
-    assert(res.isInstanceOf[gtype.map])
-    val gMap = res.asInstanceOf[gtype.map].getMap
+    val res = GtypeConverter.messageToGtype(new MMap(m))
+    assert(res.isInstanceOf[mtype.MMap])
+    val gMap = res.asInstanceOf[mtype.MMap].getMap
 
-    val val1: gtype.Type = gMap.get(new gtype.string("8.8", "\""))
-    assert(val1.isInstanceOf[gtype.gDouble])
-    assert(val1.asInstanceOf[gtype.gDouble].getValue == 123.9)
+    val val1: mtype.MType = gMap.get(new mtype.MString("8.8", "\""))
+    assert(val1.isInstanceOf[mtype.MDouble])
+    assert(val1.asInstanceOf[mtype.MDouble].getValue == 123.9)
 
-    val val2: gtype.Type = gMap.get(new gtype.string("123.9", "'"))
-    assert(val2.isInstanceOf[gtype.bool])
-    assert(!val2.asInstanceOf[gtype.bool].getValue)
+    val val2: mtype.MType = gMap.get(new mtype.MString("123.9", "'"))
+    assert(val2.isInstanceOf[mtype.MBool])
+    assert(!val2.asInstanceOf[mtype.MBool].getValue)
   }
 
-  test("convert org.mixql.remote.messages.type.gtype.gArray remote message to gtype array") {
+  test("convert org.mixql.remote.messages.rtype.mtype.gArray remote message to gtype array") {
 
     val res = GtypeConverter.messageToGtype({
-      new gArray(Seq[Message](new gString("123.9", "'"), new gString("8.8", "\"")).toArray)
+      new MArray(Seq[Message](new MString("123.9", "'"), new MString("8.8", "\"")).toArray)
     })
-    assert(res.isInstanceOf[gtype.array])
-    val arr = res.asInstanceOf[gtype.array].getArr
+    assert(res.isInstanceOf[mtype.MArray])
+    val arr = res.asInstanceOf[mtype.MArray].getArr
 
     assertEquals(arr.length, 2)
 
-    val val1: gtype.Type = arr(0)
-    assert(val1.isInstanceOf[gtype.string])
-    assertEquals(val1.asInstanceOf[gtype.string].quoted(), "'123.9'")
+    val val1: mtype.MType = arr(0)
+    assert(val1.isInstanceOf[mtype.MString])
+    assertEquals(val1.asInstanceOf[mtype.MString].quoted(), "'123.9'")
 
-    val val2: gtype.Type = arr(1)
-    assert(val2.isInstanceOf[gtype.string])
-    assertEquals(val2.asInstanceOf[gtype.string].quoted(), "\"8.8\"")
+    val val2: mtype.MType = arr(1)
+    assert(val2.isInstanceOf[mtype.MString])
+    assertEquals(val2.asInstanceOf[mtype.MString].quoted(), "\"8.8\"")
   }
 
-  test("when converts org.mixql.remote.messages.type.Error remote message throws exception") {
+  test("when converts org.mixql.remote.messages.rtype.Error remote message throws exception") {
     interceptMessage[java.lang.Exception]("test-exception") {
       GtypeConverter.messageToGtype(new Error("test-exception"))
     }

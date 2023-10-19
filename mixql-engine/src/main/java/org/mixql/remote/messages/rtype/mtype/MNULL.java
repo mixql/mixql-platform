@@ -1,6 +1,6 @@
-package org.mixql.remote.messages.type.gtype;
+package org.mixql.remote.messages.rtype.mtype;
 
-public class NULL implements IGtypeMessage {
+public class MNULL implements IGtypeMessage {
     @Override
     public String toString() {
         return "{ type: " + type() + "}";
@@ -8,7 +8,7 @@ public class NULL implements IGtypeMessage {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof NULL)
+        if (obj instanceof MNULL)
             return true;
         else
             return false;

@@ -1,20 +1,18 @@
-package org.mixql.remote.messages.type.gtype;
+package org.mixql.remote.messages.rtype.mtype;
 
-import org.mixql.core.context.gtype.Type;
-import org.mixql.core.context.gtype.bool;
 import org.mixql.remote.messages.Message;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class map implements IGtypeMessage {
+public class MMap implements IGtypeMessage {
     Map<Message, Message> m = new HashMap<>();
 
     public Map<Message, Message> getMap() {
         return m;
     }
 
-    public map(Map<Message, Message> m) {
+    public MMap(Map<Message, Message> m) {
         this.m = m;
     }
 
@@ -23,14 +21,14 @@ public class map implements IGtypeMessage {
         StringBuffer buffer = new StringBuffer();
         buffer.append("{");
         for (Map.Entry<Message, Message> entry : m.entrySet()) {
-            if (entry.getKey() instanceof gString)
-                buffer.append(((gString) entry.getKey()).asLiteral());
+            if (entry.getKey() instanceof MString)
+                buffer.append(((MString) entry.getKey()).asLiteral());
             else
                 buffer.append(entry.getKey().toString());
             buffer.append(": ");
             Message value = entry.getValue();
-            if (value instanceof gString)
-                buffer.append(((gString) value).asLiteral());
+            if (value instanceof MString)
+                buffer.append(((MString) value).asLiteral());
             else
                 buffer.append(value.toString());
             buffer.append(", ");
@@ -47,8 +45,8 @@ public class map implements IGtypeMessage {
 
     @Override
     public boolean equals(Object other) {
-        if (other instanceof map) {
-            return m.equals(((map) other).m);
+        if (other instanceof MMap) {
+            return m.equals(((MMap) other).m);
         }
         return false;
     }

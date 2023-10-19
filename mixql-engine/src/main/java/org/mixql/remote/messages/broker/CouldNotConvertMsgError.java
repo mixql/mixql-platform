@@ -1,7 +1,7 @@
 package org.mixql.remote.messages.broker;
 
 import org.mixql.remote.RemoteMessageConverter;
-import org.mixql.remote.messages.type.Error;
+import org.mixql.remote.messages.rtype.Error;
 
 public class CouldNotConvertMsgError extends Error implements IBrokerSender {
 

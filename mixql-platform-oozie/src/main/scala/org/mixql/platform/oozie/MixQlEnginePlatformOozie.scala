@@ -8,7 +8,7 @@ import org.rogach.scallop.ScallopConf
 import java.io.File
 import org.mixql.cluster.{BrokerModule, ClientModule}
 import org.mixql.core.engine.Engine
-import org.mixql.core.context.{Context, gtype}
+import org.mixql.core.context.{Context, mtype}
 import org.mixql.engine.sqlite.local.EngineSqlightLocal
 
 import scala.collection.mutable
@@ -57,10 +57,10 @@ object MixQlEnginePlatformOozie:
     )
 
     logDebug(s"Init variables for mixql context")
-    val variables: mutable.Map[String, gtype.Type] = mutable.Map[String, gtype.Type]()
+    val variables: mutable.Map[String, mtype.MType] = mutable.Map[String, mtype.MType]()
 
     if oozieParams.contains("mixql.org.engine.sqlight.db.path") then
-      variables.put("mixql.org.engine.sqlight.db.path", gtype.string(oozieParams("mixql.org.engine.sqlight.db.path")))
+      variables.put("mixql.org.engine.sqlight.db.path", mtype.MString(oozieParams("mixql.org.engine.sqlight.db.path")))
 
     logDebug(s"Mixql engine oozie platform: init Cluster context")
     val context = Context(

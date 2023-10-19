@@ -1,3 +1,4 @@
+import org.mixql.core.context.mtype
 import org.mixql.remote.messages.Message
 
 class TestExecution extends MixqlEngineSqliteTest {
@@ -6,21 +7,21 @@ class TestExecution extends MixqlEngineSqliteTest {
 
   it should ("execute statements that create table, insert value into it and" +
     " select values from table") in {
-    import org.mixql.core.context.gtype
+    import org.mixql.core.context.mtype
     import org.mixql.remote.GtypeConverter
 
     {
       logInfo(MixqlEngineSqliteTest.identity + ": execute create table customers")
       val gType = execute(TestOps.readContentFromResource("TestExecution/create_table_customers.sql"))
       logInfo(MixqlEngineSqliteTest.identity + " create table res : " + gType.toString)
-      assert(gtype.isNull(gType))
+      assert(mtype.isNull(gType))
     }
 
     {
       logInfo(MixqlEngineSqliteTest.identity + ": execute insert into customers")
       val gType = execute(TestOps.readContentFromResource("TestExecution/insert_into_customers.sql"))
       logInfo(MixqlEngineSqliteTest.identity + " insert into res : " + gType.toString)
-      assert(gtype.isNull(gType))
+      assert(mtype.isNull(gType))
     }
 
     {

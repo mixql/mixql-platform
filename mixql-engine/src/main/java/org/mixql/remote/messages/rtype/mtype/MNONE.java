@@ -1,8 +1,6 @@
-package org.mixql.remote.messages.type.gtype;
+package org.mixql.remote.messages.rtype.mtype;
 
-import org.mixql.core.context.gtype.none;
-
-public class NONE implements IGtypeMessage {
+public class MNONE implements IGtypeMessage {
     @Override
     public String toString() {
         return "{ type: " + type() + "}";
@@ -10,7 +8,7 @@ public class NONE implements IGtypeMessage {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof NONE)
+        if (obj instanceof MNONE)
             return true;
         else
             return false;

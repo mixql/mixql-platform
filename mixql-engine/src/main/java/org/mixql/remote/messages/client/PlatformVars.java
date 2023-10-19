@@ -1,7 +1,7 @@
 package org.mixql.remote.messages.client;
 
 import org.mixql.remote.RemoteMessageConverter;
-import org.mixql.remote.messages.type.Param;
+import org.mixql.remote.messages.rtype.Param;
 
 public class PlatformVars implements IWorkerReceiver {
     public Param[] vars;

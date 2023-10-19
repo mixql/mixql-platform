@@ -1,10 +1,10 @@
-package org.mixql.remote.messages.type.gtype;
+package org.mixql.remote.messages.rtype.mtype;
 
 
-public class gDouble implements IGtypeMessage {
+public class MDouble implements IGtypeMessage {
     public double value;
 
-    public gDouble(double value) {
+    public MDouble(double value) {
         this.value = value;
     }
 
@@ -15,8 +15,8 @@ public class gDouble implements IGtypeMessage {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof gDouble) {
-            if (Math.abs(value - ((gDouble) obj).value) <= 0.000001)
+        if (obj instanceof MDouble) {
+            if (Math.abs(value - ((MDouble) obj).value) <= 0.000001)
                 return true;
             else
                 return false;

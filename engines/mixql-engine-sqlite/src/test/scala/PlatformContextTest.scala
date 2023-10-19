@@ -1,11 +1,11 @@
 import org.mixql.core.context.EngineContext
-import org.mixql.core.context.gtype.Type
+import org.mixql.core.context.mtype.MType
 import org.mixql.engine.core.PlatformContext
 import org.mixql.engine.core.logger.ModuleLogger
 
 import scala.collection.mutable
 
-class PlatformContextTest(engineParams: mutable.Map[String, Type], identity: String)
+class PlatformContextTest(engineParams: mutable.Map[String, MType], identity: String)
     extends PlatformContext(null, "", null)(new ModuleLogger(identity)) {
 
   val ctx =
@@ -19,19 +19,19 @@ class PlatformContextTest(engineParams: mutable.Map[String, Type], identity: Str
       "stub"
     )
 
-  override def setVar(key: String, value: Type): Unit = {
+  override def setVar(key: String, value: MType): Unit = {
     ctx.setVar(key, value)
   }
 
-  override def getVar(key: String): Type = {
+  override def getVar(key: String): MType = {
     ctx.getVar(key)
   }
 
-  override def getVars(keys: List[String]): mutable.Map[String, Type] = {
+  override def getVars(keys: List[String]): mutable.Map[String, MType] = {
     ctx.getVars(keys)
   }
 
-  override def setVars(vars: Map[String, Type]): Unit = {
+  override def setVars(vars: Map[String, MType]): Unit = {
     ctx.setVars(vars)
   }
 

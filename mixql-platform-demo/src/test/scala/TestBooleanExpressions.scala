@@ -1,8 +1,8 @@
 import com.typesafe.config.ConfigFactory
 import munit.FunSuite
 import org.mixql.cluster.ClientModule
-import org.mixql.core.context.{Context, gtype}
-import org.mixql.core.context.gtype.Type
+import org.mixql.core.context.{Context, mtype}
+import org.mixql.core.context.mtype.MType
 import org.mixql.core.engine.Engine
 import org.mixql.engine.sqlite.local.EngineSqlightLocal
 import org.mixql.engine.stub.local.EngineStubLocal

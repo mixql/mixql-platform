@@ -75,8 +75,7 @@ object MixQlEnginePlatformDemo:
     val functions: collection.mutable.Map[String, Any] = collection.mutable.Map(
       "simple_func" -> SimpleFuncs.simple_func,
       "print_current_vars" -> SimpleFuncs.print_current_vars,
-      "get_engines_list" -> SimpleFuncs.get_engines_list,
-      "closeEngine" -> SimpleFuncs.closeEngine
+      "get_engines_list" -> SimpleFuncs.get_engines_list
     )
 
     logDebug(s"Init variables for mixql context")

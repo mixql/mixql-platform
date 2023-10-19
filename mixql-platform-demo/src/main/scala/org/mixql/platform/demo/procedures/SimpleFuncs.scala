@@ -36,23 +36,4 @@ object SimpleFuncs {
         engineNames.toArray
       }
     }
-
-  val closeEngine =
-    new ((Context, String) => MNone) {
-
-      override def apply(ctx: Context, engineName: String = ""): MNone = {
-        logInfo("[close_engine] started")
-        val engine: Engine =
-          if engineName.isEmpty then ctx.currentEngine
-          else ctx.getEngine(engineName.trim).get
-
-        if engine.isInstanceOf[AutoCloseable] then
-          val closableEngine = engine.asInstanceOf[AutoCloseable]
-          logInfo("[close_engine] trigger engine's " + engine.name + " close")
-          closableEngine.close()
-        else logWarn("[close_engine] unsupported engine " + engine.name + ". It's not AutoCloseable. Ignore it")
-
-        MNone.get()
-      }
-    }
 }

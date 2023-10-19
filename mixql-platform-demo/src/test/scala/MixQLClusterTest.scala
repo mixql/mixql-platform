@@ -111,8 +111,7 @@ trait MixQLClusterTest extends FunSuite {
         val functions: collection.mutable.Map[String, Any] = collection.mutable.Map(
           "simple_func" -> SimpleFuncs.simple_func,
           "print_current_vars" -> SimpleFuncs.print_current_vars,
-          "get_engines_list" -> SimpleFuncs.get_engines_list,
-          "closeEngine" -> SimpleFuncs.closeEngine
+          "get_engines_list" -> SimpleFuncs.get_engines_list
         )
 
         val variables: mutable.Map[String, MType] = mutable.Map[String, MType](

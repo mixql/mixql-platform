@@ -16,6 +16,7 @@ import org.mixql.platform.demo.engines.executors.{MixQlEngineSqliteExecutor, Mix
 import org.mixql.platform.demo.logger.{logDebug, logInfo}
 import org.mixql.platform.demo.procedures.SimpleFuncs
 import org.mixql.remote.messages.client.ShutDown
+import org.mixql.test.engines.EngineFail.EngineFailStarter
 import org.scalatest.funsuite.AnyFunSuite
 
 import scala.concurrent.duration.Duration
@@ -99,6 +100,23 @@ trait MixQLClusterTest extends FunSuite {
               // in base path
               startScriptName = None,
               executor = Some(MixQlEngineDummyExecutor),
+              hostArgs = None,
+              portFrontendArgs = None,
+              basePathArgs = None,
+              startScriptExtraOpts = None,
+              startEngineTimeOut = 10000 // 10sec
+            ),
+            "engine-fail" -> new ClientModule(
+              // Name of client, is used for identification in broker,
+              // must be unique
+              clientIdentity = "mixql-engine-fail-demo-platform",
+              // Name of remote engine, is used for identification in broker,
+              // must be unique
+              moduleIdentity = "mixql-engine-fail",
+              // will be started mixql-engine-demo on linux or mixql-engine-demo.bat on windows
+              // in base path
+              startScriptName = None,
+              executor = Some(EngineFailStarter),
               hostArgs = None,
               portFrontendArgs = None,
               basePathArgs = None,

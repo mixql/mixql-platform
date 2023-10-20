@@ -25,7 +25,7 @@ class TerminalApp(context: Context, prompt: String = "mixql>") extends BiConsume
           val stmt = readMixqlStmt()
           stmt.trim.toLowerCase match
             case ":help" => terminal.println("""
-                |:exit -> termnate terminal session, platform will exit
+                |:exit -> terminate terminal session, platform will exit
                 |:help -> print this message again
                 |:show vars -> prints declared variables
                 |:show vars with params -> prints declared variables overrided by engine params

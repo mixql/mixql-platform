@@ -7,7 +7,7 @@ class TestCorrectReloadOfEngine extends MixQLClusterTest {
     run("""
         |let engine stub;
         |
-        |print("launch command on first time on new instance of stub")
+        |print("launch command on first time on new instance of stub");
         |
         |INSERT INTO Customers (CustomerName, ContactName, Address, City, PostalCode, Country)
         |VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
@@ -15,7 +15,7 @@ class TestCorrectReloadOfEngine extends MixQLClusterTest {
         |print("close stub engine");
         |closeEngine("stub");
         |
-        |print("launch command on new instance of stub")
+        |print("launch command on new instance of stub");
         |INSERT INTO Customers (CustomerName, ContactName, Address, City, PostalCode, Country)
         |VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
         |""".stripMargin)

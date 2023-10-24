@@ -286,7 +286,12 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
     val requestStr: String = new String(request)
     logDebug(s"Broker frontend: received request [$requestStr] for engine module from $clientAddrStr")
     try {
-      RemoteMessageConverter.unpackAnyMsgFromArray(request)
+      RemoteMessageConverter.unpackAnyMsgFromArray(request) match {
+        case m: IBrokerReceiverFromModule => m.setEngineName(clientAddrStr)
+        case m: IModuleSendToClient       => m
+        case m: IBrokerReceiverFromClient => m.SetClientIdentity(clientAddrStr)
+        case m: IModuleReceiver           => m.SetClientIdentity(clientAddrStr)
+      }
     } catch
       case e: Throwable =>
         val msg = logError(

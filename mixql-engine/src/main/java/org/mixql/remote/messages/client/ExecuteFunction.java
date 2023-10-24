@@ -15,11 +15,21 @@ public class ExecuteFunction implements IModuleReceiver {
         return this.clientIdentity;
     }
 
-    public ExecuteFunction(String moduleIdentity, String clientIdentity, String name, Message[] params) {
+    public ExecuteFunction(String moduleIdentity, String name, Message[] params) {
         this.name = name;
         this.params = params;
         this.moduleIdentity = moduleIdentity;
+    }
+
+    public ExecuteFunction(String moduleIdentity, String clientIdentity, String name, Message[] params) {
+        this(moduleIdentity, name, params);
         this.clientIdentity = clientIdentity;
+    }
+
+    @Override
+    public IModuleReceiver SetClientIdentity(String clientIdentity){
+        this.clientIdentity = clientIdentity;
+        return this;
     }
 
     @Override

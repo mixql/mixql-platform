@@ -9,6 +9,7 @@ public class PlatformVarsNames implements IWorkerReceiver {
     public String workerIdentity() {
         return _sender;
     }
+
     private String _sender;
     public String moduleIdentity;
 
@@ -20,11 +21,21 @@ public class PlatformVarsNames implements IWorkerReceiver {
     }
 
 
-    public PlatformVarsNames(String moduleIdentity, String clientIdentity, String sender, String[] names) {
+    public PlatformVarsNames(String moduleIdentity, String sender, String[] names) {
         _sender = sender;
         this.names = names;
         this.moduleIdentity = moduleIdentity;
+    }
+
+    public PlatformVarsNames(String moduleIdentity, String clientIdentity, String sender, String[] names) {
+        this(moduleIdentity, sender, names);
         this.clientIdentity = clientIdentity;
+    }
+
+    @Override
+    public IModuleReceiver SetClientIdentity(String clientIdentity) {
+        this.clientIdentity = clientIdentity;
+        return this;
     }
 
     @Override
@@ -39,6 +50,7 @@ public class PlatformVarsNames implements IWorkerReceiver {
             return super.toString();
         }
     }
+
     @Override
     public String moduleIdentity() {
         return moduleIdentity;

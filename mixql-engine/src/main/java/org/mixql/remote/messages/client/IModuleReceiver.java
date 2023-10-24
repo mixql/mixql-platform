@@ -6,4 +6,5 @@ public interface IModuleReceiver extends Message {
     public String moduleIdentity();
 
     public String clientIdentity();
+    public IModuleReceiver SetClientIdentity(String clientIdentity);
 }

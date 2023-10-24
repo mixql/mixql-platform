@@ -7,9 +7,19 @@ public class ShutDown implements IModuleReceiver {
     public String moduleIdentity;
     private String clientIdentity;
 
-    public ShutDown(String moduleIdentity, String clientIdentity) {
+    public ShutDown(String moduleIdentity) {
         this.moduleIdentity = moduleIdentity;
+    }
+
+    public ShutDown(String moduleIdentity, String clientIdentity) {
+        this(moduleIdentity);
         this.clientIdentity = clientIdentity;
+    }
+
+    @Override
+    public IModuleReceiver SetClientIdentity(String clientIdentity) {
+        this.clientIdentity = clientIdentity;
+        return this;
     }
 
     @Override

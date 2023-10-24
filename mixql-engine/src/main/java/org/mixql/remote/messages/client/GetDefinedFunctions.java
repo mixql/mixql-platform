@@ -13,9 +13,19 @@ public class GetDefinedFunctions implements IModuleReceiver {
         return this.clientIdentity;
     }
 
-    public GetDefinedFunctions(String moduleIdentity, String clientIdentity) {
+    public GetDefinedFunctions(String moduleIdentity) {
         this.moduleIdentity = moduleIdentity;
+    }
+
+    public GetDefinedFunctions(String moduleIdentity, String clientIdentity) {
+        this(moduleIdentity);
         this.clientIdentity = clientIdentity;
+    }
+
+    @Override
+    public IModuleReceiver SetClientIdentity(String clientIdentity) {
+        this.clientIdentity = clientIdentity;
+        return this;
     }
 
     @Override

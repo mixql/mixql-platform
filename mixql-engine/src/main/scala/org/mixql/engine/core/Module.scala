@@ -88,7 +88,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
       val serverPollInIndex = poller.register(server, ZMQ.Poller.POLLIN)
 
       logInfo(s"Sending READY message to server's broker")
-      sendMsgToPlatformBroker(new EngineIsReady(identity), logger)
+      sendMsgToPlatformBroker(new EngineIsReady(), logger)
 
       while (true) {
         val rc = poller.poll(pollerTimeout)
@@ -115,7 +115,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
           if (elapsed >= heartBeatInterval) {
             processStart = DateTime.now()
             logDebug(s"heartbeat work. Sending heart beat. Liveness: " + liveness)
-            sendMsgToPlatformBroker(new EnginePingHeartBeat(identity), logger)
+            sendMsgToPlatformBroker(new EnginePingHeartBeat(), logger)
             liveness = liveness - 1
             logDebug(s"heartbeat work. After sending heart beat. Liveness: " + liveness)
           }
@@ -165,7 +165,6 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
         logError(s"Error: " + ex.getMessage)
         sendMsgToPlatformBroker(
           new EngineFailed(
-            identity,
             s"Module $identity to broker: fatal error: " +
               ex.getMessage
           ),

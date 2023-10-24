@@ -14,6 +14,15 @@ public class EngineIsReady implements IBrokerReceiverFromModule {
         this.engineName = engineName;
     }
 
+    public EngineIsReady() {
+    }
+
+    @Override
+    public IBrokerReceiverFromModule setEngineName(String engineName) {
+        this.engineName = engineName;
+        return this;
+    }
+
     @Override
     public String toString() {
         try {

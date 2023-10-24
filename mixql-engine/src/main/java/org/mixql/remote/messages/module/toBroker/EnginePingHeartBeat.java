@@ -10,9 +10,17 @@ public class EnginePingHeartBeat implements IBrokerReceiverFromModule {
         return engineName;
     }
 
-
     public EnginePingHeartBeat(String engineName) {
         this.engineName = engineName;
+    }
+
+    public EnginePingHeartBeat() {
+    }
+
+    @Override
+    public IBrokerReceiverFromModule setEngineName(String engineName) {
+        this.engineName = engineName;
+        return this;
     }
 
     @Override

@@ -37,6 +37,7 @@ trait MixQLClusterTest extends FunSuite {
   }
 
   override val munitTimeout: Duration = Duration(70, "s")
+  val timeoutRun: Long = 70000
 
   val context: Fixture[Context] =
     new Fixture[Context]("context") {
@@ -172,7 +173,7 @@ trait MixQLClusterTest extends FunSuite {
   override def munitFixtures: Seq[Fixture[Context]] = List(context)
 
   def run(code: String): Unit = {
-    runWithTimeout(70000) {
+    runWithTimeout(timeoutRun) {
       org.mixql.core.run(code, context())
     }
   }

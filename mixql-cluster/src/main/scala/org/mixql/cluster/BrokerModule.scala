@@ -271,7 +271,8 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
       val processStart = tuple._2._2
       val pollerTimeout = tuple._2._3
       var liveness = tuple._2._4
-      val timeOut = heartBeatInterval + pollerTimeout
+      val bias = (heartBeatInterval + pollerTimeout) * 0.05 // More if network is worse
+      val timeOut = heartBeatInterval + pollerTimeout + bias
 
       val elapsed = (processStart to DateTime.now()).millis
       if (elapsed > timeOut) {
@@ -279,7 +280,8 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
 
         val errorMsg =
           "Broker: elapsed ping timeout for engine " + engineName +
-            " Expected to receive ping heartbeat less then " + timeOut
+            " Expected to receive ping heartbeat less then " + timeOut +
+            "\nLiveness: " + liveness
         if (liveness < 0) {
           logError(errorMsg)
           // Added here clientIdentity of sender of EngineStarted
@@ -356,7 +358,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
         // TO-DO Properly react on EngineFailed
         throw new UnsupportedOperationException(msg.getErrorMessage)
       case msg: EnginePingHeartBeat => // Its heart beat message from engine
-        if !engines.contains(msg.engineName()) then
+        if engines.contains(msg.engineName()) then
           val t = enginesPingHeartBeatTimeout(msg.engineName())
           enginesPingHeartBeatTimeout.put(msg.engineName(), (t._1, DateTime.now(), t._3, 3))
           sendMessageToFrontend(msg.engineName(), new PlatformPongHeartBeat().toByteArray)

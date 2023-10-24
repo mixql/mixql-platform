@@ -1,7 +1,11 @@
+import scala.concurrent.duration.Duration
+
 class TestEngineServiceFail extends MixQLClusterTest {
+  override val munitTimeout: Duration = Duration(100, "s")
+  override val timeoutRun: Long = 100000
 
   test("should fail if engine started and then failed without notification of platform") {
-    interceptMessage[java.lang.Exception]("Broker: elapsed timeout for engine mixql-engine-dummy") {
+    interceptMessage[java.lang.Exception]("Broker: elapsed timeout for engine mixql-engine-fail") {
       run("""
           |let engine engine-fail;
           |

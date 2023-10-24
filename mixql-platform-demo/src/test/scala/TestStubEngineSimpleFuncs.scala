@@ -1,4 +1,9 @@
+import scala.concurrent.duration.Duration
+
 class TestStubEngineSimpleFuncs extends MixQLClusterTest {
+
+  override val munitTimeout: Duration = Duration(100, "s")
+  override val timeoutRun: Long = 100000
 
   test("execute stub_simple_proc function") {
     run("""

@@ -90,6 +90,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
   var engines: mutable.Set[String] = mutable.Set()
   var enginesStartedTimeOut: mutable.Map[String, (Long, DateTime, String)] = mutable.Map()
   var enginesPingHeartBeatTimeout: mutable.Map[String, (Long, DateTime, Long, Int)] = mutable.Map()
+  var clientsThatSentToEngine: mutable.Map[String, mutable.Set[String]] = mutable.Map()
   val NOFLAGS = 0
   val config: Config = ConfigFactory.load()
 
@@ -141,7 +142,13 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
                   if !engines.contains(m.moduleIdentity()) then
                     logDebug(s"Broker frontend: engine was not initialized yet. Stash message in engines map")
                     stashMessage(m.moduleIdentity(), m.clientIdentity(), m.toByteArray)
-                  else sendMessageToFrontend(m.moduleIdentity(), m.toByteArray)
+                  else
+                    clientsThatSentToEngine.get(m.moduleIdentity()) match {
+                      case Some(value) => value.add(m.clientIdentity())
+//                        clientsThatSentToEngine.put(m.moduleIdentity(), value)
+                      case None => clientsThatSentToEngine.put(m.moduleIdentity(), mutable.Set(m.clientIdentity()))
+                    }
+                    sendMessageToFrontend(m.moduleIdentity(), m.toByteArray)
                 }
             }
           }
@@ -290,36 +297,29 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
       enginesPingHeartBeatTimeout = enginesPingHeartBeatTimeout.dropWhile(p => {
         p._1 == failedEngineName
       })
+      logDebug("enginesPingHeartBeatTimeout: " + enginesPingHeartBeatTimeout.mkString(","))
       logDebug(s"Delete engine ${failedEngineName} from engine's list")
       engines = engines.dropWhile(t => t == failedEngineName.trim)
-    })
+      logDebug("engines: " + engines.mkString(","))
 
-//    // Add clientIdentities which sent messages to engine and they where stashed
-//    engineFailedSet.foreach(failedEngine => {
-//      enginesStashedMsgs.get(failedEngine._1) match
-//        case Some(messages) =>
-//          if (messages.nonEmpty) {
-//            messages.foreach(msg => engineFailedSet.apply(failedEngine._1).add(msg.ClientAddr))
-//            messages.clear() // Do we need to clear messages?
-//          }
-//        case None =>
-//      end match
-//    })
-//
-//    engineFailedSet.foreach(engineFailed => {
-//      val engineFailedName = engineFailed._1
-//      val clientIdentities = engineFailed._2
-//      clientIdentities.foreach(clientIdentity =>
-//        logInfo("Broker: send error message EngineStartedTimeOutElapsedError to client " + clientIdentity)
-//        sendMessageToFrontend(
-//          clientIdentity,
-//          new EngineStartedTimeOutElapsedError(
-//            engineFailedName,
-//            "Broker: elapsed timeout for engine " + engineFailedName
-//          ).toByteArray
-//        )
-//      )
-//    })
+      clientsThatSentToEngine.get(failedEngineName) match {
+        case Some(clientIdentities) =>
+          clientIdentities.foreach(clientIdentity =>
+            logDebug("Broker: send error message EnginePingTimeOutElapsedError to client " + clientIdentity)
+            sendMessageToFrontend(
+              clientIdentity,
+//              new EnginePingTimeOutElapsedError( //TO-DO
+              new EngineStartedTimeOutElapsedError(
+                failedEngineName,
+                "Broker: elapsed timeout for engine " + failedEngineName
+              ).toByteArray
+            )
+          )
+        case None =>
+      }
+      clientsThatSentToEngine = clientsThatSentToEngine.dropWhile(t => t._1 == failedEngineName.trim)
+      logDebug("clientsThatSentToEngine: " + clientsThatSentToEngine.mkString(","))
+    })
   }
 
   private def reactOnClientMsgForBroker(m: IBrokerReceiverFromClient): Unit = {

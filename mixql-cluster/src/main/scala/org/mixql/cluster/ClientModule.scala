@@ -11,7 +11,7 @@ import org.zeromq.{SocketType, ZMQ}
 import java.io.File
 import java.net.{InetSocketAddress, SocketAddress}
 import java.nio.channels.{ServerSocketChannel, SocketChannel}
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
@@ -50,6 +50,7 @@ import scalapb.options.ScalaPbOptions.OptionsScope
 
 import java.lang.Thread.sleep
 import scala.annotation.tailrec
+import scala.language.postfixOps
 
 case class StashedParam(name: String, value: mtype.MType)
 
@@ -347,23 +348,37 @@ class ClientModule(clientIdentity: String,
   override def close() = {
     if (moduleStarted) {
       logInfo(s"Server: ClientModule: sending Shutdown to remote engine " + moduleIdentity)
-      ShutDown()
+      runWithTimeout(5000) {
+        ShutDown()
+      }
       logDebug("Give time module's socket to shutdown and shutdown message to reach module")
       sleep(2000)
     }
     logDebug(s"Server: ClientModule: $clientIdentity: Executing close")
     Try(if (client != null) {
       logInfo(s"Server: ClientModule: $clientIdentity: close client socket")
-      client.close()
+      runWithTimeout(5000) {
+        client.close()
+      }
     })
 
     Try(if (ctx != null) {
       logInfo(s"Server: ClientModule: $clientIdentity: close context")
-      ctx.close()
+      runWithTimeout(5000) {
+        ctx.close()
+      }
     })
 
     //    if (clientRemoteProcess.isAlive()) clientRemoteProcess.exitValue()
     //    println(s"server: ClientModule: $clientIdentity: Remote client was shutdown")
 
+  }
+
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import scala.concurrent._
+  import scala.concurrent.duration._
+
+  def runWithTimeout[T](timeoutMs: Long)(f: => T): Option[T] = {
+    Some(Await.result(Future(f), timeoutMs milliseconds))
   }
 }

@@ -163,7 +163,9 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
       try {
         if frontend != null then
           logInfo("Broker: closing frontend")
-          frontend.close()
+          runWithTimeout(5000) {
+            frontend.close()
+          }
       } catch {
         case e: Throwable => logError("Warning error while closing frontend socket in broker: " + e.getMessage)
       }
@@ -171,7 +173,9 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
       try {
         if poller != null then {
           logInfo("Broker: close poll")
-          poller.close()
+          runWithTimeout(5000) {
+            poller.close()
+          }
         }
       } catch {
         case e: Throwable => logError("Warning error while closing poller in broker: " + e.getMessage)
@@ -181,12 +185,22 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
         if ctx != null then {
           logInfo("Broker: terminate context")
           //          ctx.term()
-          ctx.close()
+          runWithTimeout(5000) {
+            ctx.close()
+          }
         }
       } catch {
         case e: Throwable => logError("Warning error while closing broker context: " + e.getMessage)
       }
     }
+  }
+
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import scala.concurrent._
+  import scala.concurrent.duration._
+
+  def runWithTimeout[T](timeoutMs: Long)(f: => T): Option[T] = {
+    Some(Await.result(Future(f), timeoutMs milliseconds))
   }
 
   def processTimeOutForStartedEngines(): Unit = {

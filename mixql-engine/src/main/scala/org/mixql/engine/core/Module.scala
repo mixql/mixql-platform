@@ -11,7 +11,7 @@ import org.mixql.remote.messages.broker.{IBrokerSender, PlatformPongHeartBeat}
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 import scala.util.{Random, Try}
 import org.mixql.remote.messages.client.{
@@ -378,39 +378,48 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
     import scala.util.Try
     Try(if (server != null) {
       logInfo(s"finally close server")
-      server.close()
+      runWithTimeout(5000) {
+        server.close()
+      }
     })
 
     if (workersMap.nonEmpty) {
       workersMap.foreach(worker => {
-        Try(worker._2.close())
+        Try(runWithTimeout(5000) { worker._2.close() })
       })
     }
 
     Try(if (poller != null) {
       logInfo(s"finally close poller")
-      poller.close()
+      runWithTimeout(5000) {
+        poller.close()
+      }
     })
 
     Try(if (workerPoller != null) {
       logInfo(s"finally close workerPoller")
-      workerPoller.close()
+      runWithTimeout(5000) {
+        workerPoller.close()
+      }
     })
 
     try {
       if (ctx != null) {
         logInfo(s"finally close context")
-        //        implicit val ec: scala.concurrent.ExecutionContext =
-        //          scala.concurrent.ExecutionContext.global
-//        Await.result(
-//          Future {
-        ctx.close()
-//          },
-//          scala.concurrent.duration.Duration(5000, "millis")
-//        )
+        runWithTimeout(5000) {
+          ctx.close()
+        }
       }
     } catch {
       case _: Throwable => logError(s"tiemout of closing context exceeded:(")
     }
+  }
+
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import scala.concurrent._
+  import scala.concurrent.duration._
+
+  def runWithTimeout[T](timeoutMs: Long)(f: => T): Option[T] = {
+    Some(Await.result(Future(f), timeoutMs milliseconds))
   }
 }

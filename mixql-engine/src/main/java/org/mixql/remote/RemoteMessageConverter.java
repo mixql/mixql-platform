@@ -260,7 +260,9 @@ public class RemoteMessageConverter {
                 );
             case "org.mixql.remote.messages.module.toBroker.EngineIsReady":
                 return new EngineIsReady(
-                        (String) anyMsgJsonObject.get("engineName")
+                        (String) anyMsgJsonObject.get("engineName"),
+                        Long.parseLong((String) anyMsgJsonObject.get("heartBeatInterval")),
+                        Long.parseLong((String) anyMsgJsonObject.get("pollerTimeout"))
                 );
             case "org.mixql.remote.messages.module.toBroker.EnginePingHeartBeat":
                 return new EnginePingHeartBeat(
@@ -583,7 +585,8 @@ public class RemoteMessageConverter {
 
         if (msg instanceof EngineIsReady) {
             EngineIsReady msgTmp = ((EngineIsReady) msg);
-            return JsonUtils.buildEngineIsReady(msgTmp.type(), msgTmp.engineName());
+            return JsonUtils.buildEngineIsReady(msgTmp.type(), msgTmp.engineName(), msgTmp.getHeartBeatInterval(),
+                    msgTmp.getPollerTimeout());
         }
 
         if (msg instanceof EnginePingHeartBeat) {

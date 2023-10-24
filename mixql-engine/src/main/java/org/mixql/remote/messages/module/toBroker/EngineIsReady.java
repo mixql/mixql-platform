@@ -4,17 +4,30 @@ import org.mixql.remote.RemoteMessageConverter;
 
 public class EngineIsReady implements IBrokerReceiverFromModule {
     private String engineName;
+    private Long heartBeatInterval;
+    private Long pollerTimeout;
 
     @Override
     public String engineName() {
         return engineName;
     }
 
-    public EngineIsReady(String engineName) {
+    public EngineIsReady(String engineName, Long heartBeatInterval, Long pollerTimeout) {
+        this(heartBeatInterval, pollerTimeout);
         this.engineName = engineName;
     }
 
-    public EngineIsReady() {
+    public Long getHeartBeatInterval() {
+        return heartBeatInterval;
+    }
+
+    public Long getPollerTimeout() {
+        return pollerTimeout;
+    }
+
+    public EngineIsReady(Long heartBeatInterval, Long pollerTimeout) {
+        this.heartBeatInterval = heartBeatInterval;
+        this.pollerTimeout = pollerTimeout;
     }
 
     @Override

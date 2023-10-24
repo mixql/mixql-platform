@@ -88,7 +88,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
       val serverPollInIndex = poller.register(server, ZMQ.Poller.POLLIN)
 
       logInfo(s"Sending READY message to server's broker")
-      sendMsgToPlatformBroker(new EngineIsReady(), logger)
+      sendMsgToPlatformBroker(new EngineIsReady(heartBeatInterval, pollerTimeout), logger)
 
       while (true) {
         val rc = poller.poll(pollerTimeout)

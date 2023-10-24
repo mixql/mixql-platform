@@ -89,6 +89,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
   val enginesStashedMsgs: mutable.Map[String, ListBuffer[StashedClientMessage]] = mutable.Map()
   var engines: mutable.Set[String] = mutable.Set()
   var enginesStartedTimeOut: mutable.Map[String, (Long, DateTime, String)] = mutable.Map()
+  var enginesPingHeartBeatTimeout: mutable.Map[String, (Long, DateTime, Long, Int)] = mutable.Map()
   val NOFLAGS = 0
   val config: Config = ConfigFactory.load()
 
@@ -145,6 +146,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
             }
           }
           processTimeOutForStartedEngines()
+          processPingsHeartBeatForStartedEngines()
         } catch {
           case e: BrakeException => throw e
           case e: Throwable =>
@@ -238,6 +240,74 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
     })
   }
 
+  def processPingsHeartBeatForStartedEngines(): Unit = {
+    // Name of engine, clientsIdentity set
+    val engineFailedSet = mutable.Set[String]()
+
+    enginesPingHeartBeatTimeout.foreach(tuple => {
+      val engineName = tuple._1
+      val heartBeatInterval = tuple._2._1
+      val processStart = tuple._2._2
+      val pollerTimeout = tuple._2._3
+      var liveness = tuple._2._4
+      val timeOut = heartBeatInterval + pollerTimeout
+
+      val elapsed = (processStart to DateTime.now()).millis
+      if (elapsed > timeOut) {
+        liveness = liveness - 1
+
+        val errorMsg =
+          "Broker: elapsed ping timeout for engine " + engineName +
+            " Expected to receive ping heartbeat less then " + timeOut
+        if (liveness < 0) {
+          logError(errorMsg)
+          // Added here clientIdentity of sender of EngineStarted
+          engineFailedSet.add(engineName)
+        } else {
+          logWarn(errorMsg)
+          // Set updated liveness
+          enginesPingHeartBeatTimeout.put(engineName, (heartBeatInterval, DateTime.now(), pollerTimeout, liveness))
+        }
+
+      }
+    })
+
+    engineFailedSet.foreach(failedEngineName => {
+      enginesPingHeartBeatTimeout = enginesPingHeartBeatTimeout.dropWhile(p => {
+        p._1 == failedEngineName
+      })
+      logDebug(s"Delete engine ${failedEngineName} from engine's list")
+      engines = engines.dropWhile(t => t == failedEngineName.trim)
+    })
+
+//    // Add clientIdentities which sent messages to engine and they where stashed
+//    engineFailedSet.foreach(failedEngine => {
+//      enginesStashedMsgs.get(failedEngine._1) match
+//        case Some(messages) =>
+//          if (messages.nonEmpty) {
+//            messages.foreach(msg => engineFailedSet.apply(failedEngine._1).add(msg.ClientAddr))
+//            messages.clear() // Do we need to clear messages?
+//          }
+//        case None =>
+//      end match
+//    })
+//
+//    engineFailedSet.foreach(engineFailed => {
+//      val engineFailedName = engineFailed._1
+//      val clientIdentities = engineFailed._2
+//      clientIdentities.foreach(clientIdentity =>
+//        logInfo("Broker: send error message EngineStartedTimeOutElapsedError to client " + clientIdentity)
+//        sendMessageToFrontend(
+//          clientIdentity,
+//          new EngineStartedTimeOutElapsedError(
+//            engineFailedName,
+//            "Broker: elapsed timeout for engine " + engineFailedName
+//          ).toByteArray
+//        )
+//      )
+//    })
+  }
+
   private def reactOnClientMsgForBroker(m: IBrokerReceiverFromClient): Unit = {
     m match
       case msg: EngineStarted =>
@@ -259,6 +329,9 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
 
         enginesStartedTimeOut = enginesStartedTimeOut.dropWhile(t => t._1 == msg.engineName())
 
+        val t = (msg.getHeartBeatInterval.toString.toLong, DateTime.now(), msg.getPollerTimeout.toString.toLong, 3)
+        enginesPingHeartBeatTimeout.put(msg.engineName, t)
+
         if !engines.contains(msg.engineName()) then
           logDebug(s"Broker: Add ${msg.engineName()} as key in engines set")
           engines.add(msg.engineName()) // only this thread will write, so there will be no race condition
@@ -269,7 +342,15 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
         // TO-DO Properly react on EngineFailed
         throw new UnsupportedOperationException(msg.getErrorMessage)
       case msg: EnginePingHeartBeat => // Its heart beat message from engine
-        sendMessageToFrontend(msg.engineName(), new PlatformPongHeartBeat().toByteArray)
+        if !engines.contains(msg.engineName()) then
+          val t = enginesPingHeartBeatTimeout(msg.engineName())
+          enginesPingHeartBeatTimeout.put(msg.engineName(), (t._1, DateTime.now(), t._3, 3))
+          sendMessageToFrontend(msg.engineName(), new PlatformPongHeartBeat().toByteArray)
+        else
+          logWarn(
+            s"Broker: ignored EnginePingHeartBeat message from engine " + msg
+              .engineName() + " as it was not in list of registered engines: " + engines.mkString(",")
+          )
   }
 
   private def receiveMessageFromFrontend(): Message = {

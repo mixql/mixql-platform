@@ -634,7 +634,7 @@ class RemoteMessageConverterTest extends munit.FunSuite {
   test("convert EngineIsReady remote message to json and back") {
 
     val json = RemoteMessageConverter.toJson({
-      new EngineIsReady("stub")
+      new EngineIsReady("stub", 16500, 100)
     })
 
     assert(json.isInstanceOf[String])
@@ -646,6 +646,8 @@ class RemoteMessageConverterTest extends munit.FunSuite {
     val res = resRAW.asInstanceOf[EngineIsReady]
 
     assertEquals(res.engineName(), "stub")
+    assertEquals(res.getHeartBeatInterval.toString, "16500")
+    assertEquals(res.getPollerTimeout.toString, "100")
   }
 
   test("convert GetPlatformVar remote message to json and back") {

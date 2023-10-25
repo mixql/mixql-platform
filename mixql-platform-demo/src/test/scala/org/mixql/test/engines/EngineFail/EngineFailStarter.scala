@@ -8,7 +8,8 @@ import scala.concurrent.Future
 object EngineFailStarter extends IExecutor {
 
   override def start(identity: String, host: String, backendPort: String): Future[Unit] = {
-    JavaProcess.exec((new MixQlEngineFail()).getClass, List("--port", backendPort, "--host", host, "--identity", identity))
+    JavaProcess
+      .exec((new MixQlEngineFail()).getClass, List("--port", backendPort, "--host", host, "--identity", identity))
     import concurrent.ExecutionContext.Implicits.global
     Future {} // For compatibility
   }

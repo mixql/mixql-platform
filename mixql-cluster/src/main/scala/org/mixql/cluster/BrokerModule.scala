@@ -89,6 +89,8 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
   val enginesStashedMsgs: mutable.Map[String, ListBuffer[StashedClientMessage]] = mutable.Map()
   var engines: mutable.Set[String] = mutable.Set()
   var enginesStartedTimeOut: mutable.Map[String, (Long, DateTime, String)] = mutable.Map()
+  var enginesPingHeartBeatTimeout: mutable.Map[String, (Long, DateTime, Long, Int)] = mutable.Map()
+  var clientsThatSentToEngine: mutable.Map[String, mutable.Set[String]] = mutable.Map()
   val NOFLAGS = 0
   val config: Config = ConfigFactory.load()
 
@@ -140,11 +142,18 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
                   if !engines.contains(m.moduleIdentity()) then
                     logDebug(s"Broker frontend: engine was not initialized yet. Stash message in engines map")
                     stashMessage(m.moduleIdentity(), m.clientIdentity(), m.toByteArray)
-                  else sendMessageToFrontend(m.moduleIdentity(), m.toByteArray)
+                  else
+                    clientsThatSentToEngine.get(m.moduleIdentity()) match {
+                      case Some(value) => value.add(m.clientIdentity())
+//                        clientsThatSentToEngine.put(m.moduleIdentity(), value)
+                      case None => clientsThatSentToEngine.put(m.moduleIdentity(), mutable.Set(m.clientIdentity()))
+                    }
+                    sendMessageToFrontend(m.moduleIdentity(), m.toByteArray)
                 }
             }
           }
           processTimeOutForStartedEngines()
+          processPingsHeartBeatForStartedEngines()
         } catch {
           case e: BrakeException => throw e
           case e: Throwable =>
@@ -161,7 +170,9 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
       try {
         if frontend != null then
           logInfo("Broker: closing frontend")
-          frontend.close()
+          runWithTimeout(5000) {
+            frontend.close()
+          }
       } catch {
         case e: Throwable => logError("Warning error while closing frontend socket in broker: " + e.getMessage)
       }
@@ -169,7 +180,9 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
       try {
         if poller != null then {
           logInfo("Broker: close poll")
-          poller.close()
+          runWithTimeout(5000) {
+            poller.close()
+          }
         }
       } catch {
         case e: Throwable => logError("Warning error while closing poller in broker: " + e.getMessage)
@@ -179,12 +192,22 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
         if ctx != null then {
           logInfo("Broker: terminate context")
           //          ctx.term()
-          ctx.close()
+          runWithTimeout(5000) {
+            ctx.close()
+          }
         }
       } catch {
         case e: Throwable => logError("Warning error while closing broker context: " + e.getMessage)
       }
     }
+  }
+
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import scala.concurrent._
+  import scala.concurrent.duration._
+
+  def runWithTimeout[T](timeoutMs: Long)(f: => T): Option[T] = {
+    Some(Await.result(Future(f), timeoutMs milliseconds))
   }
 
   def processTimeOutForStartedEngines(): Unit = {
@@ -238,6 +261,69 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
     })
   }
 
+  def processPingsHeartBeatForStartedEngines(): Unit = {
+    // Name of engine, clientsIdentity set
+    val engineFailedSet = mutable.Set[String]()
+
+    enginesPingHeartBeatTimeout.foreach(tuple => {
+      val engineName = tuple._1
+      val heartBeatInterval = tuple._2._1
+      val processStart = tuple._2._2
+      val pollerTimeout = tuple._2._3
+      var liveness = tuple._2._4
+      val bias = (heartBeatInterval + pollerTimeout) * 0.05 // More if network is worse
+      val timeOut = heartBeatInterval + pollerTimeout + bias
+
+      val elapsed = (processStart to DateTime.now()).millis
+      if (elapsed > timeOut) {
+        liveness = liveness - 1
+
+        val errorMsg =
+          "Broker: elapsed ping timeout for engine " + engineName +
+            " Expected to receive ping heartbeat less then " + timeOut +
+            "\nLiveness: " + liveness
+        if (liveness < 0) {
+          logError(errorMsg)
+          // Added here clientIdentity of sender of EngineStarted
+          engineFailedSet.add(engineName)
+        } else {
+          logWarn(errorMsg)
+          // Set updated liveness
+          enginesPingHeartBeatTimeout.put(engineName, (heartBeatInterval, DateTime.now(), pollerTimeout, liveness))
+        }
+
+      }
+    })
+
+    engineFailedSet.foreach(failedEngineName => {
+      enginesPingHeartBeatTimeout = enginesPingHeartBeatTimeout.dropWhile(p => {
+        p._1 == failedEngineName
+      })
+      logDebug("enginesPingHeartBeatTimeout: " + enginesPingHeartBeatTimeout.mkString(","))
+      logDebug(s"Delete engine ${failedEngineName} from engine's list")
+      engines = engines.dropWhile(t => t == failedEngineName.trim)
+      logDebug("engines: " + engines.mkString(","))
+
+      clientsThatSentToEngine.get(failedEngineName) match {
+        case Some(clientIdentities) =>
+          clientIdentities.foreach(clientIdentity =>
+            logDebug("Broker: send error message EnginePingTimeOutElapsedError to client " + clientIdentity)
+            sendMessageToFrontend(
+              clientIdentity,
+//              new EnginePingTimeOutElapsedError( //TO-DO
+              new EngineStartedTimeOutElapsedError(
+                failedEngineName,
+                "Broker: elapsed timeout for engine " + failedEngineName
+              ).toByteArray
+            )
+          )
+        case None =>
+      }
+      clientsThatSentToEngine = clientsThatSentToEngine.dropWhile(t => t._1 == failedEngineName.trim)
+      logDebug("clientsThatSentToEngine: " + clientsThatSentToEngine.mkString(","))
+    })
+  }
+
   private def reactOnClientMsgForBroker(m: IBrokerReceiverFromClient): Unit = {
     m match
       case msg: EngineStarted =>
@@ -259,6 +345,9 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
 
         enginesStartedTimeOut = enginesStartedTimeOut.dropWhile(t => t._1 == msg.engineName())
 
+        val t = (msg.getHeartBeatInterval.toString.toLong, DateTime.now(), msg.getPollerTimeout.toString.toLong, 3)
+        enginesPingHeartBeatTimeout.put(msg.engineName, t)
+
         if !engines.contains(msg.engineName()) then
           logDebug(s"Broker: Add ${msg.engineName()} as key in engines set")
           engines.add(msg.engineName()) // only this thread will write, so there will be no race condition
@@ -269,7 +358,15 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
         // TO-DO Properly react on EngineFailed
         throw new UnsupportedOperationException(msg.getErrorMessage)
       case msg: EnginePingHeartBeat => // Its heart beat message from engine
-        sendMessageToFrontend(msg.engineName(), new PlatformPongHeartBeat().toByteArray)
+        if engines.contains(msg.engineName()) then
+          val t = enginesPingHeartBeatTimeout(msg.engineName())
+          enginesPingHeartBeatTimeout.put(msg.engineName(), (t._1, DateTime.now(), t._3, 3))
+          sendMessageToFrontend(msg.engineName(), new PlatformPongHeartBeat().toByteArray)
+        else
+          logWarn(
+            s"Broker: ignored EnginePingHeartBeat message from engine " + msg
+              .engineName() + " as it was not in list of registered engines: " + engines.mkString(",")
+          )
   }
 
   private def receiveMessageFromFrontend(): Message = {
@@ -286,7 +383,12 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
     val requestStr: String = new String(request)
     logDebug(s"Broker frontend: received request [$requestStr] for engine module from $clientAddrStr")
     try {
-      RemoteMessageConverter.unpackAnyMsgFromArray(request)
+      RemoteMessageConverter.unpackAnyMsgFromArray(request) match {
+        case m: IBrokerReceiverFromModule => m.setEngineName(clientAddrStr)
+        case m: IModuleSendToClient       => m
+        case m: IBrokerReceiverFromClient => m.SetClientIdentity(clientAddrStr)
+        case m: IModuleReceiver           => m.SetClientIdentity(clientAddrStr)
+      }
     } catch
       case e: Throwable =>
         val msg = logError(

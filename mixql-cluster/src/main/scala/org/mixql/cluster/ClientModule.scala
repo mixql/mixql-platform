@@ -11,7 +11,7 @@ import org.zeromq.{SocketType, ZMQ}
 import java.io.File
 import java.net.{InetSocketAddress, SocketAddress}
 import java.nio.channels.{ServerSocketChannel, SocketChannel}
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
@@ -50,6 +50,7 @@ import scalapb.options.ScalaPbOptions.OptionsScope
 
 import java.lang.Thread.sleep
 import scala.annotation.tailrec
+import scala.language.postfixOps
 
 case class StashedParam(name: String, value: mtype.MType)
 
@@ -84,7 +85,7 @@ class ClientModule(clientIdentity: String,
   override def executeImpl(stmt: String, ctx: EngineContext): MType = {
     logInfo(s"[ClientModule-$clientIdentity]: module $moduleIdentity was triggered by execute request")
 
-    sendMsg(Execute(moduleIdentity, clientIdentity, stmt))
+    sendMsg(Execute(moduleIdentity, stmt))
     reactOnRequest(recvMsg(), ctx)
   }
 
@@ -93,14 +94,7 @@ class ClientModule(clientIdentity: String,
       throw new UnsupportedOperationException("named arguments are not supported in functions in remote engine " + name)
 
     logInfo(s"[ClientModule-$clientIdentity]: module $moduleIdentity was triggered by executeFunc request")
-    sendMsg(
-      ExecuteFunction(
-        moduleIdentity,
-        clientIdentity,
-        name,
-        params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray
-      )
-    )
+    sendMsg(ExecuteFunction(moduleIdentity, name, params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray))
     reactOnRequest(recvMsg(), ctx)
   }
 
@@ -112,7 +106,7 @@ class ClientModule(clientIdentity: String,
 
     logInfo(s"Server: ClientModule: $clientIdentity: ask defined functions from remote engine")
 
-    sendMsg(messages.client.GetDefinedFunctions(moduleIdentity, clientIdentity))
+    sendMsg(messages.client.GetDefinedFunctions(moduleIdentity))
     val functionsList =
       recvMsg() match {
         case m: messages.module.DefinedFunctions => m.arr.toList
@@ -141,26 +135,17 @@ class ClientModule(clientIdentity: String,
         m match
           case msg: GetPlatformVar =>
             val v = ctx.getVar(msg.name)
-            sendMsg(
-              new PlatformVar(
-                moduleIdentity,
-                clientIdentity,
-                msg.workerIdentity(),
-                msg.name,
-                GtypeConverter.toGeneratedMsg(v)
-              )
-            )
+            sendMsg(new PlatformVar(moduleIdentity, msg.workerIdentity(), msg.name, GtypeConverter.toGeneratedMsg(v)))
             reactOnRequest(recvMsg(), ctx)
           case msg: SetPlatformVar =>
             ctx.setVar(msg.name, GtypeConverter.messageToGtype(msg.msg))
-            sendMsg(new PlatformVarWasSet(moduleIdentity, clientIdentity, msg.workerIdentity(), msg.name))
+            sendMsg(new PlatformVarWasSet(moduleIdentity, msg.workerIdentity(), msg.name))
             reactOnRequest(recvMsg(), ctx)
           case msg: GetPlatformVars =>
             val valMap = ctx.getVars(msg.names.toList)
             sendMsg(
               new PlatformVars(
                 moduleIdentity,
-                clientIdentity,
                 msg.workerIdentity(),
                 valMap.map(t => new Param(t._1, GtypeConverter.toGeneratedMsg(t._2))).toArray
               )
@@ -172,16 +157,13 @@ class ClientModule(clientIdentity: String,
             sendMsg(
               new PlatformVarsWereSet(
                 moduleIdentity,
-                clientIdentity,
                 msg.workerIdentity(),
                 new java.util.ArrayList[String](msg.vars.keySet())
               )
             )
             reactOnRequest(recvMsg(), ctx)
           case msg: GetPlatformVarsNames =>
-            sendMsg(
-              new PlatformVarsNames(moduleIdentity, clientIdentity, msg.workerIdentity(), ctx.getVarsNames().toArray)
-            )
+            sendMsg(new PlatformVarsNames(moduleIdentity, msg.workerIdentity(), ctx.getVarsNames().toArray))
             reactOnRequest(recvMsg(), ctx)
           case msg: InvokeFunction =>
 //            try {
@@ -190,7 +172,6 @@ class ClientModule(clientIdentity: String,
             sendMsg(
               new InvokedPlatformFunctionResult(
                 moduleIdentity,
-                clientIdentity,
                 msg.workerIdentity(),
                 msg.name,
                 GtypeConverter.toGeneratedMsg(res)
@@ -260,7 +241,7 @@ class ClientModule(clientIdentity: String,
         )
         moduleStarted = true
         logInfo(s" Clientmodule $clientIdentity: notify broker about started engine " + moduleIdentity)
-        _sendMsg(new EngineStarted(moduleIdentity, clientIdentity, startEngineTimeOut))
+        _sendMsg(new EngineStarted(moduleIdentity, startEngineTimeOut))
       }
       _sendMsg(msg)
     }
@@ -360,30 +341,44 @@ class ClientModule(clientIdentity: String,
 
   def ShutDown() = {
     if moduleStarted then
-      sendMsg(messages.client.ShutDown(moduleIdentity, clientIdentity))
+      sendMsg(messages.client.ShutDown(moduleIdentity))
       moduleStarted = false // not to send occasionally more then once
   }
 
   override def close() = {
     if (moduleStarted) {
       logInfo(s"Server: ClientModule: sending Shutdown to remote engine " + moduleIdentity)
-      ShutDown()
+      runWithTimeout(5000) {
+        ShutDown()
+      }
       logDebug("Give time module's socket to shutdown and shutdown message to reach module")
       sleep(2000)
     }
     logDebug(s"Server: ClientModule: $clientIdentity: Executing close")
     Try(if (client != null) {
       logInfo(s"Server: ClientModule: $clientIdentity: close client socket")
-      client.close()
+      runWithTimeout(5000) {
+        client.close()
+      }
     })
 
     Try(if (ctx != null) {
       logInfo(s"Server: ClientModule: $clientIdentity: close context")
-      ctx.close()
+      runWithTimeout(5000) {
+        ctx.close()
+      }
     })
 
     //    if (clientRemoteProcess.isAlive()) clientRemoteProcess.exitValue()
     //    println(s"server: ClientModule: $clientIdentity: Remote client was shutdown")
 
+  }
+
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import scala.concurrent._
+  import scala.concurrent.duration._
+
+  def runWithTimeout[T](timeoutMs: Long)(f: => T): Option[T] = {
+    Some(Await.result(Future(f), timeoutMs milliseconds))
   }
 }

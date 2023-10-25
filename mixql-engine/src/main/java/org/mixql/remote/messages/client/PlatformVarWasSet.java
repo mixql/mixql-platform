@@ -14,11 +14,21 @@ public class PlatformVarWasSet implements IWorkerReceiver {
     public String moduleIdentity;
     private String clientIdentity;
 
-    public PlatformVarWasSet(String moduleIdentity, String clientIdentity, String sender, String name) {
+    public PlatformVarWasSet(String moduleIdentity, String sender, String name) {
         _sender = sender;
         this.name = name;
         this.moduleIdentity = moduleIdentity;
+    }
+
+    public PlatformVarWasSet(String moduleIdentity, String clientIdentity, String sender, String name) {
+        this(moduleIdentity, sender, name);
         this.clientIdentity = clientIdentity;
+    }
+
+    @Override
+    public IModuleReceiver SetClientIdentity(String clientIdentity) {
+        this.clientIdentity = clientIdentity;
+        return this;
     }
 
 

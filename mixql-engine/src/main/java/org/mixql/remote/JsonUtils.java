@@ -15,15 +15,20 @@ class JsonUtils {
         return jsonObject;
     }
 
-    public static JSONObject buildEngineIsReady(String type, String name) {
+    public static JSONObject buildEngineIsReady(String type, String name, Long heartBeatInterval, Long pollerTimeout) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("engineName", name);
+        jsonObject.put("heartBeatInterval", heartBeatInterval.toString());
+        jsonObject.put("pollerTimeout", pollerTimeout.toString());
         return jsonObject;
     }
 
     public static JSONObject buildEnginePingHeartBeat(String type, String name) {
-        return buildEngineIsReady(type, name);
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("type", type);
+        jsonObject.put("engineName", name);
+        return jsonObject;
     }
 
     public static JSONObject buildShutDown(String type, String moduleIdentity, String clientIdentity) {

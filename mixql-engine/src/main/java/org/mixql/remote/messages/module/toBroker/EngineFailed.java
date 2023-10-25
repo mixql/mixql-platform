@@ -17,6 +17,16 @@ public class EngineFailed extends Error implements IBrokerReceiverFromModule {
         this.engineName = engineName;
     }
 
+    public EngineFailed(String errorMsg) {
+        super(errorMsg);
+    }
+
+    @Override
+    public IBrokerReceiverFromModule setEngineName(String engineName) {
+        this.engineName = engineName;
+        return this;
+    }
+
     @Override
     public String toString() {
         try {

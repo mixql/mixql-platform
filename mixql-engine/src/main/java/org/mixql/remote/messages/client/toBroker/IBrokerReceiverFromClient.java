@@ -4,4 +4,6 @@ import org.mixql.remote.messages.Message;
 
 public interface IBrokerReceiverFromClient extends Message {
     public String clientIdentity();
+
+    public IBrokerReceiverFromClient SetClientIdentity(String clientIdentity);
 }

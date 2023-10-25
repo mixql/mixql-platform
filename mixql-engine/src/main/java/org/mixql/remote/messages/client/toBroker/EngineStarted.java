@@ -9,11 +9,20 @@ public class EngineStarted implements IBrokerReceiverFromClient {
 
     private long timeout;
 
+    public EngineStarted(String engineName, long timeout) {
+        this.engineName = engineName;
+        this.timeout = timeout;
+    }
 
     public EngineStarted(String engineName, String clientIdentity, long timeout) {
-        this.engineName = engineName;
+        this(engineName, timeout);
         this.clientIdentity = clientIdentity;
-        this.timeout = timeout;
+    }
+
+    @Override
+    public IBrokerReceiverFromClient SetClientIdentity(String clientIdentity){
+        this.clientIdentity = clientIdentity;
+        return this;
     }
 
     @Override

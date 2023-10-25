@@ -9,10 +9,20 @@ public class Execute implements IModuleReceiver {
 
     private String clientIdentity;
 
-    public Execute(String moduleIdentity, String clientIdentity, String statement) {
+    public Execute(String moduleIdentity, String statement) {
         this.statement = statement;
         this.moduleIdentity = moduleIdentity;
+    }
+
+    public Execute(String moduleIdentity, String clientIdentity, String statement) {
+        this(moduleIdentity, statement);
         this.clientIdentity = clientIdentity;
+    }
+
+    @Override
+    public IModuleReceiver SetClientIdentity(String clientIdentity){
+        this.clientIdentity = clientIdentity;
+        return this;
     }
 
     @Override

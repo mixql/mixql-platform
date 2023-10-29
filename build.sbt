@@ -3,7 +3,7 @@ ThisBuild / scalaVersion := "3.1.3"
 inThisBuild(
   List(
     organization := "org.mixql",
-    version := "0.9.1", // change version for all projects
+    version := "0.9.1.1", // change version for all projects
     organizationName := "MixQL",
     organizationHomepage := Some(url("https://mixql.org/")),
     developers := List(

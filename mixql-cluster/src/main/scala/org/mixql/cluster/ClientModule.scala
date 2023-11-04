@@ -164,13 +164,13 @@ class ClientModule(clientIdentity: String,
           case m: messages.module.DefinedFunctions => m.arr.toList
           case ex: org.mixql.remote.messages.rtype.Error =>
             val errorMessage =
-              s"Server: ClientModule: $clientIdentity-${String(client.getIdentity)}: getDefinedFunctions error: \n" + ex
+              s"Server: ClientModule: ${String(client.getIdentity)}: getDefinedFunctions error: \n" + ex
                 .getErrorMessage
             logError(errorMessage)
             throw new Exception(errorMessage)
           case m: messages.Message =>
             val errorMessage =
-              s"Server: ClientModule: $clientIdentity-${String(client.getIdentity)}: getDefinedFunctions error: \n" +
+              s"Server: ClientModule: ${String(client.getIdentity)}: getDefinedFunctions error: \n" +
                 "Unknown message " + m.`type`() + " received"
             logError(errorMessage)
             throw new Exception(errorMessage)
@@ -188,9 +188,7 @@ class ClientModule(clientIdentity: String,
     logInfo(s"Server: ClientModule: close socket with identity " + clientSocketIdentity)
     Try(if (client != null) {
       logInfo(
-        s"Server: ClientModule: $clientIdentity-${String(client.getIdentity)}: close client socket " + String(
-          client.getIdentity
-        )
+        s"Server: ClientModule: ${String(client.getIdentity)}: close client socket "
       )
       runWithTimeout(5000) {
         client.close()
@@ -264,7 +262,7 @@ class ClientModule(clientIdentity: String,
           case msg: ExecutedFunctionResult =>
             if (msg.msg.isInstanceOf[org.mixql.remote.messages.rtype.Error]) {
               logError(
-                s"Server: ClientModule: $clientIdentity-${String(client.getIdentity)} Error while executing function " + msg
+                s"Server: ClientModule: ${String(client.getIdentity)} Error while executing function " + msg
                   .functionName + "error: " +
                   msg.msg.asInstanceOf[org.mixql.remote.messages.rtype.Error].getErrorMessage
               )
@@ -273,14 +271,14 @@ class ClientModule(clientIdentity: String,
             GtypeConverter.messageToGtype(msg.msg)
           case msg: org.mixql.remote.messages.rtype.Error =>
             logError(
-              s"Server: ClientModule: $clientIdentity-${String(client.getIdentity)}:" + msg
+              s"Server: ClientModule: ${String(client.getIdentity)}:" + msg
                 .asInstanceOf[org.mixql.remote.messages.rtype.Error].getErrorMessage
             )
             throw new Exception(msg.asInstanceOf[org.mixql.remote.messages.rtype.Error].getErrorMessage)
           case msg: ExecuteResult =>
             if (msg.result.isInstanceOf[org.mixql.remote.messages.rtype.Error]) {
               logError(
-                s"Server: ClientModule: $clientIdentity-${String(client.getIdentity)} Error while executing statement " + msg
+                s"Server: ClientModule: ${String(client.getIdentity)} Error while executing statement " + msg
                   .stmt + "error: " +
                   msg.result.asInstanceOf[org.mixql.remote.messages.rtype.Error].getErrorMessage
               )
@@ -289,7 +287,7 @@ class ClientModule(clientIdentity: String,
             GtypeConverter.messageToGtype(msg.result)
       case msg: org.mixql.remote.messages.rtype.Error =>
         logError(
-          s"Server: ClientModule: $clientIdentity-${String(client.getIdentity)}: \n error while reacting on request\n" +
+          s"Server: ClientModule: ${String(client.getIdentity)}: \n error while reacting on request\n" +
             msg.getErrorMessage
         )
         throw new Exception(msg.getErrorMessage)
@@ -297,7 +295,7 @@ class ClientModule(clientIdentity: String,
 
   private def _sendMsg(msg: messages.Message, client: ZMQ.Socket): Unit = {
     logDebug(
-      "server: Clientmodule " + clientIdentity + "-" + String(
+      "server: Clientmodule " + String(
         client.getIdentity
       ) + " sending protobuf message to remote module " + moduleIdentity + " " +
         client.send(msg.toByteArray, 0)
@@ -317,13 +315,13 @@ class ClientModule(clientIdentity: String,
         // set id for client
 //        client.setIdentity(clientIdentity.getBytes)
         logInfo(
-          s"server: Clientmodule $clientIdentity-${String(client.getIdentity)} connected to " +
+          s"server: Clientmodule ${String(client.getIdentity)} connected to " +
             s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPort.get} " + client
               .connect(s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPort.get}")
         )
         moduleStarted = true
         logInfo(
-          s" Clientmodule $clientIdentity-${String(client.getIdentity)}: notify broker about started engine " + moduleIdentity
+          s" Clientmodule ${String(client.getIdentity)}: notify broker about started engine " + moduleIdentity
         )
         _sendMsg(new EngineStarted(moduleIdentity, startEngineTimeOut), client)
       }

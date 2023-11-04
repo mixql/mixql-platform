@@ -287,15 +287,19 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
                                 onSuccess: (Message, ZMQ.Socket, String) => Unit,
                                 onFailure: (Throwable, ZMQ.Socket, String) => Unit): Unit = {
     import scala.util.{Success, Failure}
-    val workersName = generateUnusedWorkersName()
-    logInfo("Creating worker " + workersName)
-    logInfo(s"Register module's pair socket pollin in workersPoller for worker " + workersName)
-    val workerSocket = ctx.socket(SocketType.PAIR)
-    val pairPollInIndex = workerPoller.register(workerSocket, ZMQ.Poller.POLLIN)
-    workerSocket.bind(s"inproc://$workersName")
-    workersMap.put(workersName, workerSocket)
+    var workersName = ""
     var futurePairSocket: ZMQ.Socket = null
     Future {
+
+      this.synchronized {
+        workersName = generateUnusedWorkersName()
+        logInfo("Creating worker " + workersName)
+        logInfo(s"Register module's pair socket pollin in workersPoller for worker " + workersName)
+        val workerSocket = ctx.socket(SocketType.PAIR)
+        val pairPollInIndex = workerPoller.register(workerSocket, ZMQ.Poller.POLLIN)
+        workerSocket.bind(s"inproc://$workersName")
+        workersMap.put(workersName, workerSocket)
+      }
       logInfo(s"[workers-future-$workersName]: Creating future's pair socket for communicating with module")
       futurePairSocket = ctx.socket(SocketType.PAIR)
       logInfo(s"[workers-future-$workersName]: Bind future's pair socket in inproc://$workersName")

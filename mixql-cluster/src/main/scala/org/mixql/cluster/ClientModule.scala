@@ -1,6 +1,8 @@
 package org.mixql.cluster
 
 import com.typesafe.config.ConfigFactory
+import org.mixql.cluster.BrokerModule.{_host, _port, startedBroker, threadBroker}
+import org.mixql.cluster.ClientModule.config
 import org.mixql.cluster.logger.{logDebug, logError, logInfo, logWarn}
 import org.mixql.core.engine.Engine
 import org.mixql.core.context.mtype.{MType, unpack}
@@ -16,6 +18,8 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 import org.mixql.core.context.{EngineContext, mtype}
+import org.mixql.engine.core.BrakeException
+import org.mixql.protobuf.ErrorOps
 import org.mixql.remote.messages.rtype.Param
 import org.mixql.remote.messages.rtype.mtype.IGtypeMessage
 import org.mixql.remote.messages.client.toBroker.EngineStarted
@@ -73,12 +77,13 @@ class ClientModule(clientIdentity: String,
                    startScriptExtraOpts: Option[String] = None)
     extends Engine
     with java.lang.AutoCloseable {
-  var client: ZMQ.Socket = null
   var ctx: ZMQ.Context = null
 
   var clientRemoteProcess: sys.process.Process = null
   var clientFuture: Future[Unit] = null
   var moduleStarted: Boolean = false
+
+  private var threadClientPoller: Thread = null
 
   override def name: String = clientIdentity
 
@@ -355,12 +360,6 @@ class ClientModule(clientIdentity: String,
       sleep(2000)
     }
     logDebug(s"Server: ClientModule: $clientIdentity: Executing close")
-    Try(if (client != null) {
-      logInfo(s"Server: ClientModule: $clientIdentity: close client socket")
-      runWithTimeout(5000) {
-        client.close()
-      }
-    })
 
     Try(if (ctx != null) {
       logInfo(s"Server: ClientModule: $clientIdentity: close context")
@@ -372,6 +371,119 @@ class ClientModule(clientIdentity: String,
     //    if (clientRemoteProcess.isAlive()) clientRemoteProcess.exitValue()
     //    println(s"server: ClientModule: $clientIdentity: Remote client was shutdown")
 
+    this.synchronized {
+      if (threadBroker != null && threadBroker.isAlive() && !threadBroker.isInterrupted)
+        _port = None
+        _host = None
+        logInfo("Broker: Executing close")
+        logInfo("Broker: send interrupt to thread")
+        threadBroker.interrupt()
+        logInfo("Waiting while broker thread is alive")
+        try {
+          threadBroker.join();
+        } catch case _: InterruptedException => System.out.printf("%s has been interrupted", threadBroker.getName())
+        logInfo("server: Broker was shutdown")
+        threadBroker = null
+        startedBroker = false
+    }
+  }
+
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import scala.concurrent._
+  import scala.concurrent.duration._
+
+  def runWithTimeout[T](timeoutMs: Long)(f: => T): Option[T] = {
+    Some(Await.result(Future(f), timeoutMs milliseconds))
+  }
+}
+
+class ClientModuleMainRunnable(name: String, host: String, port: String, ctx: ZMQ.Context) extends Thread(name) {
+  var client: ZMQ.Socket = null
+  var workerPoller: ZMQ.Poller = null
+
+  val workerPollerTimeout: Long = Try(config.getLong("org.mixql.cluster.client.poller.workerPollerTimeout")).getOrElse({
+    95
+  })
+
+  // key -> workers unique name
+  // int -> poll in index of pair to communicate with this worker
+  val workersMap: mutable.Map[String, ZMQ.Socket] = mutable.Map()
+
+  override def run(): Unit = {
+    logDebug("client thread poller was started")
+    logInfo(s"Setting client thread workers poller")
+    workerPoller = ctx.poller(14)
+
+    try {
+      while (!Thread.currentThread().isInterrupted) {
+        try {
+
+          var rcWorkers = -1;
+          if (workerPoller.getSize != 0)
+            rcWorkers = workerPoller.poll(workerPollerTimeout)
+          if (rcWorkers == -1)
+            throw new BrakeException()
+          logDebug("ThreadInterrupted: " + Thread.currentThread().isInterrupted)
+          // Receive messages from engines
+          if (rcWorkers > 0) {
+            for (index <- 0 until workerPoller.getSize) {
+              if (workerPoller.pollin(index)) {
+                val workerSocket = workerPoller.getSocket(index)
+                val msg: Message = RemoteMessageConverter.unpackAnyMsgFromArray(workerSocket.recv(0))
+                msg match {
+                  case m: WorkerFinished =>
+                    logInfo(
+                      "Received message WorkerFinished from worker " + m.workerIdentity() +
+                        " Remove socket from workersMap"
+                    )
+                    workersMap.remove(m.Id)
+                    logInfo("Unregister worker's " + m.workerIdentity() + " socket from workerPoller")
+                    workerPoller.unregister(workerSocket)
+                    logInfo("Closing worker's " + m.workerIdentity() + " socket")
+                    workerSocket.close()
+                  case m: SendMsgToPlatform =>
+                    logInfo(
+                      "Received message SendMsgToPlatform from worker " + m.workerIdentity() +
+                        " and send it to platform"
+                    )
+                    sendMsgToClient(m.msg, logger)
+                  case m: IWorkerSendToClient =>
+                    logInfo(
+                      "Received message of type IWorkerSendToPlatform from worker " + m.workerIdentity() +
+                        s" and proxy it (type: ${m.`type`()}) to platform"
+                    )
+                    sendMsgToClient(m, logger)
+                }
+              }
+            }
+          }
+        } catch {
+          case e: BrakeException => throw e
+          case e: Throwable =>
+            logError(
+              "Broker main thread:\n Got Exception: \n" + e.getMessage +
+                "\n target exception stacktrace: \n" + ErrorOps.stackTraceToString(e)
+            )
+          // TO-DO Send broker error to clients
+        }
+      }
+    } catch {
+      case e: BrakeException =>
+    } finally {
+      Try(if (workerPoller != null) {
+        logInfo(s"finally close workerPoller")
+        runWithTimeout(5000) {
+          workerPoller.close()
+        }
+      })
+
+      Try(if (client != null) {
+        logInfo(s"Server: ClientModule: $clientIdentity: close client socket")
+        runWithTimeout(5000) {
+          client.close()
+        }
+      })
+    }
   }
 
   import scala.concurrent.ExecutionContext.Implicits.global

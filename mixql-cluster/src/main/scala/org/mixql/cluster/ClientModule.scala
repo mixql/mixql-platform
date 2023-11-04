@@ -14,7 +14,7 @@ import java.nio.channels.{ServerSocketChannel, SocketChannel}
 import scala.concurrent.{Await, Future}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.util.Try
+import scala.util.{Random, Try}
 import org.mixql.core.context.{EngineContext, mtype}
 import org.mixql.remote.messages.rtype.Param
 import org.mixql.remote.messages.rtype.mtype.IGtypeMessage
@@ -92,12 +92,40 @@ class ClientModule(clientIdentity: String,
 
     var client: ZMQ.Socket = null
     try {
-      client = this.ctx().socket(SocketType.DEALER)
+      client = initClientSocket()
       sendMsg(Execute(moduleIdentity, stmt), client)
       reactOnRequest(recvMsg(client), ctx, client)
     } finally {
       closeClientSocket(client)
     }
+  }
+
+  val clientSocketsIdentitiesSet: mutable.Set[String] = mutable.Set()
+  val r: Random.type = scala.util.Random
+
+  def generateUnusedClientSocketsIdentity(): String = {
+    val numPattern = "[0-9]+".r
+    val ids = clientSocketsIdentitiesSet.map(name => numPattern.findFirstIn(name).get.toInt)
+
+    var foundUniqueId = false
+    var id = -1;
+    while (!foundUniqueId) {
+      id = r.nextInt().abs
+      ids.find(p => p == id) match {
+        case Some(_) =>
+        case None    => foundUniqueId = true
+      }
+    }
+    s"$clientIdentity$id"
+  }
+
+  protected def initClientSocket(): ZMQ.Socket = {
+    val client = this.ctx().socket(SocketType.DEALER)
+    val clientIdentity = generateUnusedClientSocketsIdentity()
+    client.setIdentity(clientIdentity.getBytes)
+    clientSocketsIdentitiesSet.add(clientIdentity)
+    logInfo(s"[ClientModule-$clientIdentity]: created client socket with identity " + String(client.getIdentity))
+    client
   }
 
   override def executeFuncImpl(name: String, ctx: EngineContext, kwargs: Map[String, Object], params: MType*): MType = {
@@ -107,7 +135,7 @@ class ClientModule(clientIdentity: String,
     logInfo(s"[ClientModule-$clientIdentity]: module $moduleIdentity was triggered by executeFunc request")
     var client: ZMQ.Socket = null
     try {
-      client = this.ctx().socket(SocketType.DEALER)
+      client = initClientSocket()
       sendMsg(
         ExecuteFunction(moduleIdentity, name, params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray),
         client
@@ -128,7 +156,7 @@ class ClientModule(clientIdentity: String,
     var client: ZMQ.Socket = null
     val functionsList =
       try {
-        client = ctx().socket(SocketType.DEALER)
+        client = initClientSocket()
 
         sendMsg(messages.client.GetDefinedFunctions(moduleIdentity), client)
 
@@ -156,6 +184,8 @@ class ClientModule(clientIdentity: String,
   }
 
   def closeClientSocket(client: ZMQ.Socket) = {
+    val clientSocketIdentity = String(client.getIdentity)
+    logInfo(s"Server: ClientModule: close socket with identity " + clientSocketIdentity)
     Try(if (client != null) {
       logInfo(
         s"Server: ClientModule: $clientIdentity-${String(client.getIdentity)}: close client socket " + String(
@@ -166,6 +196,7 @@ class ClientModule(clientIdentity: String,
         client.close()
       }
     })
+    clientSocketsIdentitiesSet.remove(clientSocketIdentity)
   }
 
   @tailrec
@@ -396,7 +427,7 @@ class ClientModule(clientIdentity: String,
     if moduleStarted then
       var client: ZMQ.Socket = null
       try {
-        client = ctx().socket(SocketType.DEALER)
+        client = initClientSocket()
         sendMsg(messages.client.ShutDown(moduleIdentity), client)
         moduleStarted = false // not to send occasionally more then once
       } finally {

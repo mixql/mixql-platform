@@ -15,7 +15,7 @@ object MixQlEngineSqlight {
     val host: String = appArgs.host.toOption.get
     val port = appArgs.port.toOption.get
     implicit val logger = new ModuleLogger(indentity)
-    logger.logInfo(s"Starting main client")
+    logger.logInfo(s"Starting MixQlEngineSqlite")
 
     new core.Module(EngineSqlightExecutor, indentity, host, port).startServer()
   }

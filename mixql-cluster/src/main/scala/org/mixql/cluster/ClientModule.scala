@@ -120,11 +120,24 @@ class ClientModule(clientIdentity: String,
   }
 
   protected def initClientSocket(): ZMQ.Socket = {
+
+    ClientModule.synchronized {
+      if (!BrokerModule.wasStarted)
+        startBroker()
+    }
+
     val client = this.ctx().socket(SocketType.DEALER)
-    val clientIdentity = generateUnusedClientSocketsIdentity()
-    client.setIdentity(clientIdentity.getBytes)
-    clientSocketsIdentitiesSet.add(clientIdentity)
+    this.synchronized {
+      val clientIdentity = generateUnusedClientSocketsIdentity()
+      client.setIdentity(clientIdentity.getBytes)
+      clientSocketsIdentitiesSet.add(clientIdentity)
+    }
     logInfo(s"[ClientModule-$clientIdentity]: created client socket with identity " + String(client.getIdentity))
+    logInfo(
+      s"server: Clientmodule ${String(client.getIdentity)} connected to " +
+        s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPort.get} " + client
+          .connect(s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPort.get}")
+    )
     client
   }
 
@@ -164,8 +177,7 @@ class ClientModule(clientIdentity: String,
           case m: messages.module.DefinedFunctions => m.arr.toList
           case ex: org.mixql.remote.messages.rtype.Error =>
             val errorMessage =
-              s"Server: ClientModule: ${String(client.getIdentity)}: getDefinedFunctions error: \n" + ex
-                .getErrorMessage
+              s"Server: ClientModule: ${String(client.getIdentity)}: getDefinedFunctions error: \n" + ex.getErrorMessage
             logError(errorMessage)
             throw new Exception(errorMessage)
           case m: messages.Message =>
@@ -187,14 +199,14 @@ class ClientModule(clientIdentity: String,
     val clientSocketIdentity = String(client.getIdentity)
     logInfo(s"Server: ClientModule: close socket with identity " + clientSocketIdentity)
     Try(if (client != null) {
-      logInfo(
-        s"Server: ClientModule: ${String(client.getIdentity)}: close client socket "
-      )
+      logInfo(s"Server: ClientModule: ${String(client.getIdentity)}: close client socket ")
       runWithTimeout(5000) {
         client.close()
       }
     })
-    clientSocketsIdentitiesSet.remove(clientSocketIdentity)
+    this.synchronized {
+      clientSocketsIdentitiesSet.remove(clientSocketIdentity)
+    }
   }
 
   @tailrec
@@ -254,11 +266,6 @@ class ClientModule(clientIdentity: String,
               client
             )
             reactOnRequest(recvMsg(client), ctx, client)
-//            } catch {
-//              case e: Throwable =>
-//                sendMsg(new module.Error(e.getMessage()))
-//                reactOnRequest(recvMsg(), ctx)
-//            }
           case msg: ExecutedFunctionResult =>
             if (msg.msg.isInstanceOf[org.mixql.remote.messages.rtype.Error]) {
               logError(
@@ -305,41 +312,24 @@ class ClientModule(clientIdentity: String,
   private def sendMsg(msg: IModuleReceiver, client: ZMQ.Socket): Unit = {
     this.synchronized {
       if (!moduleStarted) {
-
-        if (!BrokerModule.wasStarted)
-          startBroker()
-
         startModuleClient()
-//        ctx = ZMQ.context(1)
-//        client = ctx.socket(SocketType.DEALER)
-        // set id for client
-//        client.setIdentity(clientIdentity.getBytes)
-        logInfo(
-          s"server: Clientmodule ${String(client.getIdentity)} connected to " +
-            s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPort.get} " + client
-              .connect(s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPort.get}")
-        )
         moduleStarted = true
-        logInfo(
-          s" Clientmodule ${String(client.getIdentity)}: notify broker about started engine " + moduleIdentity
-        )
+        logInfo(s" Clientmodule ${String(client.getIdentity)}: notify broker about started engine " + moduleIdentity)
         _sendMsg(new EngineStarted(moduleIdentity, startEngineTimeOut), client)
       }
-      _sendMsg(msg, client)
     }
+    _sendMsg(msg, client)
   }
 
   private def recvMsg(client: ZMQ.Socket): messages.Message = {
-    this.synchronized {
-      val emptyRAW = client.recv(0)
-      val emptyRAWStr = new String(emptyRAW)
-      logDebug("Received empty msg " + emptyRAWStr)
+    val emptyRAW = client.recv(0)
+    val emptyRAWStr = new String(emptyRAW)
+    logDebug("Received empty msg " + emptyRAWStr)
 
-      val msgRAW = client.recv(0)
-      val msgRAWStr = new String(msgRAW)
-      logDebug("Received raw msg " + msgRAWStr)
-      RemoteMessageConverter.unpackAnyMsgFromArray(msgRAW)
-    }
+    val msgRAW = client.recv(0)
+    val msgRAWStr = new String(msgRAW)
+    logDebug("Received raw msg " + msgRAWStr)
+    RemoteMessageConverter.unpackAnyMsgFromArray(msgRAW)
   }
 
   private def startBroker(): Unit = {

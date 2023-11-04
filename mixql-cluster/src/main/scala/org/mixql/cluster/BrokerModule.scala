@@ -373,7 +373,6 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
     ////// Identity frame was added by ROUTER socket////////////////////////
     val clientAddr = frontend.recv()
     val clientAddrStr = String(clientAddr)
-    logDebug("Broker frontend: received client's identity " + clientAddrStr)
     ///////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////
@@ -386,8 +385,12 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
       RemoteMessageConverter.unpackAnyMsgFromArray(request) match {
         case m: IBrokerReceiverFromModule => m.setEngineName(clientAddrStr)
         case m: IModuleSendToClient       => m
-        case m: IBrokerReceiverFromClient => m.SetClientIdentity(clientAddrStr)
-        case m: IModuleReceiver           => m.SetClientIdentity(clientAddrStr)
+        case m: IBrokerReceiverFromClient =>
+          logInfo("Broker frontend: received client's identity " + clientAddrStr)
+          m.SetClientIdentity(clientAddrStr)
+        case m: IModuleReceiver =>
+          logInfo("Broker frontend: received client's identity " + clientAddrStr)
+          m.SetClientIdentity(clientAddrStr)
       }
     } catch
       case e: Throwable =>

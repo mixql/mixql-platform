@@ -139,6 +139,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
                   engines = engines.dropWhile(t => t == m.moduleIdentity().trim)
                   logDebug(s"Delete engine ${m.moduleIdentity()} from enginesPingHeartBeatTimeout's list")
                   enginesPingHeartBeatTimeout = enginesPingHeartBeatTimeout
+                    .dropWhile(t => t._1 == m.moduleIdentity().trim)
                   logDebug(s"Delete engine ${m.moduleIdentity()} from enginesStartedTimeOut's list")
                   enginesStartedTimeOut = enginesStartedTimeOut.dropWhile(t => t._1 == m.moduleIdentity().trim)
                   sendMessageToFrontend(m.moduleIdentity(), m.toByteArray)

@@ -11,9 +11,8 @@ import org.mixql.engine.core.PlatformContext
 import org.mixql.remote.messages.rtype.Error
 import org.mixql.remote.messages.rtype.mtype.{MArray, MBool, MDouble, MInt, MNULL, MString}
 
-class SQLightJDBC(identity: String, platformCtx: PlatformContext) extends java.lang.AutoCloseable {
-
-  val logger = new ModuleLogger(identity)
+class SQLightJDBC(identity: String, platformCtx: PlatformContext, logger: ModuleLogger)
+    extends java.lang.AutoCloseable {
 
   import logger._
   var c: Connection = null

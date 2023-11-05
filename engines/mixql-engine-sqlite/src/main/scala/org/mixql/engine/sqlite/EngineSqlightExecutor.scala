@@ -26,7 +26,7 @@ object EngineSqlightExecutor extends IModuleExecutor:
                                    logger: ModuleLogger,
                                    platformContext: PlatformContext): Message = {
     import logger._
-    val context = new SQLightJDBC(identity, platformContext)
+    val context = new SQLightJDBC(identity, platformContext, logger)
     try {
       logInfo(s"Received Execute msg from server statement: ${msg.statement}")
       logDebug(s"Executing command ${msg.statement}")
@@ -45,7 +45,7 @@ object EngineSqlightExecutor extends IModuleExecutor:
                                            clientAddress: String,
                                            logger: ModuleLogger,
                                            platformContext: PlatformContext): Message = {
-    val context = new SQLightJDBC(identity, platformContext)
+    val context = new SQLightJDBC(identity, platformContext, logger)
     try {
       import logger._
       logDebug(s"Started executing function ${msg.name}")

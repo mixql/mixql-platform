@@ -42,3 +42,4 @@ mixql-protobuf-core/src/main/java/
 .sbt
 
 samples/db/
+mixql-org-sqlight-db.db

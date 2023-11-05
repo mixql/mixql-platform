@@ -7,10 +7,11 @@ import scala.concurrent.Future
 
 object MixQlEngineSqliteExecutor extends IExecutor {
 
-  override def start(identity: String, host: String, backendPort: String): Future[Unit] = {
+  override def start(identity: String, host: String, backendPort: String, logLevel: String): Future[Unit] = {
     import concurrent.ExecutionContext.Implicits.global
     Future {
-      MixQlEngineSqlight.main(Seq("--port", backendPort, "--host", host, "--identity", identity).toArray)
+      MixQlEngineSqlight
+        .main(Seq("--port", backendPort, "--host", host, "--identity", identity, "--log-level", logLevel).toArray)
     }
   }
 }

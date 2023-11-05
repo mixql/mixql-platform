@@ -9,10 +9,10 @@ import scala.concurrent.Future
 
 object MixQlEngineStub5SecExecutor extends IExecutor {
 
-  override def start(identity: String, host: String, backendPort: String): Future[Unit] = {
+  override def start(identity: String, host: String, backendPort: String, logLevel: String): Future[Unit] = {
     import concurrent.ExecutionContext.Implicits.global
     Future {
-      implicit val logger = new ModuleLogger(identity)
+      implicit val logger = new ModuleLogger(identity, logLevel)
       logger.logInfo("Starting MixQlEngineStub5Sec")
 
       new core.Module(EngineDemo5SecExecutor, identity, host, backendPort.toInt).startServer()

@@ -109,7 +109,7 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
         }
 
         val elapsed = (processStart to DateTime.now()).millis
-        logDebug(s"elapsed: " + elapsed)
+//        logDebug(s"elapsed: " + elapsed)
 
         if (elapsed >= heartBeatInterval) {
           processStart = DateTime.now()

@@ -1,3 +1,4 @@
+import org.apache.logging.log4j.LogManager
 import org.mixql.core.context.EngineContext
 import org.mixql.core.context.mtype.MType
 import org.mixql.engine.core.PlatformContext
@@ -6,7 +7,7 @@ import org.mixql.engine.core.logger.ModuleLogger
 import scala.collection.mutable
 
 class PlatformContextTest(engineParams: mutable.Map[String, MType], identity: String)
-    extends PlatformContext(null, "", null)(new ModuleLogger(identity)) {
+    extends PlatformContext(null, "", null)(new ModuleLogger(identity, LogManager.getRootLogger.getLevel.name())) {
 
   val ctx =
     new EngineContext(

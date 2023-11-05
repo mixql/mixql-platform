@@ -14,7 +14,7 @@ object MixQlEngineDemo {
     import org.rogach.scallop.ScallopConfBase
     val host: String = appArgs.host.toOption.get
     val port = appArgs.port.toOption.get
-    implicit val logger = new ModuleLogger(indentity)
+    implicit val logger = new ModuleLogger(indentity, appArgs.logLevel.toOption.get)
     logger.logInfo("Starting MixQlEngineStub")
 
     new core.Module(EngineDemoExecutor, indentity, host, port).startServer()
@@ -29,5 +29,6 @@ case class AppArgs(arguments: Seq[String]) extends ScallopConf(arguments) {
   val port = opt[Int](required = true)
   val host = opt[String](required = true)
   val identity = opt[String](required = true)
+  val logLevel = opt[String](required = true)
   verify()
 }

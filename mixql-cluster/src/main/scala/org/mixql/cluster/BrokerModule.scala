@@ -121,7 +121,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
           val rc = poller.poll(Try(config.getLong("org.mixql.cluster.broker.pollerTimeout")).getOrElse(100))
           if (rc == -1)
             throw new BrakeException()
-          logDebug("ThreadInterrupted: " + Thread.currentThread().isInterrupted)
+//          logDebug("ThreadInterrupted: " + Thread.currentThread().isInterrupted)
           // Receive messages from engines
           if (poller.pollin(initRes)) {
             receiveMessageFromFrontend() match {

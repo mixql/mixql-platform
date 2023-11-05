@@ -1,6 +1,7 @@
 package org.mixql.cluster
 
 import com.typesafe.config.ConfigFactory
+import org.apache.logging.log4j.LogManager
 import org.mixql.cluster.logger.{logDebug, logError, logInfo, logWarn}
 import org.mixql.core.engine.Engine
 import org.mixql.core.context.mtype.{MType, unpack}
@@ -386,6 +387,8 @@ class ClientModule(clientIdentity: String,
       file
     }).getOrElse(new File("."))))
 
+    val logLevel = getPlatformCurrentLogLevel()
+
     startScriptName match
       case Some(scriptName) =>
         logInfo(
@@ -395,10 +398,12 @@ class ClientModule(clientIdentity: String,
         )
         clientRemoteProcess = CmdOperations.runCmdNoWait(
           Some(
-            s"$scriptName.bat --port $portBackend --host $host --identity $moduleIdentity ${startScriptExtraOpts.getOrElse("")}"
+            s"$scriptName.bat --port $portBackend --host $host --identity $moduleIdentity --log-level $logLevel ${startScriptExtraOpts
+                .getOrElse("")}"
           ),
           Some(
-            s"$scriptName --port $portBackend --host $host --identity $moduleIdentity ${startScriptExtraOpts.getOrElse("")}"
+            s"$scriptName --port $portBackend --host $host --identity $moduleIdentity --log-level $logLevel ${startScriptExtraOpts
+                .getOrElse("")}"
           ),
           basePath
         )
@@ -409,7 +414,7 @@ class ClientModule(clientIdentity: String,
               s"server: ClientModule: $clientIdentity trying to  start module $moduleIdentity at " + host +
                 " and port at " + portBackend + " in " + basePath.getAbsolutePath + " by executing in scala future"
             )
-            clientFuture = engine.start(moduleIdentity, host, portBackend.toString)
+            clientFuture = engine.start(moduleIdentity, host, portBackend.toString, logLevel)
           case None =>
   }
 
@@ -432,6 +437,12 @@ class ClientModule(clientIdentity: String,
           _ctx = null
         })
     }
+  }
+
+  def getPlatformCurrentLogLevel(): String = {
+    val level = LogManager.getRootLogger.getLevel.name()
+    logInfo("Current log level " + level + " which will be passed to engine " + moduleIdentity)
+    level
   }
 
   override def close() = {

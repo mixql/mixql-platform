@@ -414,22 +414,24 @@ class ClientModule(clientIdentity: String,
   }
 
   def ShutDown() = {
-    if moduleStarted then
-      var client: ZMQ.Socket = null
-      try {
-        client = initClientSocket()
-        sendMsg(messages.client.ShutDown(moduleIdentity), client)
-        moduleStarted = false // not to send occasionally more then once
-      } finally {
-        closeClientSocket(client)
-      }
-      Try(if (_ctx != null) {
-        logInfo(s"Server: ClientModule: $clientIdentity: close context")
-        runWithTimeout(5000) {
-          _ctx.close()
+    this.synchronized {
+      if moduleStarted then
+        var client: ZMQ.Socket = null
+        try {
+          client = initClientSocket()
+          sendMsg(messages.client.ShutDown(moduleIdentity), client)
+          moduleStarted = false // not to send occasionally more then once
+        } finally {
+          closeClientSocket(client)
         }
-        _ctx = null
-      })
+        Try(if (_ctx != null) {
+          logInfo(s"Server: ClientModule: $clientIdentity: close context")
+          runWithTimeout(5000) {
+            _ctx.close()
+          }
+          _ctx = null
+        })
+    }
   }
 
   override def close() = {

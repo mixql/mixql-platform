@@ -89,4 +89,41 @@ class TestStubEngineAsync extends MixQLClusterTest {
         |""".stripMargin)
   }
 
+  test("execute 3 tasks in parallel and wait them all in the end One of them closes engine") {
+    run("""
+        |let engine "stub";
+        |let async1 = async
+        |  async1 statement1;
+        |  async1 statement2;
+        |  async1 statement3;
+        |  async1 statement4;
+        |  async1 statement5;
+        |  async1 statement6;
+        |  return none;
+        |end async;
+        |
+        |let async2 = async
+        |  async2 statement1;
+        |  async2 statement2;
+        |  async2 statement3;
+        |  closeEngine("stub");
+        |  async2 statement5;
+        |  async2 statement6;
+        |end async;
+        |
+        |let async3 = async
+        |  async3 statement1;
+        |  async3 statement2;
+        |  async3 statement3;
+        |  async3 statement4;
+        |  async3 statement5;
+        |  async3 statement6;
+        |end async;
+        |
+        |let res = await_all($async1, $async2, $async3);
+        |print("res: " + $res);
+        |let engine "stub-local";
+        |""".stripMargin)
+  }
+
 }

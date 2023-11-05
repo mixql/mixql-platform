@@ -106,24 +106,22 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
             case m: IModuleReceiver => // got protobuf message
               reactOnReceivedMsgForEngine(m)
           }
+        }
+
+        val elapsed = (processStart to DateTime.now()).millis
+        logDebug(s"elapsed: " + elapsed)
+
+        if (elapsed >= heartBeatInterval) {
           processStart = DateTime.now()
-          liveness = livenessInit
-        } else {
-          val elapsed = (processStart to DateTime.now()).millis
-          logDebug(s"elapsed: " + elapsed)
+          logDebug(s"heartbeat work. Sending heart beat. Liveness: " + liveness)
+          sendMsgToPlatformBroker(new EnginePingHeartBeat(), logger)
+          liveness = liveness - 1
+          logDebug(s"heartbeat work. After sending heart beat. Liveness: " + liveness)
+        }
 
-          if (elapsed >= heartBeatInterval) {
-            processStart = DateTime.now()
-            logDebug(s"heartbeat work. Sending heart beat. Liveness: " + liveness)
-            sendMsgToPlatformBroker(new EnginePingHeartBeat(), logger)
-            liveness = liveness - 1
-            logDebug(s"heartbeat work. After sending heart beat. Liveness: " + liveness)
-          }
-
-          if (liveness < 0) {
-            logError(s"heartbeat failure, can't reach server's broker. Shutting down")
-            throw new BrakeException()
-          }
+        if (liveness < 0) {
+          logError(s"heartbeat failure, can't reach server's broker. Shutting down")
+          throw new BrakeException()
         }
 
         if (rcWorkers > 0) {
@@ -178,7 +176,10 @@ class Module(executor: IModuleExecutor, identity: String, host: String, port: In
 
   private def reactOnReceivedBrokerMsg(message: Message): Unit = {
     message match {
-      case _: PlatformPongHeartBeat => logDebug(s"got pong heart beat message from broker server")
+      case _: PlatformPongHeartBeat =>
+        logDebug(s"got pong heart beat message from broker server")
+        processStart = DateTime.now()
+        liveness = livenessInit
     }
   }
 

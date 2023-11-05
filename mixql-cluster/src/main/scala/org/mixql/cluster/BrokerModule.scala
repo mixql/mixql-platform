@@ -358,6 +358,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
         // TO-DO Properly react on EngineFailed
         throw new UnsupportedOperationException(msg.getErrorMessage)
       case msg: EnginePingHeartBeat => // Its heart beat message from engine
+        logDebug(s"Broker: received EnginePingHeartBeat message from engine " + msg.engineName())
         if engines.contains(msg.engineName()) then
           val t = enginesPingHeartBeatTimeout(msg.engineName())
           enginesPingHeartBeatTimeout.put(msg.engineName(), (t._1, DateTime.now(), t._3, 3))

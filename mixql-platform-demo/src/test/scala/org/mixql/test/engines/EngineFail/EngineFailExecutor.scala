@@ -24,8 +24,8 @@ class EngineFailExecutor extends IModuleExecutor {
       logInfo(s"Fail as was asked")
       exit(1)
     }
-    logInfo(s"Executing command ${msg.statement} for 1sec")
-    Thread.sleep(1000)
+    logInfo(s"Executing command ${msg.statement} for 4sec")
+    Thread.sleep(4000)
     logInfo(s"Successfully executed command ${msg.statement}")
     logDebug(s"Sending reply on Execute msg")
     messages.rtype.mtype.MNULL()

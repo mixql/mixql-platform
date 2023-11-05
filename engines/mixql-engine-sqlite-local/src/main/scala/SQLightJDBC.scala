@@ -42,48 +42,47 @@ class SQLightJDBC(identity: String, ctx: EngineContext, dbPathParameter: Option[
   def execute(stmt: String): mtype.MType = {
     this.synchronized {
       if c == null then init()
+    }
 
-      var jdbcStmt: Statement = null
+    var jdbcStmt: Statement = null
 
-      try {
-        jdbcStmt = c.createStatement()
-        val flag = jdbcStmt.execute(stmt)
-        if flag then
-          // some result was returned
-          var res: ResultSet = null
-          try {
-            res = jdbcStmt.getResultSet
-            // init iterator
-            var remainedRows = res.next()
+    try {
+      jdbcStmt = c.createStatement()
+      val flag = jdbcStmt.execute(stmt)
+      if flag then
+        // some result was returned
+        var res: ResultSet = null
+        try {
+          res = jdbcStmt.getResultSet
+          // init iterator
+          var remainedRows = res.next()
 
-            val resultSetMetaData = res.getMetaData
-            val columnCount = resultSetMetaData.getColumnCount
-            val columnTypes: Seq[mtype.MType] = getColumnTypes(resultSetMetaData, columnCount)
-            val columnNames: Seq[String] =
-              for (i <- 1 to columnCount)
-                yield resultSetMetaData.getColumnName(i)
+          val resultSetMetaData = res.getMetaData
+          val columnCount = resultSetMetaData.getColumnCount
+          val columnTypes: Seq[mtype.MType] = getColumnTypes(resultSetMetaData, columnCount)
+          val columnNames: Seq[String] =
+            for (i <- 1 to columnCount)
+              yield resultSetMetaData.getColumnName(i)
 
-            import org.mixql.engine.sqlite.local.JavaSqlArrayConverter
+          import org.mixql.engine.sqlite.local.JavaSqlArrayConverter
 
-            var arr: Seq[mtype.MArray] = Seq()
-            while remainedRows
-            do // simulate do while, as it is no longer supported in scala 3
-              val rowValues = getRowFromResultSet(res, columnCount, columnTypes)
-              arr = arr :+ mtype.MArray(rowValues.toArray)
-              remainedRows = res.next()
-            end while
-            new mtype.MArray(arr.toArray)
-          } finally {
-            if (res != null)
-              res.close()
-          }
-        else mtype.MNull.get()
-      } catch {
-        case e: Throwable =>
-          throw new Exception(s"[ENGINE $identity] : SQLightJDBC error while execute: " + e.getMessage)
-      } finally {
-        if jdbcStmt != null then jdbcStmt.close()
-      }
+          var arr: Seq[mtype.MArray] = Seq()
+          while remainedRows
+          do // simulate do while, as it is no longer supported in scala 3
+            val rowValues = getRowFromResultSet(res, columnCount, columnTypes)
+            arr = arr :+ mtype.MArray(rowValues.toArray)
+            remainedRows = res.next()
+          end while
+          new mtype.MArray(arr.toArray)
+        } finally {
+          if (res != null)
+            res.close()
+        }
+      else mtype.MNull.get()
+    } catch {
+      case e: Throwable => throw new Exception(s"[ENGINE $identity] : SQLightJDBC error while execute: " + e.getMessage)
+    } finally {
+      if jdbcStmt != null then jdbcStmt.close()
     }
   }
 

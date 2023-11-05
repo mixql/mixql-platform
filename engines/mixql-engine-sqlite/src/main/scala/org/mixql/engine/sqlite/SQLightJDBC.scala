@@ -33,58 +33,58 @@ class SQLightJDBC(identity: String, platformCtx: PlatformContext) extends java.l
   }
 
   def getSQLightJDBCConnection: Connection = {
-    if (c == null)
-      init()
+    this.synchronized {
+      if (c == null)
+        init()
+    }
     c
   }
 
   // returns messages.Type
   // TO-DO Should return iterator?
   def execute(stmt: String): messages.Message = {
-    this.synchronized {
-      var jdbcStmt: Statement = null
+    var jdbcStmt: Statement = null
 
-      try {
-        jdbcStmt = getSQLightJDBCConnection.createStatement()
-        val flag = jdbcStmt.execute(stmt)
-        if (flag) {
-          // some result was returned
-          var res: ResultSet = null
-          try {
-            res = jdbcStmt.getResultSet
-            // init iterator
-            var remainedRows = res.next()
+    try {
+      jdbcStmt = getSQLightJDBCConnection.createStatement()
+      val flag = jdbcStmt.execute(stmt)
+      if (flag) {
+        // some result was returned
+        var res: ResultSet = null
+        try {
+          res = jdbcStmt.getResultSet
+          // init iterator
+          var remainedRows = res.next()
 
-            val resultSetMetaData = res.getMetaData
-            val columnCount = resultSetMetaData.getColumnCount
-            val columnTypes: Seq[messages.Message] = getColumnTypes(resultSetMetaData, columnCount)
-            val columnNames: Seq[String] =
-              for (i <- 1 to columnCount)
-                yield resultSetMetaData.getColumnName(i)
+          val resultSetMetaData = res.getMetaData
+          val columnCount = resultSetMetaData.getColumnCount
+          val columnTypes: Seq[messages.Message] = getColumnTypes(resultSetMetaData, columnCount)
+          val columnNames: Seq[String] =
+            for (i <- 1 to columnCount)
+              yield resultSetMetaData.getColumnName(i)
 
-            import org.mixql.engine.sqlite.JavaSqlArrayConverter
+          import org.mixql.engine.sqlite.JavaSqlArrayConverter
 
-            var arr: Seq[MArray] = Seq()
-            while (remainedRows) {
-              // simulate do while, as it is no longer supported in scala 3
-              val rowValues = getRowFromResultSet(res, columnCount, columnTypes)
-              arr = arr :+ MArray(rowValues.toArray)
-              remainedRows = res.next()
-            }
-            MArray(arr.toArray)
-          } finally {
-            if (res != null)
-              res.close()
+          var arr: Seq[MArray] = Seq()
+          while (remainedRows) {
+            // simulate do while, as it is no longer supported in scala 3
+            val rowValues = getRowFromResultSet(res, columnCount, columnTypes)
+            arr = arr :+ MArray(rowValues.toArray)
+            remainedRows = res.next()
           }
-        } else
-          MNULL()
-      } catch {
-        case e: Throwable =>
-          org.mixql.remote.messages.rtype.Error(s"Module $identity: SQLightJDBC error while execute: " + e.getMessage)
-      } finally {
-        if (jdbcStmt != null)
-          jdbcStmt.close()
-      }
+          MArray(arr.toArray)
+        } finally {
+          if (res != null)
+            res.close()
+        }
+      } else
+        MNULL()
+    } catch {
+      case e: Throwable =>
+        org.mixql.remote.messages.rtype.Error(s"Module $identity: SQLightJDBC error while execute: " + e.getMessage)
+    } finally {
+      if (jdbcStmt != null)
+        jdbcStmt.close()
     }
   }
 

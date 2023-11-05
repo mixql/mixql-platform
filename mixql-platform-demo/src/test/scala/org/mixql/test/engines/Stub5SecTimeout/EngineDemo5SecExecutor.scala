@@ -1,4 +1,4 @@
-package org.mixql.test.engines.EngineFail
+package org.mixql.test.engines.Stub5SecTimeout
 
 import org.mixql.engine.core.logger.ModuleLogger
 import org.mixql.engine.core.{IModuleExecutor, PlatformContext}
@@ -9,9 +9,10 @@ import org.mixql.remote.messages.rtype.mtype.MBool
 import org.mixql.remote.{GtypeConverter, RemoteMessageConverter, messages}
 
 import scala.collection.mutable
-import scala.sys.exit
+import scala.util.Random
 
-class EngineFailExecutor extends IModuleExecutor {
+object EngineDemo5SecExecutor extends IModuleExecutor {
+  val r: Random.type = scala.util.Random
 
   override def reactOnExecuteAsync(msg: Execute,
                                    identity: String,
@@ -19,16 +20,16 @@ class EngineFailExecutor extends IModuleExecutor {
                                    logger: ModuleLogger,
                                    platformContext: PlatformContext): Message = {
     import logger.*
-    logInfo(s"Received Execute msg from server statement: ${msg.statement}")
-    if (msg.statement.trim == "fail_on_next_cmd_whith_runtime_exception") {
-      logInfo(s"Fail as was asked")
-      exit(1)
-    }
-    logInfo(s"Executing command ${msg.statement} for 4sec")
-    Thread.sleep(4000)
+    logDebug(s"Received Execute msg from server statement: ${msg.statement}")
+    logInfo(s"Executing command ${msg.statement} for 5000 milliseconds")
+    Thread.sleep(5000)
     logInfo(s"Successfully executed command ${msg.statement}")
     logDebug(s"Sending reply on Execute msg")
     messages.rtype.mtype.MNULL()
+  }
+
+  def getRandomLongInInterval(start: Long, end: Long): Long = {
+    start + r.nextLong((end - start) + 1)
   }
 
   def functions: Map[String, Any] = Map()

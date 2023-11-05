@@ -137,6 +137,11 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
                 if (m.isInstanceOf[ShutDown]) {
                   logDebug(s"Delete engine ${m.moduleIdentity()} from engine's list")
                   engines = engines.dropWhile(t => t == m.moduleIdentity().trim)
+                  logDebug(s"Delete engine ${m.moduleIdentity()} from enginesPingHeartBeatTimeout's list")
+                  enginesPingHeartBeatTimeout = enginesPingHeartBeatTimeout
+                    .dropWhile(t => t._1 == m.moduleIdentity().trim)
+                  logDebug(s"Delete engine ${m.moduleIdentity()} from enginesStartedTimeOut's list")
+                  enginesStartedTimeOut = enginesStartedTimeOut.dropWhile(t => t._1 == m.moduleIdentity().trim)
                   sendMessageToFrontend(m.moduleIdentity(), m.toByteArray)
                 } else {
                   if !engines.contains(m.moduleIdentity()) then
@@ -358,6 +363,7 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
         // TO-DO Properly react on EngineFailed
         throw new UnsupportedOperationException(msg.getErrorMessage)
       case msg: EnginePingHeartBeat => // Its heart beat message from engine
+        logDebug(s"Broker: received EnginePingHeartBeat message from engine " + msg.engineName())
         if engines.contains(msg.engineName()) then
           val t = enginesPingHeartBeatTimeout(msg.engineName())
           enginesPingHeartBeatTimeout.put(msg.engineName(), (t._1, DateTime.now(), t._3, 3))
@@ -373,7 +379,6 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
     ////// Identity frame was added by ROUTER socket////////////////////////
     val clientAddr = frontend.recv()
     val clientAddrStr = String(clientAddr)
-    logDebug("Broker frontend: received client's identity " + clientAddrStr)
     ///////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////
@@ -386,8 +391,12 @@ class BrokerMainRunnable(name: String, host: String, port: String) extends Threa
       RemoteMessageConverter.unpackAnyMsgFromArray(request) match {
         case m: IBrokerReceiverFromModule => m.setEngineName(clientAddrStr)
         case m: IModuleSendToClient       => m
-        case m: IBrokerReceiverFromClient => m.SetClientIdentity(clientAddrStr)
-        case m: IModuleReceiver           => m.SetClientIdentity(clientAddrStr)
+        case m: IBrokerReceiverFromClient =>
+          logInfo("Broker frontend: received client's identity " + clientAddrStr)
+          m.SetClientIdentity(clientAddrStr)
+        case m: IModuleReceiver =>
+          logInfo("Broker frontend: received client's identity " + clientAddrStr)
+          m.SetClientIdentity(clientAddrStr)
       }
     } catch
       case e: Throwable =>

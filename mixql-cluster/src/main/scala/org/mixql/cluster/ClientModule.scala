@@ -14,7 +14,7 @@ import java.nio.channels.{ServerSocketChannel, SocketChannel}
 import scala.concurrent.{Await, Future}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.util.Try
+import scala.util.{Random, Try}
 import org.mixql.core.context.{EngineContext, mtype}
 import org.mixql.remote.messages.rtype.Param
 import org.mixql.remote.messages.rtype.mtype.IGtypeMessage
@@ -52,8 +52,6 @@ import java.lang.Thread.sleep
 import scala.annotation.tailrec
 import scala.language.postfixOps
 
-case class StashedParam(name: String, value: mtype.MType)
-
 object ClientModule {
   val config = ConfigFactory.load()
 }
@@ -73,8 +71,15 @@ class ClientModule(clientIdentity: String,
                    startScriptExtraOpts: Option[String] = None)
     extends Engine
     with java.lang.AutoCloseable {
-  var client: ZMQ.Socket = null
-  var ctx: ZMQ.Context = null
+//  var client: ZMQ.Socket = null
+  protected var _ctx: ZMQ.Context = null
+
+  def ctx(): ZMQ.Context =
+    if (_ctx == null) {
+      _ctx = ZMQ.context(1)
+      _ctx
+    } else
+      _ctx
 
   var clientRemoteProcess: sys.process.Process = null
   var clientFuture: Future[Unit] = null
@@ -85,8 +90,55 @@ class ClientModule(clientIdentity: String,
   override def executeImpl(stmt: String, ctx: EngineContext): MType = {
     logInfo(s"[ClientModule-$clientIdentity]: module $moduleIdentity was triggered by execute request")
 
-    sendMsg(Execute(moduleIdentity, stmt))
-    reactOnRequest(recvMsg(), ctx)
+    var client: ZMQ.Socket = null
+    try {
+      client = initClientSocket()
+      sendMsg(Execute(moduleIdentity, stmt), client)
+      reactOnRequest(recvMsg(client), ctx, client)
+    } finally {
+      closeClientSocket(client)
+    }
+  }
+
+  val clientSocketsIdentitiesSet: mutable.Set[String] = mutable.Set()
+  val r: Random.type = scala.util.Random
+
+  def generateUnusedClientSocketsIdentity(): String = {
+    val numPattern = "[0-9]+".r
+    val ids = clientSocketsIdentitiesSet.map(name => numPattern.findFirstIn(name).get.toInt)
+
+    var foundUniqueId = false
+    var id = -1;
+    while (!foundUniqueId) {
+      id = r.nextInt().abs
+      ids.find(p => p == id) match {
+        case Some(_) =>
+        case None    => foundUniqueId = true
+      }
+    }
+    s"$clientIdentity$id"
+  }
+
+  protected def initClientSocket(): ZMQ.Socket = {
+
+    ClientModule.synchronized {
+      if (!BrokerModule.wasStarted)
+        startBroker()
+    }
+
+    val client = this.ctx().socket(SocketType.DEALER)
+    this.synchronized {
+      val clientIdentity = generateUnusedClientSocketsIdentity()
+      client.setIdentity(clientIdentity.getBytes)
+      clientSocketsIdentitiesSet.add(clientIdentity)
+    }
+    logInfo(s"[ClientModule-$clientIdentity]: created client socket with identity " + String(client.getIdentity))
+    logInfo(
+      s"server: Clientmodule ${String(client.getIdentity)} connected to " +
+        s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPort.get} " + client
+          .connect(s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPort.get}")
+    )
+    client
   }
 
   override def executeFuncImpl(name: String, ctx: EngineContext, kwargs: Map[String, Object], params: MType*): MType = {
@@ -94,8 +146,17 @@ class ClientModule(clientIdentity: String,
       throw new UnsupportedOperationException("named arguments are not supported in functions in remote engine " + name)
 
     logInfo(s"[ClientModule-$clientIdentity]: module $moduleIdentity was triggered by executeFunc request")
-    sendMsg(ExecuteFunction(moduleIdentity, name, params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray))
-    reactOnRequest(recvMsg(), ctx)
+    var client: ZMQ.Socket = null
+    try {
+      client = initClientSocket()
+      sendMsg(
+        ExecuteFunction(moduleIdentity, name, params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray),
+        client
+      )
+      reactOnRequest(recvMsg(client), ctx, client)
+    } finally {
+      closeClientSocket(client)
+    }
   }
 
   override def getDefinedFunctions(): List[String] = {
@@ -105,42 +166,68 @@ class ClientModule(clientIdentity: String,
     engineStarted = true
 
     logInfo(s"Server: ClientModule: $clientIdentity: ask defined functions from remote engine")
-
-    sendMsg(messages.client.GetDefinedFunctions(moduleIdentity))
+    var client: ZMQ.Socket = null
     val functionsList =
-      recvMsg() match {
-        case m: messages.module.DefinedFunctions => m.arr.toList
-        case ex: org.mixql.remote.messages.rtype.Error =>
-          val errorMessage =
-            s"Server: ClientModule: $clientIdentity: getDefinedFunctions error: \n" + ex.getErrorMessage
-          logError(errorMessage)
-          throw new Exception(errorMessage)
-        case m: messages.Message =>
-          val errorMessage =
-            s"Server: ClientModule: $clientIdentity: getDefinedFunctions error: \n" +
-              "Unknown message " + m.`type`() + " received"
-          logError(errorMessage)
-          throw new Exception(errorMessage)
+      try {
+        client = initClientSocket()
+
+        sendMsg(messages.client.GetDefinedFunctions(moduleIdentity), client)
+
+        recvMsg(client) match {
+          case m: messages.module.DefinedFunctions => m.arr.toList
+          case ex: org.mixql.remote.messages.rtype.Error =>
+            val errorMessage =
+              s"Server: ClientModule: ${String(client.getIdentity)}: getDefinedFunctions error: \n" + ex.getErrorMessage
+            logError(errorMessage)
+            throw new Exception(errorMessage)
+          case m: messages.Message =>
+            val errorMessage =
+              s"Server: ClientModule: ${String(client.getIdentity)}: getDefinedFunctions error: \n" +
+                "Unknown message " + m.`type`() + " received"
+            logError(errorMessage)
+            throw new Exception(errorMessage)
+        }
+      } finally {
+        closeClientSocket(client)
       }
 
     if functionsList.isEmpty then Nil
     else functionsList
   }
 
+  def closeClientSocket(client: ZMQ.Socket) = {
+    if (client != null) {
+      val clientSocketIdentity = String(client.getIdentity)
+      logInfo(s"Server: ClientModule: close socket with identity " + clientSocketIdentity)
+      Try(if (client != null) {
+        logInfo(s"Server: ClientModule: ${String(client.getIdentity)}: close client socket ")
+        runWithTimeout(5000) {
+          client.close()
+        }
+      })
+      this.synchronized {
+        clientSocketsIdentitiesSet.remove(clientSocketIdentity)
+      }
+    }
+  }
+
   @tailrec
-  private def reactOnRequest(msg: Message, ctx: EngineContext): MType = {
+  private def reactOnRequest(msg: Message, ctx: EngineContext, client: ZMQ.Socket): MType = {
     msg match
       case msg: IGtypeMessage => msg.toGType
       case m: IModuleSendToClient =>
         m match
           case msg: GetPlatformVar =>
             val v = ctx.getVar(msg.name)
-            sendMsg(new PlatformVar(moduleIdentity, msg.workerIdentity(), msg.name, GtypeConverter.toGeneratedMsg(v)))
-            reactOnRequest(recvMsg(), ctx)
+            sendMsg(
+              new PlatformVar(moduleIdentity, msg.workerIdentity(), msg.name, GtypeConverter.toGeneratedMsg(v)),
+              client
+            )
+            reactOnRequest(recvMsg(client), ctx, client)
           case msg: SetPlatformVar =>
             ctx.setVar(msg.name, GtypeConverter.messageToGtype(msg.msg))
-            sendMsg(new PlatformVarWasSet(moduleIdentity, msg.workerIdentity(), msg.name))
-            reactOnRequest(recvMsg(), ctx)
+            sendMsg(new PlatformVarWasSet(moduleIdentity, msg.workerIdentity(), msg.name), client)
+            reactOnRequest(recvMsg(client), ctx, client)
           case msg: GetPlatformVars =>
             val valMap = ctx.getVars(msg.names.toList)
             sendMsg(
@@ -148,9 +235,10 @@ class ClientModule(clientIdentity: String,
                 moduleIdentity,
                 msg.workerIdentity(),
                 valMap.map(t => new Param(t._1, GtypeConverter.toGeneratedMsg(t._2))).toArray
-              )
+              ),
+              client
             )
-            reactOnRequest(recvMsg(), ctx)
+            reactOnRequest(recvMsg(client), ctx, client)
           case msg: SetPlatformVars =>
             import collection.JavaConverters._
             ctx.setVars(msg.vars.asScala.map(t => t._1 -> GtypeConverter.messageToGtype(t._2)))
@@ -159,12 +247,13 @@ class ClientModule(clientIdentity: String,
                 moduleIdentity,
                 msg.workerIdentity(),
                 new java.util.ArrayList[String](msg.vars.keySet())
-              )
+              ),
+              client
             )
-            reactOnRequest(recvMsg(), ctx)
+            reactOnRequest(recvMsg(client), ctx, client)
           case msg: GetPlatformVarsNames =>
-            sendMsg(new PlatformVarsNames(moduleIdentity, msg.workerIdentity(), ctx.getVarsNames().toArray))
-            reactOnRequest(recvMsg(), ctx)
+            sendMsg(new PlatformVarsNames(moduleIdentity, msg.workerIdentity(), ctx.getVarsNames().toArray), client)
+            reactOnRequest(recvMsg(client), ctx, client)
           case msg: InvokeFunction =>
 //            try {
             val res = ctx
@@ -175,18 +264,15 @@ class ClientModule(clientIdentity: String,
                 msg.workerIdentity(),
                 msg.name,
                 GtypeConverter.toGeneratedMsg(res)
-              )
+              ),
+              client
             )
-            reactOnRequest(recvMsg(), ctx)
-//            } catch {
-//              case e: Throwable =>
-//                sendMsg(new module.Error(e.getMessage()))
-//                reactOnRequest(recvMsg(), ctx)
-//            }
+            reactOnRequest(recvMsg(client), ctx, client)
           case msg: ExecutedFunctionResult =>
             if (msg.msg.isInstanceOf[org.mixql.remote.messages.rtype.Error]) {
               logError(
-                "Server: ClientModule: Error while executing function " + msg.functionName + "error: " +
+                s"Server: ClientModule: ${String(client.getIdentity)} Error while executing function " + msg
+                  .functionName + "error: " +
                   msg.msg.asInstanceOf[org.mixql.remote.messages.rtype.Error].getErrorMessage
               )
               throw new Exception(msg.msg.asInstanceOf[org.mixql.remote.messages.rtype.Error].getErrorMessage)
@@ -194,14 +280,15 @@ class ClientModule(clientIdentity: String,
             GtypeConverter.messageToGtype(msg.msg)
           case msg: org.mixql.remote.messages.rtype.Error =>
             logError(
-              "Server: ClientModule: $clientIdentity:" + msg.asInstanceOf[org.mixql.remote.messages.rtype.Error]
-                .getErrorMessage
+              s"Server: ClientModule: ${String(client.getIdentity)}:" + msg
+                .asInstanceOf[org.mixql.remote.messages.rtype.Error].getErrorMessage
             )
             throw new Exception(msg.asInstanceOf[org.mixql.remote.messages.rtype.Error].getErrorMessage)
           case msg: ExecuteResult =>
             if (msg.result.isInstanceOf[org.mixql.remote.messages.rtype.Error]) {
               logError(
-                "Server: ClientModule: Error while executing statement " + msg.stmt + "error: " +
+                s"Server: ClientModule: ${String(client.getIdentity)} Error while executing statement " + msg
+                  .stmt + "error: " +
                   msg.result.asInstanceOf[org.mixql.remote.messages.rtype.Error].getErrorMessage
               )
               throw new Exception(msg.result.asInstanceOf[org.mixql.remote.messages.rtype.Error].getErrorMessage)
@@ -209,55 +296,42 @@ class ClientModule(clientIdentity: String,
             GtypeConverter.messageToGtype(msg.result)
       case msg: org.mixql.remote.messages.rtype.Error =>
         logError(
-          s"Server: ClientModule: $clientIdentity: \n error while reacting on request\n" +
+          s"Server: ClientModule: ${String(client.getIdentity)}: \n error while reacting on request\n" +
             msg.getErrorMessage
         )
         throw new Exception(msg.getErrorMessage)
   }
 
-  private def _sendMsg(msg: messages.Message): Unit = {
+  private def _sendMsg(msg: messages.Message, client: ZMQ.Socket): Unit = {
     logDebug(
-      "server: Clientmodule " + clientIdentity + " sending protobuf message to remote module " + moduleIdentity + " " +
+      "server: Clientmodule " + String(
+        client.getIdentity
+      ) + " sending protobuf message to remote module " + moduleIdentity + " " +
         client.send(msg.toByteArray, 0)
     )
   }
 
-  private def sendMsg(msg: IModuleReceiver): Unit = {
+  private def sendMsg(msg: IModuleReceiver, client: ZMQ.Socket): Unit = {
     this.synchronized {
       if (!moduleStarted) {
-
-        if (!BrokerModule.wasStarted)
-          startBroker()
-
         startModuleClient()
-        ctx = ZMQ.context(1)
-        client = ctx.socket(SocketType.DEALER)
-        // set id for client
-        client.setIdentity(clientIdentity.getBytes)
-        logInfo(
-          "server: Clientmodule " + clientIdentity + " connected to " +
-            s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPort.get} " + client
-              .connect(s"tcp://${BrokerModule.getHost.get}:${BrokerModule.getPort.get}")
-        )
         moduleStarted = true
-        logInfo(s" Clientmodule $clientIdentity: notify broker about started engine " + moduleIdentity)
-        _sendMsg(new EngineStarted(moduleIdentity, startEngineTimeOut))
+        logInfo(s" Clientmodule ${String(client.getIdentity)}: notify broker about started engine " + moduleIdentity)
+        _sendMsg(new EngineStarted(moduleIdentity, startEngineTimeOut), client)
       }
-      _sendMsg(msg)
     }
+    _sendMsg(msg, client)
   }
 
-  private def recvMsg(): messages.Message = {
-    this.synchronized {
-      val emptyRAW = client.recv(0)
-      val emptyRAWStr = new String(emptyRAW)
-      logDebug("Received empty msg " + emptyRAWStr)
+  private def recvMsg(client: ZMQ.Socket): messages.Message = {
+    val emptyRAW = client.recv(0)
+    val emptyRAWStr = new String(emptyRAW)
+    logDebug("Received empty msg " + emptyRAWStr)
 
-      val msgRAW = client.recv(0)
-      val msgRAWStr = new String(msgRAW)
-      logDebug("Received raw msg " + msgRAWStr)
-      RemoteMessageConverter.unpackAnyMsgFromArray(msgRAW)
-    }
+    val msgRAW = client.recv(0)
+    val msgRAWStr = new String(msgRAW)
+    logDebug("Received raw msg " + msgRAWStr)
+    RemoteMessageConverter.unpackAnyMsgFromArray(msgRAW)
   }
 
   private def startBroker(): Unit = {
@@ -340,9 +414,24 @@ class ClientModule(clientIdentity: String,
   }
 
   def ShutDown() = {
-    if moduleStarted then
-      sendMsg(messages.client.ShutDown(moduleIdentity))
-      moduleStarted = false // not to send occasionally more then once
+    this.synchronized {
+      if moduleStarted then
+        var client: ZMQ.Socket = null
+        try {
+          client = initClientSocket()
+          sendMsg(messages.client.ShutDown(moduleIdentity), client)
+          moduleStarted = false // not to send occasionally more then once
+        } finally {
+          closeClientSocket(client)
+        }
+        Try(if (_ctx != null) {
+          logInfo(s"Server: ClientModule: $clientIdentity: close context")
+          runWithTimeout(5000) {
+            _ctx.close()
+          }
+          _ctx = null
+        })
+    }
   }
 
   override def close() = {
@@ -355,17 +444,11 @@ class ClientModule(clientIdentity: String,
       sleep(2000)
     }
     logDebug(s"Server: ClientModule: $clientIdentity: Executing close")
-    Try(if (client != null) {
-      logInfo(s"Server: ClientModule: $clientIdentity: close client socket")
-      runWithTimeout(5000) {
-        client.close()
-      }
-    })
 
-    Try(if (ctx != null) {
+    Try(if (_ctx != null) {
       logInfo(s"Server: ClientModule: $clientIdentity: close context")
       runWithTimeout(5000) {
-        ctx.close()
+        _ctx.close()
       }
     })
 

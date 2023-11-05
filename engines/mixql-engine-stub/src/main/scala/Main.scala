@@ -15,7 +15,7 @@ object MixQlEngineDemo {
     val host: String = appArgs.host.toOption.get
     val port = appArgs.port.toOption.get
     implicit val logger = new ModuleLogger(indentity)
-    logger.logInfo("Starting main client")
+    logger.logInfo("Starting MixQlEngineStub")
 
     new core.Module(EngineDemoExecutor, indentity, host, port).startServer()
   }

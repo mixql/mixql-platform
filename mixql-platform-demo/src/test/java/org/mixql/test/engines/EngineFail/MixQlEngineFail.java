@@ -9,7 +9,7 @@ public class MixQlEngineFail {
         String host = args[3];
         String port = args[1];
         ModuleLogger logger = new ModuleLogger(indentity);
-        logger.logInfo("Starting main client");
+        logger.logInfo("Starting MixQlEngineFail");
 
         new Module(new EngineFailExecutor(), indentity, host, Integer.parseInt(port), logger).startServer();
     }

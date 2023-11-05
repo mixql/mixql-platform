@@ -9,7 +9,10 @@ import org.mixql.remote.{GtypeConverter, RemoteMessageConverter, messages}
 import org.mixql.remote.messages.Message
 import org.mixql.remote.messages.rtype.mtype.MBool
 
+import scala.util.Random
+
 object EngineDemoExecutor extends IModuleExecutor {
+  val r: Random.type = scala.util.Random
 
   override def reactOnExecuteAsync(msg: Execute,
                                    identity: String,
@@ -18,11 +21,16 @@ object EngineDemoExecutor extends IModuleExecutor {
                                    platformContext: PlatformContext): Message = {
     import logger._
     logDebug(s"Received Execute msg from server statement: ${msg.statement}")
-    logInfo(s"Executing command ${msg.statement} for 1sec")
-    Thread.sleep(1000)
+    val timeout = getRandomLongInInterval(500, 7000)
+    logInfo(s"Executing command ${msg.statement} for $timeout milliseconds")
+    Thread.sleep(timeout)
     logInfo(s"Successfully executed command ${msg.statement}")
     logDebug(s"Sending reply on Execute msg")
     messages.rtype.mtype.MNULL()
+  }
+
+  def getRandomLongInInterval(start: Long, end: Long): Long = {
+    start + r.nextLong((end - start) + 1)
   }
 
   def functions: Map[String, Any] =

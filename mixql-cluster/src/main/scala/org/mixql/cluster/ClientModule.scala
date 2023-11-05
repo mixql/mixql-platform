@@ -196,16 +196,18 @@ class ClientModule(clientIdentity: String,
   }
 
   def closeClientSocket(client: ZMQ.Socket) = {
-    val clientSocketIdentity = String(client.getIdentity)
-    logInfo(s"Server: ClientModule: close socket with identity " + clientSocketIdentity)
-    Try(if (client != null) {
-      logInfo(s"Server: ClientModule: ${String(client.getIdentity)}: close client socket ")
-      runWithTimeout(5000) {
-        client.close()
+    if (client != null) {
+      val clientSocketIdentity = String(client.getIdentity)
+      logInfo(s"Server: ClientModule: close socket with identity " + clientSocketIdentity)
+      Try(if (client != null) {
+        logInfo(s"Server: ClientModule: ${String(client.getIdentity)}: close client socket ")
+        runWithTimeout(5000) {
+          client.close()
+        }
+      })
+      this.synchronized {
+        clientSocketsIdentitiesSet.remove(clientSocketIdentity)
       }
-    })
-    this.synchronized {
-      clientSocketsIdentitiesSet.remove(clientSocketIdentity)
     }
   }
 
@@ -421,6 +423,13 @@ class ClientModule(clientIdentity: String,
       } finally {
         closeClientSocket(client)
       }
+      Try(if (_ctx != null) {
+        logInfo(s"Server: ClientModule: $clientIdentity: close context")
+        runWithTimeout(5000) {
+          _ctx.close()
+        }
+        _ctx = null
+      })
   }
 
   override def close() = {

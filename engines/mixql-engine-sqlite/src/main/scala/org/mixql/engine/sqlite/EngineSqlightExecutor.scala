@@ -45,16 +45,17 @@ object EngineSqlightExecutor extends IModuleExecutor:
                                            clientAddress: String,
                                            logger: ModuleLogger,
                                            platformContext: PlatformContext): Message = {
+    import collection.JavaConverters._
     val context = new SQLightJDBC(identity, platformContext, logger)
     try {
       import logger._
       logDebug(s"Started executing function ${msg.name}")
       logInfo(
         s"Executing function ${msg.name} with params " +
-          msg.params.mkString("[", ",", "]")
+          msg.params.mkString("[", ",", "]" + " and kwargs " + msg.getKwargs.asScala.mkString(","))
       )
       val res = org.mixql.engine.core.FunctionInvoker
-        .invoke(functions, msg.name, List[Object](context, platformContext), msg.params.toList)
+        .invoke(functions, msg.name, List[Object](context, platformContext), msg.params.toList, msg.getKwargs.asScala)
       logInfo(s": Successfully executed function ${msg.name} ")
       res
     } finally {

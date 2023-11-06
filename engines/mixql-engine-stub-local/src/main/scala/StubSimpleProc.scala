@@ -11,17 +11,17 @@ object StubSimpleProc {
     }
 
   val simple_func_params =
-    new ((String, Int) => String) {
+    new ((String, Long) => String) {
 
-      override def apply(a: String, b: Int): String = {
+      override def apply(a: String, b: Long): String = {
         s"SUCCESS:$a:${b.toString}"
       }
     }
 
   val simple_func_context_params =
-    new ((StubContext, String, Int) => String) {
+    new ((StubContext, String, Long) => String) {
 
-      override def apply(ctx: StubContext, a: String, b: Int): String = {
+      override def apply(ctx: StubContext, a: String, b: Long): String = {
         s"SUCCESS:${ctx.name}:$a:${b.toString}"
       }
     }

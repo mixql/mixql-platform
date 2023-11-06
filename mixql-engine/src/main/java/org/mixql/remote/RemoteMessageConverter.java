@@ -74,15 +74,27 @@ public class RemoteMessageConverter {
                 return new Error(
                         (String) anyMsgJsonObject.get("errorMsg")
                 );
-            case "org.mixql.remote.messages.client.ExecuteFunction":
+            case "org.mixql.remote.messages.client.ExecuteFunction": {
+                Map<String, Message> kwargs = new HashMap<>();
+                JSONArray mapJsonObject = (JSONArray) anyMsgJsonObject.get("kwargs");
+                for (int i = 0; i < mapJsonObject.size(); i++) {
+                    kwargs.put(
+                            (String) ((JSONObject) mapJsonObject.get(i)).get("key"),
+                            _unpackAnyMsg(
+                                    (JSONObject) ((JSONObject) mapJsonObject.get(i)).get("value")
+                            )
+                    );
+                }
                 return new ExecuteFunction(
                         (String) anyMsgJsonObject.get("moduleIdentity"),
                         (String) anyMsgJsonObject.get("clientIdentity"),
                         (String) anyMsgJsonObject.get("name"),
                         parseMessagesArray((JSONArray) anyMsgJsonObject
                                 .get("params")
-                        )
+                        ),
+                        kwargs
                 );
+            }
             case "org.mixql.remote.messages.client.GetDefinedFunctions":
                 return new GetDefinedFunctions(
                         (String) anyMsgJsonObject.get("moduleIdentity"),
@@ -402,7 +414,13 @@ public class RemoteMessageConverter {
             ExecuteFunction tmpMsg = (ExecuteFunction) msg;
             return JsonUtils.buildExecuteFunction(msg.type(), tmpMsg.moduleIdentity, tmpMsg.clientIdentity(),
                     tmpMsg.name,
-                    _toJsonObjects(tmpMsg.params)
+                    _toJsonObjects(tmpMsg.params),
+                    tmpMsg.getKwargs().keySet().toArray(new String[tmpMsg.getKwargs().keySet().size()]),
+                    _toJsonObjects(
+                            tmpMsg.getKwargs().values().toArray(
+                                    new Message[tmpMsg.getKwargs().values().size()]
+                            )
+                    )
             );
         }
 

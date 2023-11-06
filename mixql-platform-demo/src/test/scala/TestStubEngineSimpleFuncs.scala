@@ -24,8 +24,7 @@ class TestStubEngineSimpleFuncs extends MixQLClusterTest {
   }
 
   test("execute stub_simple_proc_params function with named params") {
-    run(
-      """
+    run("""
         |let engine "stub";
         |print(stub_simple_proc_params("test", b = 5));
         |let engine "stub-local";

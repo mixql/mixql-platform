@@ -2,8 +2,10 @@ package org.mixql.remote;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.mixql.remote.messages.Message;
 
 import java.util.Arrays;
+import java.util.Map;
 
 class JsonUtils {
     public static JSONObject buildEngineStarted(String type, String name, String clientIdentity, Long timeout) {
@@ -135,13 +137,23 @@ class JsonUtils {
     }
 
     public static JSONObject buildExecuteFunction(String type, String moduleIdentity, String clientIdentity,
-                                                  String name, JSONObject[] params) {
+                                                  String name, JSONObject[] params, String[] kwargsKeys,
+                                                  JSONObject[] kwargsValues) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type", type);
         jsonObject.put("moduleIdentity", moduleIdentity);
         jsonObject.put("clientIdentity", clientIdentity);
         jsonObject.put("name", name);
         jsonObject.put("params", buildJsonObjectsArray(params));
+
+        JSONArray jsonArrObject = new JSONArray();
+        for (int i = 0; i < kwargsKeys.length; i++) {
+            JSONObject tupleJsonObject = new JSONObject();
+            tupleJsonObject.put("key", kwargsKeys[i]);
+            tupleJsonObject.put("value", kwargsValues[i]);
+            jsonArrObject.add(tupleJsonObject);
+        }
+        jsonObject.put("kwargs", jsonArrObject);
         return jsonObject;
     }
 

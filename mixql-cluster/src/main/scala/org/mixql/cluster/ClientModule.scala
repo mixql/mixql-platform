@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.logging.log4j.LogManager
 import org.mixql.cluster.logger.{logDebug, logError, logInfo, logWarn}
 import org.mixql.core.engine.Engine
-import org.mixql.core.context.mtype.{MType, unpack}
+import org.mixql.core.context.mtype.{MType, pack, unpack}
 import org.mixql.net.PortOperations
 import org.mixql.remote.{GtypeConverter, RemoteMessageConverter, messages}
 import org.zeromq.{SocketType, ZMQ}
@@ -142,16 +142,30 @@ class ClientModule(clientIdentity: String,
     client
   }
 
-  override def executeFuncImpl(name: String, ctx: EngineContext, kwargs: Map[String, Object], params: MType*): MType = {
-    if (kwargs.nonEmpty)
-      throw new UnsupportedOperationException("named arguments are not supported in functions in remote engine " + name)
+  override def executeFuncImpl(name: String,
+                               ctx: EngineContext,
+                               _kwargs: Map[String, Object],
+                               params: MType*): MType = {
+    val kwargs: Map[String, Message] =
+      if (_kwargs.nonEmpty) {
+        logDebug(s"[ClientModule-$clientIdentity] convert kwargs to Messages")
+        _kwargs.map(t => t._1 -> GtypeConverter.toGeneratedMsg(pack(t._2)))
+      } else
+        Map[String, Message]()
+    logDebug(s"[ClientModule-$clientIdentity] kwargs: " + kwargs.mkString(","))
 
     logInfo(s"[ClientModule-$clientIdentity]: module $moduleIdentity was triggered by executeFunc request")
     var client: ZMQ.Socket = null
     try {
       client = initClientSocket()
+      import collection.JavaConverters._
       sendMsg(
-        ExecuteFunction(moduleIdentity, name, params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray),
+        ExecuteFunction(
+          moduleIdentity,
+          name,
+          params.map(gParam => GtypeConverter.toGeneratedMsg(gParam)).toArray,
+          kwargs.asJava
+        ),
         client
       )
       reactOnRequest(recvMsg(client), ctx, client)

@@ -407,7 +407,19 @@ class RemoteMessageConverterTest extends munit.FunSuite {
   test("convert ExecuteFunction remote message to json and back") {
 
     val json = RemoteMessageConverter.toJson({
-      new ExecuteFunction("stub", "stub-client", "testFuncName", Seq[Message](new MString("123.9", "'")).toArray)
+      new ExecuteFunction(
+        "stub",
+        "stub-client",
+        "testFuncName",
+        Seq[Message](new MString("123.9", "'")).toArray, {
+          val m = new java.util.HashMap[String, Message]()
+          m.put("test-var-name-1", new MBool(false))
+          m.put("test-var-name-2", new MDouble(123.9))
+          m.put("test-var-name-3", new MString("8.8", "\""))
+          m.put("test-var-name-4", new MString("123.9", "'"))
+          m
+        }
+      )
     })
 
     assert(json.isInstanceOf[String])
@@ -428,6 +440,46 @@ class RemoteMessageConverterTest extends munit.FunSuite {
       val value = res.params(0)
       assert(value.isInstanceOf[MString])
       assertEquals(value.asInstanceOf[MString].value, "123.9")
+    }
+
+    val vars = res.getKwargs
+
+    assert(vars.keySet().size() == 4)
+
+    {
+      val valueRAW = vars.get("test-var-name-1")
+      assert(valueRAW != null)
+
+      assert(valueRAW.isInstanceOf[MBool])
+      val value = valueRAW.asInstanceOf[MBool]
+      assert(!value.value)
+    }
+
+    {
+      val valueRAW = vars.get("test-var-name-2")
+      assert(valueRAW != null)
+
+      assert(valueRAW.isInstanceOf[MDouble])
+      val value = valueRAW.asInstanceOf[MDouble]
+      assertEqualsDouble(Double.box(value.value), Double.box(123.9), Double.box(0.0001))
+    }
+
+    {
+      val valueRAW = vars.get("test-var-name-3")
+      assert(valueRAW != null)
+
+      assert(valueRAW.isInstanceOf[MString])
+      val value = valueRAW.asInstanceOf[MString]
+      assertEquals(value.quoted(), "\"8.8\"")
+    }
+
+    {
+      val valueRAW = vars.get("test-var-name-4")
+      assert(valueRAW != null)
+
+      assert(valueRAW.isInstanceOf[MString])
+      val value = valueRAW.asInstanceOf[MString]
+      assertEquals(value.quoted(), "'123.9'")
     }
   }
 

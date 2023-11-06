@@ -39,13 +39,14 @@ class EngineFailExecutor extends IModuleExecutor {
                                            logger: ModuleLogger,
                                            platformContext: PlatformContext): Message = {
     import logger.*
+    import collection.JavaConverters._
     logInfo(s"Started executing function ${msg.name}")
     logDebug(
       s"Executing function ${msg.name} with params " +
-        msg.params.mkString("[", ",", "]")
+        msg.params.mkString("[", ",", "]") + " and kwargs " + msg.getKwargs.asScala.mkString(",")
     )
     val res = org.mixql.engine.core.FunctionInvoker
-      .invoke(functions, msg.name, List[Object](platformContext), msg.params.toList)
+      .invoke(functions, msg.name, List[Object](platformContext), msg.params.toList, msg.getKwargs.asScala)
     logInfo(s": Successfully executed function ${msg.name} ")
     res
   }

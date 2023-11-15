@@ -13,7 +13,7 @@ object EngineSqlightExecutor extends IModuleExecutor:
 
 //  var context: SQLightJDBC = null
 
-  def functions: Map[String, Any] =
+  def functions: Map[String, Object] =
     Map(
       "sqlite_simple_proc" -> SqliteSimpleProc.simple_func,
       "sqlite_simple_proc_params" -> SqliteSimpleProc.simple_func_params,

@@ -32,7 +32,7 @@ object EngineDemo5SecExecutor extends IModuleExecutor {
     start + r.nextLong((end - start) + 1)
   }
 
-  def functions: Map[String, Any] = Map()
+  def functions: Map[String, Object] = Map()
 
   override def reactOnExecuteFunctionAsync(msg: ExecuteFunction,
                                            identity: String,

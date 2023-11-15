@@ -31,7 +31,7 @@ class EngineFailExecutor extends IModuleExecutor {
     messages.rtype.mtype.MNULL()
   }
 
-  def functions: Map[String, Any] = Map()
+  def functions: Map[String, Object] = Map()
 
   override def reactOnExecuteFunctionAsync(msg: ExecuteFunction,
                                            identity: String,

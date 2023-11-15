@@ -33,7 +33,7 @@ object EngineDemoExecutor extends IModuleExecutor {
     start + r.nextLong((end - start) + 1)
   }
 
-  def functions: Map[String, Any] =
+  def functions: Map[String, Object] =
     Map(
       "stub_simple_proc" -> StubSimpleProc.simple_func,
       "stub_simple_proc_params" -> StubSimpleProc.simple_func_params,

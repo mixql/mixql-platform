@@ -6,7 +6,7 @@ import scala.collection.mutable
 
 object FunctionInvoker {
 
-  def invoke(functions: Map[String, Any],
+  def invoke(functions: Map[String, Object],
              name: String,
              contexts: List[Object], // To support not only mixql-core context
              params: List[Message] = Nil,

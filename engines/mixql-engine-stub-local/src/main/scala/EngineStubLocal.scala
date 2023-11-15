@@ -20,7 +20,7 @@ object EngineStubLocal extends Engine with IEngineLogger {
     mtype.MNull.get()
   }
 
-  def functions: Map[String, Any] =
+  def functions: Map[String, Object] =
     Map(
       "stub_simple_proc" -> StubSimpleProc.simple_func,
       "stub_simple_proc_params" -> StubSimpleProc.simple_func_params,

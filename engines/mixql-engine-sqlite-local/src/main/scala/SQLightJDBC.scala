@@ -91,7 +91,7 @@ class SQLightJDBC(identity: String, ctx: EngineContext, dbPathParameter: Option[
       yield {
         columnTypes(i - 1) match
           case _: mtype.MString => mtype.MString(res.getString(i), "")
-          case _: mtype.MBool   => mtype.MBool(res.getBoolean(i))
+          case _: mtype.MBool   => mtype.MBool.get(res.getBoolean(i))
           case _: mtype.MInt    => mtype.MInt(res.getInt(i))
           case _: mtype.MDouble => mtype.MDouble(res.getDouble(i))
           case _: mtype.MArray  => readArrayFromResultSet(res.getArray(i))
@@ -105,7 +105,7 @@ class SQLightJDBC(identity: String, ctx: EngineContext, dbPathParameter: Option[
         case _: mtype.MString =>
           JavaSqlArrayConverter.toStringArray(javaSqlArray).map { str => mtype.MString(str, "") }.toArray
         case _: mtype.MBool =>
-          JavaSqlArrayConverter.toBooleanArray(javaSqlArray).map { value => mtype.MBool(value) }.toArray
+          JavaSqlArrayConverter.toBooleanArray(javaSqlArray).map { value => mtype.MBool.get(value) }.toArray
         case _: mtype.MInt => JavaSqlArrayConverter.toIntArray(javaSqlArray).map { value => mtype.MInt(value) }.toArray
         case _: mtype.MDouble =>
           JavaSqlArrayConverter.toDoubleArray(javaSqlArray).map { value => mtype.MDouble(value) }.toArray
@@ -116,7 +116,7 @@ class SQLightJDBC(identity: String, ctx: EngineContext, dbPathParameter: Option[
   def javaSqlTypeToClientMsg(intType: Int): mtype.MType =
     intType match
       case Types.VARCHAR | Types.CHAR | Types.LONGVARCHAR => mtype.MString("")
-      case Types.BIT | Types.BOOLEAN                      => mtype.MBool(false)
+      case Types.BIT | Types.BOOLEAN                      => mtype.MBool.get(false)
       case Types.NUMERIC =>
         logWarn(s"SQLightJDBC error while execute: unsupported column type NUMERIC")
         mtype.MString("")

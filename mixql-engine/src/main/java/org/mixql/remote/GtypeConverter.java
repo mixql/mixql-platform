@@ -31,7 +31,7 @@ public class GtypeConverter {
             return MNone.get();
 
         if (msg instanceof MBool)
-            return new org.mixql.core.context.mtype.MBool(((MBool) msg).value);
+            return org.mixql.core.context.mtype.MBool.get(((MBool) msg).value);
 
         if (msg instanceof MInt)
             return new org.mixql.core.context.mtype.MInt(((MInt) msg).value);

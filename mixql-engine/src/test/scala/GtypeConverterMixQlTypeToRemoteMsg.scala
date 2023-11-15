@@ -20,7 +20,7 @@ class GtypeConverterMixQlTypeToRemoteMsg extends munit.FunSuite {
   }
 
   test("convert gtype bool to Bool remote message ") {
-    val res = GtypeConverter.toGeneratedMsg(new MBool(false))
+    val res = GtypeConverter.toGeneratedMsg(MBool.get(false))
     assert(res.isInstanceOf[rtype.mtype.MBool])
     assert(!res.asInstanceOf[rtype.mtype.MBool].value)
   }
@@ -46,7 +46,7 @@ class GtypeConverterMixQlTypeToRemoteMsg extends munit.FunSuite {
 
   test("convert gtype map to org.mixql.remote.messages.rtype.mtype.map remote message") {
     val m = new java.util.HashMap[mtype.MType, mtype.MType]()
-    m.put(new mtype.MString("123.9", "'"), new mtype.MBool(false))
+    m.put(new mtype.MString("123.9", "'"), mtype.MBool.get(false))
     m.put(new mtype.MString("8.8", "\""), new mtype.MDouble(123.9))
 
     val res = GtypeConverter.toGeneratedMsg(new mtype.MMap(m))

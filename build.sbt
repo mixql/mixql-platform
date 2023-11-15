@@ -29,7 +29,7 @@ inThisBuild(
 )
 
 val Scala3 = "3.1.3"
-val Scala213 = "2.13.8"
+val Scala213 = "2.13.12"
 val Scala212 = "2.12.17"
 
 lazy val mixQLCore = projectMatrix.in(file("mixql-core")).enablePlugins(Antlr4Plugin).defaultAxes().settings(
@@ -55,7 +55,6 @@ lazy val mixQLCore = projectMatrix.in(file("mixql-core")).enablePlugins(Antlr4Pl
   _.settings(
     libraryDependencies ++= Seq(
       "org.scalatest" %% "scalatest"     % "3.1.1" % Test,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value
     )
   )
 ).customRow(
@@ -64,8 +63,7 @@ lazy val mixQLCore = projectMatrix.in(file("mixql-core")).enablePlugins(Antlr4Pl
   Seq(VirtualAxis.jvm),
   _.settings(
     libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest"     % "3.2.14" % Test,
-      "org.scala-lang" % "scala-reflect" % "2.13.8"
+      "org.scalatest" %% "scalatest"     % "3.2.14" % Test
     )
   )
 )

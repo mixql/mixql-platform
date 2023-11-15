@@ -3,7 +3,7 @@ ThisBuild / scalaVersion := "3.1.3"
 inThisBuild(
   List(
     organization := "org.mixql",
-    version := "0.9.2", // change version for all projects
+    version := "0.9.3", // change version for all projects
     organizationName := "MixQL",
     organizationHomepage := Some(url("https://mixql.org/")),
     developers := List(
@@ -52,20 +52,12 @@ lazy val mixQLCore = projectMatrix.in(file("mixql-core")).enablePlugins(Antlr4Pl
   true,
   Seq(Scala212, Scala213),
   Seq(VirtualAxis.jvm),
-  _.settings(
-    libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest"     % "3.1.1" % Test,
-    )
-  )
+  _.settings(libraryDependencies ++= Seq("org.scalatest" %% "scalatest" % "3.1.1" % Test))
 ).customRow(
   true,
   Seq(Scala3),
   Seq(VirtualAxis.jvm),
-  _.settings(
-    libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest"     % "3.2.14" % Test
-    )
-  )
+  _.settings(libraryDependencies ++= Seq("org.scalatest" %% "scalatest" % "3.2.14" % Test))
 )
 
 lazy val mixQLCoreSCALA3 = mixQLCore.jvm(Scala3)
